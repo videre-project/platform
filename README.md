@@ -6,6 +6,7 @@ This repository contains Videre's API-facing TypeScript services:
 |---|---|
 | `services/videre-api` | Cloudflare Worker API for Magic: The Gathering data. |
 | `services/videre-bot` | Cloudflare Worker Discord bot and interaction handler. |
+| `services/videre-ml` | Public routing and API policy for format-specific Manafold inference Workers. |
 
 The repo is a small pnpm workspace over `services/*`, with shared TypeScript defaults in `tsconfig.base.json`.
 
@@ -25,6 +26,7 @@ Run a service locally:
 ```sh
 pnpm --filter videre-api run dev
 pnpm --filter videre-bot run dev
+pnpm --filter videre-ml run dev
 ```
 
 Deploy a service:
@@ -32,6 +34,7 @@ Deploy a service:
 ```sh
 pnpm --filter videre-api run deploy
 pnpm --filter videre-bot run deploy
+pnpm --filter videre-ml run deploy
 ```
 
 Sync Discord commands for the bot:

@@ -9,7 +9,7 @@
   "devDependencies": {
     "@types/node": "^20.2.3",
     "typescript": "^5.0.4",
-    "wrangler": "^4.105.0"
+    "wrangler": "4.114.0"
   },
   "repository": {
     "type": "git",
