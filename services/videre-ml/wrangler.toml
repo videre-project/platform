@@ -1,0 +1,36 @@
+name = "videre-ml"
+main = "./src/index.ts"
+compatibility_date = "2026-07-28"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "ml.videreproject.com", custom_domain = true }
+]
+
+[[services]]
+binding = "MANAFOLD_STANDARD"
+service = "manafold-standard"
+
+[[services]]
+binding = "MANAFOLD_MODERN"
+service = "manafold-modern"
+
+[[services]]
+binding = "MANAFOLD_PIONEER"
+service = "manafold-pioneer"
+
+[[services]]
+binding = "MANAFOLD_VINTAGE"
+service = "manafold-vintage"
+
+[[services]]
+binding = "MANAFOLD_LEGACY"
+service = "manafold-legacy"
+
+[[services]]
+binding = "MANAFOLD_PAUPER"
+service = "manafold-pauper"
+
+[[services]]
+binding = "MANAFOLD_PREMODERN"
+service = "manafold-premodern"
