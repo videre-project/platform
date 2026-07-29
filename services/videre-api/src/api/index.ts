@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import { Router, cors } from 'itty-router';
+import { Router } from 'itty-router';
 
+import { applyPublicApiCors, publicApiPreflight } from '@/apiPolicy';
 import { useCache } from '@/cache';
 import { withParams } from '@/parameters';
 import { Error, asJSON } from '@/responses';
@@ -24,9 +25,10 @@ import sets from './sets';
 import standings from './standings';
 
 
-const { preflight, corsify } = cors();
-
-export default Router({ before: [preflight], finally: [asJSON, corsify] })
+export default Router({
+  before: [publicApiPreflight],
+  finally: [asJSON, applyPublicApiCors],
+})
   .get('*', useCache)
   .all('*', withParams)
   .get('/openapi.json', openApiResponse)
