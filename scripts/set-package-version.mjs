@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readdir, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
