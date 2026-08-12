@@ -1,3 +1,8 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
 // This is the slash-up config file.
 // Make sure to fill in "token" and "applicationId" before using.
 // You can also use environment variables from the ".env" file if any.
