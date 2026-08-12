@@ -601,7 +601,7 @@ h3 { font-size: 1.1rem; }
 }
 
 .replay-preview-layout {
-  height: 640px;
+  height: auto;
 }
 
 /* ===== Frequently asked questions ===== */
