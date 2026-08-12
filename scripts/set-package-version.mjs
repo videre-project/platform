@@ -38,13 +38,27 @@ const packagePaths = (await readdir(packagesRoot, { withFileTypes: true }))
       return JSON.parse(readFileSync(path, 'utf8')).publishConfig?.access === 'public';
     } catch {
       return false;
-    }
-  });
+  }
+});
 
-for (const path of packagePaths.sort()) {
-  const packageJson = JSON.parse(await readFile(path, 'utf8'));
+const packageRecords = packagePaths.sort().map(path => ({
+  path,
+  packageJson: JSON.parse(readFileSync(path, 'utf8')),
+}));
+const publicPackageNames = new Set(packageRecords.map(({ packageJson }) => packageJson.name));
+
+for (const { path, packageJson } of packageRecords) {
   const previousVersion = packageJson.version;
   packageJson.version = version;
+
+  for (const section of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
+    for (const name of publicPackageNames) {
+      const specifier = packageJson[section]?.[name];
+      if (typeof specifier === 'string' && specifier.startsWith('workspace:')) {
+        packageJson[section][name] = version;
+      }
+    }
+  }
 
   if (dryRun) {
     console.log(`${packageJson.name}: ${previousVersion} -> ${version}`);

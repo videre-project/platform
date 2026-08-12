@@ -103,7 +103,7 @@ git tag v0.3.0
 git push origin v0.3.0
 ```
 
-Ordinary commits do not publish packages. The package workflow runs on relevant pull requests and the release workflow runs only for version tags. The workflows expect an `NPM_TOKEN` repository secret and read-only database secrets named `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, and optionally `PGSSL`. Local development continues to use the Verdaccio commands above, and the temporary local registry configuration is overridden by CI when publishing to npm.
+Ordinary commits do not publish packages. The package workflow runs on relevant pull requests and the release workflow runs only for version tags. npm publication uses a trusted publisher configured for each public package, so the release workflow requires no npm token; it does require read-only database secrets named `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, and optionally `PGSSL`. Local development continues to use the Verdaccio commands above, and the temporary local registry configuration is overridden by CI when publishing to npm.
 
 ## Services
 

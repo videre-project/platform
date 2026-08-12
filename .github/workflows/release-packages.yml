@@ -44,9 +44,9 @@ jobs:
     name: Publish packages
     needs: validate
     runs-on: ubuntu-latest
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      NPM_REGISTRY: https://registry.npmjs.org
+    permissions:
+      id-token: write
+      contents: write
 
     steps:
       - name: Check out tagged commit
@@ -66,6 +66,12 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      - name: Install npm trusted publishing CLI
+        run: npm install --global npm@11.6.2
+
+      - name: Check npm version
+        run: npm --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -73,7 +79,16 @@ jobs:
         run: node scripts/set-package-version.mjs "$GITHUB_REF_NAME"
 
       - name: Publish public packages
-        run: pnpm --filter './packages/*' -r publish --no-git-checks --access public --registry "$NPM_REGISTRY"
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in packages/constants packages/sql-builder packages/sql-schema packages/ui; do
+            echo "Publishing $package"
+            (
+              cd "$package"
+              npm publish --access public --registry https://registry.npmjs.org
+            )
+          done
 
       - name: Create GitHub release
         env:
