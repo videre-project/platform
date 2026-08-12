@@ -1,37 +1,37 @@
 # Videre Platform
 
-This repository is the shared TypeScript workspace for the Videre Project platform. It contains the public data API, supporting Cloudflare Workers, reusable packages, and the Videre Project website.
+**Videre Platform** is the TypeScript monorepo for the Videre Project. It contains the public API, website, Cloudflare services, and shared packages used across Videre applications.
 
-The [Tracker](https://github.com/videre-project/Tracker) desktop application is maintained separately and consumes the published Videre packages from this workspace.
+The [Tracker](https://github.com/videre-project/Tracker) desktop application is maintained separately and uses packages published from this repository.
 
-## Repository layout
+## Projects and packages
 
-| Path | Purpose |
-|---|---|
-| `src/` | React/Vite landing site for [videreproject.com](https://videreproject.com). |
-| `packages/constants` | `@videreproject/constants`, generated domain enums and shared constants whose source of truth is `mtgo-db`. |
-| `packages/sql-builder` | `@videreproject/sql-builder`, typed SQL fragments, predicates, filters, and schema helpers. |
-| `packages/ui` | `@videreproject/ui`, host-neutral Tracker UI primitives, layouts, card-media providers, fixtures, and shared theme assets. |
-| `services/videre-api` | `api.videreproject.com`, the public Cloudflare Worker API for MTGO catalog, event, deck, match, standings, price, and metagame data. |
-| `services/videre-bot` | Videre's Discord bot and interaction handler. |
-| `services/videre-ml` | Public routing and API policy for format-specific Manafold inference Workers. |
-| `docs/` | API and reference documentation. |
+| Path                   | Purpose                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `src/`                 | React/Vite website for [videreproject.com](https://videreproject.com)                                              |
+| `packages/constants`   | `@videreproject/constants`, generated enums and shared constants from `mtgo-db`                                    |
+| `packages/sql-builder` | `@videreproject/sql-builder`, typed SQL fragments, predicates, filters, and schema helpers                         |
+| `packages/ui`          | `@videreproject/ui`, shared Tracker UI components, layouts, card-media providers, fixtures, and theme assets       |
+| `services/videre-api`  | Public API at `api.videreproject.com` for MTGO cards, events, decks, matches, standings, prices, and metagame data |
+| `services/videre-bot`  | Videre's Discord bot and interaction handler                                                                       |
+| `services/videre-ml`   | Routing and API policy for format-specific Manafold inference Workers                                              |
+| `docs/`                | API and reference documentation                                                                                    |
 
-The API reads data prepared by the Videre ingestion pipeline and `mtgo-db`. Generated constants and database contracts should be regenerated from that source rather than edited by hand.
+The API uses data produced by the Videre ingestion pipeline and `mtgo-db`. Generated constants and database types come from `mtgo-db` and should not be edited by hand.
 
 ## Requirements
 
-- Node.js 22.16.0 (see `.node-version`)
-- pnpm 10.28.2, provided through Corepack
+* Node.js 22.16.0 (see `.node-version`)
+* pnpm 10.28.2 through Corepack
 
-Enable Corepack and install the workspace dependencies:
+Enable Corepack and install dependencies:
 
 ```sh
 corepack enable
 pnpm install
 ```
 
-The website's build-time Open Graph image uses Playwright. Install Chromium once if it is not already available in your environment:
+The website uses Playwright to generate its Open Graph image. If Chromium is not already installed, install it once:
 
 ```sh
 pnpm exec playwright install chromium
@@ -39,26 +39,26 @@ pnpm exec playwright install chromium
 
 ## Website
 
-Run the landing site locally:
+Run the website locally:
 
 ```sh
 pnpm dev
 ```
 
-Build the site and generate its Open Graph image:
+Build and preview it:
 
 ```sh
 pnpm build
 pnpm preview
 ```
 
-Deploy the site to the configured Cloudflare Pages project:
+Deploy it to the configured Cloudflare Pages project:
 
 ```sh
 pnpm deploy:site
 ```
 
-The deployment requires an authenticated Wrangler/Cloudflare environment. The Pages configuration is in [`wrangler.toml`](wrangler.toml).
+Deployment requires an authenticated Wrangler/Cloudflare environment. The Pages configuration is in [`wrangler.toml`](wrangler.toml).
 
 ## Shared packages
 
@@ -72,7 +72,7 @@ pnpm --filter @videreproject/ui typecheck
 pnpm --filter @videreproject/ui build
 ```
 
-Develop and validate `@videreproject/ui` with Storybook and the checked-in visual baselines:
+Use Storybook and the checked-in visual baselines to develop and test `@videreproject/ui`:
 
 ```sh
 pnpm ui:storybook
@@ -81,7 +81,7 @@ pnpm ui:test
 pnpm ui:visual
 ```
 
-For package development against Tracker, use the repository-local Verdaccio registry:
+For package development against Tracker, use the local Verdaccio registry:
 
 ```sh
 pnpm registry:start
@@ -92,18 +92,21 @@ pnpm sql-schema:publish:local
 pnpm ui:publish:local
 ```
 
-See [`packages/constants/README.md`](packages/constants/README.md) and [`packages/ui/README.md`](packages/ui/README.md) for generation, media-provider, visual-test, and local publishing details.
+See [`packages/constants/README.md`](packages/constants/README.md) and [`packages/ui/README.md`](packages/ui/README.md) for details on generation, media providers, visual testing, and local publishing.
 
 ### Package releases
 
-The publishable packages are released together from an explicit `v*` Git tag. The tag is the single source of truth for the release version. The package manifests use the shared `0.0.0-development` placeholder during ordinary development; CI replaces it with the tag version in its temporary checkout, runs the workspace validation checks, publishes all four packages, and creates the corresponding GitHub release.
+Publishable packages are released together from a `v*` Git tag. The tag determines the release version.
+
+Package manifests use `0.0.0-development` during normal development. When a version tag is pushed, CI replaces that placeholder with the tag version in its checkout, runs the repository checks, publishes all four packages, and creates the matching GitHub release.
 
 ```sh
 git tag v0.3.0
 git push origin v0.3.0
 ```
 
-Ordinary commits do not publish packages. The package workflow runs on relevant pull requests and the release workflow runs only for version tags. npm publication uses a trusted publisher configured for each public package, so the release workflow requires no npm token. Workspace validation uses the passwordless, read-only `public_api` role through the `public-db.videreproject.com` Cloudflare TCP bridge. Local development continues to use the Verdaccio commands above, and the temporary local registry configuration is overridden by CI when publishing to npm.
+> [!NOTE]
+> Regular commits that do not contain a version tag do not publish packages.
 
 ## Services
 
@@ -123,23 +126,25 @@ pnpm --filter videre-bot deploy
 pnpm --filter videre-ml deploy
 ```
 
-The root convenience commands run matching workspace scripts in parallel:
+The root commands run the corresponding scripts in parallel:
 
 ```sh
 pnpm dev:all
 pnpm deploy:all
 ```
 
-The Discord bot also provides command synchronization commands:
+Sync Discord commands with:
 
 ```sh
 pnpm --filter videre-bot sync
 pnpm --filter videre-bot sync:dev
 ```
 
-## Database-generated contracts
+## Generated database types
 
-`mtgo-db` is the source of truth for generated database enums, card attributes, rarities, and schema contracts. With the API's database credentials configured in `services/videre-api/.dev.vars`:
+[`mtgo-db`](https://github.com/videre-project/mtgo-db) is the source of truth for generated database enums, card attributes, rarities, and schema types.
+
+Configure the API database credentials in `services/videre-api/.dev.vars`, then run:
 
 ```sh
 pnpm db:generate-types
@@ -148,27 +153,29 @@ pnpm db:check-types
 
 Do not edit `packages/constants/src/enums.g.ts` or `packages/sql-schema/src/schema.g.ts` by hand.
 
-## API documentation
+CI database checks use the read-only `public_api` role through the `public-db.videreproject.com` Cloudflare TCP bridge.
 
-The canonical machine-readable OpenAPI 3.0 document is served at [`api.videreproject.com/openapi.json`](https://api.videreproject.com/openapi.json). Client SDKs and API model types should be generated from that document.
+## API
 
-- [API overview](docs/api/index.md)
-- [Cards](docs/api/cards.md)
-- [Sets](docs/api/sets.md)
-- [Products](docs/api/products.md)
-- [Prices](docs/api/prices.md)
-- [Events](docs/api/events.md)
-- [Decks](docs/api/decks.md)
-- [Matches](docs/api/matches.md)
-- [Standings](docs/api/standings.md)
-- [Metagame](docs/api/metagame.md)
-- [Archetypes](docs/api/archetypes.md)
-- [Matchups](docs/api/matchups.md)
-- [MTGO manifest](docs/api/mtgo.md)
-- [Card search syntax](docs/reference/card-search.md)
-- [Data sources and freshness](docs/reference/data-sources.md)
-- [Rate limits](docs/reference/rate-limits.md)
-- [Responses and errors](docs/reference/responses-and-errors.md)
+The API publishes its [OpenAPI 3.0 specification](https://api.videreproject.com/openapi.json) at `api.videreproject.com/openapi.json`. Generate client SDKs and API model types from this document.
+
+* [API overview](docs/api/index.md)
+* [Cards](docs/api/cards.md)
+* [Sets](docs/api/sets.md)
+* [Products](docs/api/products.md)
+* [Prices](docs/api/prices.md)
+* [Events](docs/api/events.md)
+* [Decks](docs/api/decks.md)
+* [Matches](docs/api/matches.md)
+* [Standings](docs/api/standings.md)
+* [Metagame](docs/api/metagame.md)
+* [Archetypes](docs/api/archetypes.md)
+* [Matchups](docs/api/matchups.md)
+* [MTGO manifest](docs/api/mtgo.md)
+* [Card search syntax](docs/reference/card-search.md)
+* [Data sources and freshness](docs/reference/data-sources.md)
+* [Rate limits](docs/reference/rate-limits.md)
+* [Responses and errors](docs/reference/responses-and-errors.md)
 
 Run the API tests:
 
@@ -177,15 +184,17 @@ pnpm --filter videre-api test
 VIDERE_API_BASE_URL=http://localhost:8787 pnpm --filter videre-api test
 ```
 
-## Repository checks
+## Checks
 
-Run the root lint and workspace tests before publishing or deploying:
+Run linting and tests before publishing or deploying:
 
 ```sh
 pnpm lint
 pnpm test
 ```
 
+Use the Verdaccio commands above to publish packages locally for testing.
+
 ## License
 
-[Apache-2.0 License](LICENSE).
+Licensed under the [Apache-2.0 License](LICENSE).
