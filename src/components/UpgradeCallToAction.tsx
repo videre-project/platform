@@ -28,10 +28,10 @@ export const UpgradeCallToAction: React.FC = () => (
     <div className="container">
       <div className="upgrade-cta-panel">
         <div className="upgrade-cta-copy">
-          <h2>Ready to upgrade your MTGO workflow?</h2>
+          <h2>Ready to upgrade your MTGO play?</h2>
           <p className="text-sm text-muted">
-            Track your collection, review every trade, and replay each match action by action. Then
-            dig into public APIs for tournament results and metagame research.
+            An open platform for live match tracking, collection management, and metagame trends.
+            Explore every match, deck, and event in one place.
             <br/>Open source, self-hostable, and free.
           </p>
         </div>
