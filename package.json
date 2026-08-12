@@ -1,23 +1,70 @@
 {
-  "name": "@videre/monorepo",
+  "name": "@videreproject/monorepo",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "pnpm --parallel -r run dev",
-    "deploy": "pnpm --parallel -r run deploy",
+    "dev": "vite",
+    "build": "tsc && vite build && pnpm generate:og",
+    "generate:og": "node scripts/generate-og-image.mjs",
+    "preview": "vite preview",
+    "deploy:site": "pnpm build && pnpm exec wrangler pages deploy dist --project-name videreproject --branch main",
+    "lint": "eslint . --max-warnings 0",
+    "ui:storybook": "pnpm --filter @videreproject/ui storybook",
+    "ui:storybook:build": "pnpm --filter @videreproject/ui build-storybook",
+    "ui:test": "pnpm --filter @videreproject/ui test:stories",
+    "ui:visual": "pnpm --filter @videreproject/ui test:visual",
+    "ui:visual:update": "pnpm --filter @videreproject/ui test:visual:update",
+    "registry:start": "verdaccio --config infra/verdaccio/config.yaml",
+    "ui:pack": "pnpm --filter @videreproject/ui pack --pack-destination artifacts",
+    "ui:publish:local": "pnpm --filter @videreproject/ui publish --no-git-checks --registry http://127.0.0.1:4873/",
+    "constants:publish:local": "pnpm --filter @videreproject/constants publish --no-git-checks --registry http://127.0.0.1:4873/",
+    "sql-builder:publish:local": "pnpm --filter @videreproject/sql-builder publish --no-git-checks --registry http://127.0.0.1:4873/",
+    "sql-schema:publish:local": "pnpm --filter @videreproject/sql-schema publish --no-git-checks --registry http://127.0.0.1:4873/",
+    "release:version": "node scripts/set-package-version.mjs",
+    "db:generate-types": "node scripts/generate-db-types.mjs",
+    "db:check-types": "node scripts/generate-db-types.mjs --check",
+    "dev:all": "pnpm --parallel -r run dev",
+    "deploy:all": "pnpm --parallel -r run deploy",
     "test": "pnpm -r run test"
   },
+  "dependencies": {
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "@videreproject/constants": "workspace:*",
+    "@videreproject/ui": "workspace:*",
+    "framer-motion": "^11.3.0",
+    "lucide-react": "^0.428.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.2.3",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.5.4",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "globals": "^17.9.0",
+    "postcss": "^8.5.26",
+    "playwright": "^1.62.1",
+    "postgres": "^3.4.4",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.0.4",
+    "typescript-eslint": "^8.67.0",
+    "verdaccio": "6.9.2",
+    "vite": "^5.4.1",
     "wrangler": "4.114.0"
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@github.com/videre-project/videre-project.git",
+    "url": "ssh://git@github.com/videre-project/platform.git",
     "directory": "."
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.16.0"
   },
   "packageManager": "pnpm@10.28.2"
 }

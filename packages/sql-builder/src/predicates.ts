@@ -1,9 +1,9 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import { join, param, raw, sql, toFragment, toFragmentOrParam } from './fragments.ts';
+import { join, raw, sql, toFragment, toFragmentOrParam } from './fragments.ts';
 import type { SqlFragment, SqlValue } from './types.ts';
 
 export const and = (

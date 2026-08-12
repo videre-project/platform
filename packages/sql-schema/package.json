@@ -1,13 +1,13 @@
 {
-  "name": "@videreproject/sql-builder",
+  "name": "@videreproject/sql-schema",
   "version": "0.0.0-development",
   "type": "module",
-  "description": "Typed SQL fragments, predicates, filters, and schema helpers for Videre services.",
+  "description": "Generated database schema types and table references for Videre services.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/videre-project/platform.git",
-    "directory": "packages/sql-builder"
+    "directory": "packages/sql-schema"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -29,8 +29,11 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm run build && node --test --experimental-strip-types test/*.test.ts",
     "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@videreproject/constants": "workspace:*",
+    "@videreproject/sql-builder": "workspace:*"
   },
   "devDependencies": {
     "tsup": "8.5.1",
