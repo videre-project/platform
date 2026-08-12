@@ -1,0 +1,31 @@
+storage: ./storage
+
+auth:
+  htpasswd:
+    file: ./htpasswd
+    max_users: 1000
+
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+
+packages:
+  '@videreproject/*':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+
+  '**':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: npmjs
+
+log:
+  type: stdout
+  format: pretty
+  level: http
+
+# Tracker's development container reaches this registry through Docker's host
+# gateway. Package publication still requires an authenticated local identity.
+listen: 0.0.0.0:4873

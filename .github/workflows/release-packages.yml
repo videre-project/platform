@@ -1,0 +1,81 @@
+name: Release packages
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-packages-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  verify-tag:
+    name: Verify release tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag points into main
+        run: |
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+  validate:
+    name: Validate release
+    needs: verify-tag
+    uses: ./.github/workflows/package-ci.yml
+    with:
+      version: ${{ github.ref_name }}
+    secrets: inherit
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish packages
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NPM_REGISTRY: https://registry.npmjs.org
+
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply tag version
+        run: node scripts/set-package-version.mjs "$GITHUB_REF_NAME"
+
+      - name: Publish public packages
+        run: pnpm --filter './packages/*' -r publish --no-git-checks --access public --registry "$NPM_REGISTRY"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"

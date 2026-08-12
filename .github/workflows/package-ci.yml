@@ -1,0 +1,82 @@
+name: Package and workspace checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/package-ci.yml'
+      - '.github/workflows/release-packages.yml'
+      - 'packages/**'
+      - 'services/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig*.json'
+      - 'eslint.config.js'
+      - '.node-version'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: Optional release version to apply before validation.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate workspace
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: ${{ secrets.PGHOST }}
+      PGPORT: ${{ secrets.PGPORT }}
+      PGDATABASE: ${{ secrets.PGDATABASE }}
+      PGUSER: ${{ secrets.PGUSER }}
+      PGPASSWORD: ${{ secrets.PGPASSWORD }}
+      PGSSL: ${{ secrets.PGSSL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply release version
+        if: inputs.version != ''
+        run: node scripts/set-package-version.mjs "${{ inputs.version }}"
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check generated database types
+        run: pnpm db:check-types
+
+      - name: Build shared packages
+        run: pnpm --filter './packages/*' -r run build
+
+      - name: Typecheck packages and services
+        run: pnpm --filter './packages/*' --filter './services/*' -r run typecheck
+
+      - name: Test packages and services
+        run: pnpm --filter './packages/*' --filter './services/*' -r run test
+
+      - name: Build website
+        run: pnpm build
