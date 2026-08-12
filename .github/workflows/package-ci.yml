@@ -110,6 +110,9 @@ jobs:
       - name: Test packages and services
         run: pnpm --filter './packages/*' --filter './services/*' -r run test
 
+      - name: Install Chromium for Open Graph generation
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Build website
         run: pnpm build
 
