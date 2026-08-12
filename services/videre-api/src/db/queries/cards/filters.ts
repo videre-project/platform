@@ -1,10 +1,11 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import { raw, sql, type SqlFragment } from '@videre/sql-builder';
-import { CARD_COLORS, table } from '../../schema.g.ts';
+import { raw, sql, type SqlFragment } from '@videreproject/sql-builder';
+import { CARD_COLORS } from '@videreproject/constants';
+import { table } from '@videreproject/sql-schema';
 
 const cards = table('cards', 'c');
 

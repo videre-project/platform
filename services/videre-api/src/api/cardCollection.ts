@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import type { IRequest } from 'itty-router';
 
@@ -34,19 +34,21 @@ export async function readCardCollection(
     return Error(400, 'Request body must be valid JSON.');
   }
 
-  if (!isRecord(body) || body.collection === undefined || body.collection === null) {
+  if (typeof body !== 'object' || body === null || Array.isArray(body) ||
+      !('collection' in body) || body.collection === undefined || body.collection === null) {
     return null;
   }
 
-  if (!isRecord(body.collection)) {
+  const collection = body.collection;
+  if (typeof collection !== 'object' || Array.isArray(collection)) {
     return Error(400, 'collection must be an object.');
   }
 
-  return parseCollection(body.collection);
+  return parseCollection(collection);
 }
 
-function parseCollection(collection: Record<string, unknown>): CardCollectionFilter | Response {
-  if (!Array.isArray(collection.ids)) {
+function parseCollection(collection: object): CardCollectionFilter | Response {
+  if (!('ids' in collection) || !Array.isArray(collection.ids)) {
     return Error(400, 'collection.ids must be an array of MTGO catalog IDs.');
   }
 
@@ -59,12 +61,12 @@ function parseCollection(collection: Record<string, unknown>): CardCollectionFil
     return ids;
   }
 
-  const mode = parseMode(collection.mode);
+  const mode = parseMode('mode' in collection ? collection.mode : undefined);
   if (mode instanceof Response) {
     return mode;
   }
 
-  const match = parseMatch(collection.match);
+  const match = parseMatch('match' in collection ? collection.match : undefined);
   if (match instanceof Response) {
     return match;
   }
@@ -112,8 +114,4 @@ function parseMatch(value: unknown): CardCollectionMatchMode | Response {
   }
 
   return Error(400, 'collection.match must be one of prints or oracle.');
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

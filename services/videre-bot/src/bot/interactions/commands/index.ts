@@ -1,15 +1,14 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { SlashCommand } from 'slash-create/web';
 import type {
   BaseSlashCreator,
-  CommandEdgeContext,
   AutocompleteContext,
   SlashCommandOptions,
-  MessageOptions,
+  CommandContext,
   ComponentEdgeContext,
   ModalEdgeContext
 } from 'slash-create/web';
@@ -50,7 +49,7 @@ export type CommandCallbacks = {
  * A factory for creating command instances.
  */
 export class CommandFactory extends SlashCommand {
-  run: (ctx: CommandEdgeContext) => Promise<void | string | MessageOptions> = null!;
+  run: (ctx: CommandContext) => Promise<any> = null!;
   autocomplete: (ctx: AutocompleteContext) => Promise<any> = null!;
   callbacks: CommandCallbacks = { components: {}, modals: {} };
 
@@ -83,11 +82,11 @@ export class Command {
   constructor({ run, autocomplete, callbacks, ...options }: CommandOptions) {
     this.options = options;
     this.callbacks = callbacks || {};
-    // @ts-ignore - Factory constructor will consume the command options
+    // @ts-expect-error - Factory constructor will consume the command options.
     return new Proxy(CommandFactory, {
       construct: (target, [creator]) => {
         const instance = new target(creator, options);
-        instance.run = run;
+        instance.run = run as typeof instance.run;
         instance.autocomplete = autocomplete!;
         instance.callbacks = callbacks!;
         return instance;

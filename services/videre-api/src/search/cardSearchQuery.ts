@@ -1,10 +1,11 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { parseSortDirection } from '../db/searchOptions.ts';
-import { normalizeCardFormatCode, normalizeCardLegality, normalizeCardRarity } from '../db/validators/index.ts';
+import { normalizeCardRarity } from '@videreproject/constants';
+import { normalizeCardFormatCode, normalizeCardLegality } from '../db/validators/index.ts';
 import {
   assignIfMissing,
   stripQuotes,

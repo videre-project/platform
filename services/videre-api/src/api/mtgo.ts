@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { Router } from 'itty-router';
 
@@ -25,7 +25,7 @@ export interface DeploymentManifest {
 
 export default Router({ base: '/mtgo' })
   .get('/manifest',
-    async (req, { params }) => {
+    async (_req, { params: _params }) => {
       // The deployment manifest names the active client version; the
       // application manifest lists the assemblies that make up that version.
       let response = await fetch([

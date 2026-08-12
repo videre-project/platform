@@ -1,9 +1,9 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import { clampInteger } from '@videre/sql-builder';
+import { clampInteger } from '@videreproject/sql-builder';
 
 export const DEFAULT_LIST_LIMIT = 100;
 export const MAX_INLINE_COLLECTION_IDS = 10_000;

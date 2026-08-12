@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { Buffer } from 'node:buffer';
 
@@ -77,7 +77,6 @@ export class TcpOverWebSocket {
         throw new Error(`Failed to upgrade to WebSocket: ${resp.status} ${text}`);
       }
 
-      // @ts-ignore
       const ws = resp.webSocket;
       if (!ws) {
         throw new Error('No WebSocket in response');
@@ -85,7 +84,6 @@ export class TcpOverWebSocket {
 
       this.ws = ws;
       ws.accept();
-      // @ts-ignore
       ws.binaryType = 'arraybuffer';
 
       ws.addEventListener('message', (msg: any) => {

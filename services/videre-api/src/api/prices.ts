@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { Router } from 'itty-router';
 import type { IRequest } from 'itty-router';
@@ -173,7 +173,7 @@ async function readPriceSearchBody(req: IRequest): Promise<{ ids: readonly numbe
     return Error(400, 'Request body must be valid JSON.');
   }
 
-  if (!isRecord(body)) {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     return Error(400, 'Request body must be an object.');
   }
 
@@ -195,7 +195,7 @@ async function readPriceSearchBody(req: IRequest): Promise<{ ids: readonly numbe
     return ids;
   }
 
-  const date = normalizeBodyDate(body.date);
+  const date = normalizeBodyDate('date' in body ? body.date : undefined);
   if (date instanceof Response) {
     return date;
   }
@@ -206,20 +206,21 @@ async function readPriceSearchBody(req: IRequest): Promise<{ ids: readonly numbe
   };
 }
 
-function readIdsBody(body: Record<string, unknown>): { ids: readonly unknown[], key: 'ids' | 'collection.ids' } | Response {
-  if (body.ids !== undefined) {
+function readIdsBody(body: object): { ids: readonly unknown[], key: 'ids' | 'collection.ids' } | Response {
+  if ('ids' in body && body.ids !== undefined) {
     return Array.isArray(body.ids)
       ? { ids: body.ids, key: 'ids' }
       : Error(400, 'ids must be an array of MTGO catalog IDs.');
   }
 
-  if (body.collection !== undefined && body.collection !== null) {
-    if (!isRecord(body.collection)) {
+  if ('collection' in body && body.collection !== undefined && body.collection !== null) {
+    const collection = body.collection;
+    if (typeof collection !== 'object' || Array.isArray(collection)) {
       return Error(400, 'collection must be an object.');
     }
 
-    return Array.isArray(body.collection.ids)
-      ? { ids: body.collection.ids, key: 'collection.ids' }
+    return 'ids' in collection && Array.isArray(collection.ids)
+      ? { ids: collection.ids, key: 'collection.ids' }
       : Error(400, 'collection.ids must be an array of MTGO catalog IDs.');
   }
 
@@ -271,8 +272,4 @@ function isIsoDate(value: string): boolean {
 
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

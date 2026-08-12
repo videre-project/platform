@@ -5,10 +5,12 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy src/index.ts",
+		"typecheck": "tsc --noEmit --pretty false",
 		"sync": "slash-up sync",
 		"sync:dev": "slash-up sync -e development"
 	},
 	"dependencies": {
+		"@videreproject/constants": "workspace:*",
 		"@discordjs/builders": "^1.7.0",
 		"itty-router": "^5.0.16",
 		"slash-create": "^6.1.2"

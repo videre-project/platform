@@ -1,11 +1,11 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import type { APIMessageComponentEmoji } from 'discord-api-types/v10';
 
-import type { EventType } from '@videre-api/db/types';
+import type { EventType } from '@videreproject/constants';
 
 
 export const League: APIMessageComponentEmoji = {
@@ -43,6 +43,8 @@ export default (kind: EventType): APIMessageComponentEmoji => {
     case 'Showcase':
       return Premier;
     case 'Qualifier':
+      return Premier;
+    default:
       return Premier;
   }
 };

@@ -5,7 +5,7 @@
 
 import { All } from '@videre-api/validation';
 
-import type Env from "@/env";
+import type Env from "@bot/env";
 
 
 /**

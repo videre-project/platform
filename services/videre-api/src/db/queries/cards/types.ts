@@ -1,9 +1,9 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import type { TableColumn } from '../../schema.g.ts';
+import type { TableColumn } from '@videreproject/sql-schema';
 import type {
   CardOrderDirection,
   CardOrderMode,
@@ -102,7 +102,7 @@ const cardColumnShape = {
   is_token: field<boolean | null>(),
 } satisfies Partial<Record<TableColumn<'cards'>, unknown>>;
 
-const cardComputedShape = {
+const _cardComputedShape = {
   canonical_name: field<string | null>(),
   display_name: field<string | null>(),
   set_name: field<string | null>(),
@@ -115,7 +115,7 @@ const cardComputedShape = {
   image_url: field<string>(),
 };
 
-export type ICard = typeof cardColumnShape & typeof cardComputedShape;
+export type ICard = typeof cardColumnShape & typeof _cardComputedShape;
 
 export type CardColumnField = Extract<keyof typeof cardColumnShape, TableColumn<'cards'>>;
 

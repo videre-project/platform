@@ -1,18 +1,19 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import { EmbedBuilder } from '@discordjs/builders';
+import type { EmbedBuilder } from '@discordjs/builders';
 
 import type {
   ComponentEdgeContext,
   MessageOptions
 } from 'slash-create/web';
 
-import { hideText, unhideText } from '@/utils/formatters/text';
-import Bindings, { type APIResponse, Query } from '@/bindings';
-import { ErrorEmbed } from '@/responses';
+import { hideText, unhideText } from '@bot/utils/formatters/text';
+import type { Query } from '@bot/bindings';
+import Bindings, { type APIResponse } from '@bot/bindings';
+import { ErrorEmbed } from '@bot/responses';
 
 
 export function setCallbackData(message: MessageOptions, data: Query) {

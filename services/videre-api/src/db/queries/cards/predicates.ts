@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import {
   and,
@@ -19,7 +19,7 @@ import {
   sql,
   type QueryFilter,
   type SqlFragment
-} from '@videre/sql-builder';
+} from '@videreproject/sql-builder';
 import {
   attributeColumn,
   attributeSearch,
@@ -36,7 +36,7 @@ import {
   hasCollection
 } from './collection.ts';
 import { isUnset } from './modes.ts';
-import { table } from '../../schema.g.ts';
+import { table } from '@videreproject/sql-schema';
 import type { CardOrderMode, CardQueryParams, UniqueMode } from './types.ts';
 
 type CardSearchOptimization = 'simpleCount' | 'uniqueNameFastPath';

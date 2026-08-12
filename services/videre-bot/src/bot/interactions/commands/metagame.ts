@@ -1,18 +1,19 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { EmbedBuilder } from '@discordjs/builders';
 import { CommandOptionType } from 'slash-create/web';
 
-import { FORMATS } from '@videre-api/db/schema.g';
+import { FORMATS } from '@videreproject/constants';
 import type { IMetagame } from '@videre-api/db/queries';
 
-import { Timestamp } from '@/utils/formatters/date';
-import { Column, formatTable } from '@/utils/formatters/table';
-import Bindings, { type APIResponse, Query } from '@/bindings';
-import { ErrorEmbed } from '@/responses';
+import { Timestamp } from '@bot/utils/formatters/date';
+import type { Column} from '@bot/utils/formatters/table';
+import { formatTable } from '@bot/utils/formatters/table';
+import Bindings, { type APIResponse, Query } from '@bot/bindings';
+import { ErrorEmbed } from '@bot/responses';
 
 import { Command } from './index';
 

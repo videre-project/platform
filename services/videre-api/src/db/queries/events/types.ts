@@ -1,18 +1,16 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import type {
   CardQuantityPair,
-  EventType,
-  FormatType,
   GameResult,
   RecordType,
-  ResultType
-} from '@/db/types';
+} from '@videreproject/sql-schema';
+import type { EventType, FormatType, ResultType } from '@videreproject/constants';
 import type { CI, Percentage } from '@/db/statistics';
-import type { TableColumn } from '../../schema.g.ts';
+import type { TableColumn } from '@videreproject/sql-schema';
 
 const field = <T>() => undefined as unknown as T;
 
@@ -68,11 +66,11 @@ export const DECK_SUMMARY_DECK_FIELDS = Object.keys(
   deckSummaryDeckShape
 ) as readonly DeckSummaryDeckField[];
 
-const deckSummaryJoinedShape = {
+const _deckSummaryJoinedShape = {
   id: field<number>(),
 };
 
-export type IDeck = typeof deckSummaryJoinedShape
+export type IDeck = typeof _deckSummaryJoinedShape
   & typeof deckSummaryArchetypeShape
   & typeof deckSummaryDeckShape;
 
@@ -143,7 +141,7 @@ export const EVENT_ARCHETYPE_FIELDS = Object.keys(
   eventArchetypeShape
 ) as readonly EventArchetypeField[];
 
-const eventDeckJoinedShape = {
+const _eventDeckJoinedShape = {
   event_name: field<string>(),
   event_type: field<EventType>(),
   deck_name: field<string | null>(),
@@ -152,7 +150,7 @@ const eventDeckJoinedShape = {
 export type IEventDeck = typeof eventDeckDeckShape
   & typeof eventDateFormatShape
   & typeof eventArchetypeShape
-  & typeof eventDeckJoinedShape;
+  & typeof _eventDeckJoinedShape;
 
 const eventMatchMatchShape = {
   id: field<number>(),
@@ -175,7 +173,7 @@ export const EVENT_MATCH_MATCH_FIELDS = Object.keys(
   eventMatchMatchShape
 ) as readonly EventMatchMatchField[];
 
-const eventMatchJoinedShape = {
+const _eventMatchJoinedShape = {
   event_name: field<string>(),
   event_type: field<EventType>(),
   player_deck_id: field<number | null>(),
@@ -190,7 +188,7 @@ const eventMatchJoinedShape = {
 
 export type IEventMatch = typeof eventMatchMatchShape
   & typeof eventDateFormatShape
-  & typeof eventMatchJoinedShape;
+  & typeof _eventMatchJoinedShape;
 
 const eventStandingStandingShape = {
   event_id: field<number>(),
@@ -212,7 +210,7 @@ export const EVENT_STANDING_STANDING_FIELDS = Object.keys(
   eventStandingStandingShape
 ) as readonly EventStandingStandingField[];
 
-const eventStandingJoinedShape = {
+const _eventStandingJoinedShape = {
   event_name: field<string>(),
   event_type: field<EventType>(),
   deck_id: field<number | null>(),
@@ -222,7 +220,7 @@ const eventStandingJoinedShape = {
 export type IEventStanding = typeof eventStandingStandingShape
   & typeof eventDateFormatShape
   & typeof eventArchetypeShape
-  & typeof eventStandingJoinedShape;
+  & typeof _eventStandingJoinedShape;
 
 export type ICardStatistics = {
   card: string,

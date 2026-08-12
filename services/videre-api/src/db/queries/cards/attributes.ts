@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import {
   and,
@@ -12,8 +12,8 @@ import {
   select,
   sql,
   type SqlFragment
-} from '@videre/sql-builder';
-import { table, type TableColumn } from '../../schema.g.ts';
+} from '@videreproject/sql-builder';
+import { table, type TableColumn } from '@videreproject/sql-schema';
 
 export type CardSearchAttributeColumn = TableColumn<'cards'> & TableColumn<'card_faces'>;
 

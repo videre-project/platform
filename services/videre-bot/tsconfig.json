@@ -1,9 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": [
+        "../videre-api/src/*"
+      ],
+      "@bot/*": [
         "./src/*"
       ],
       "^/*": [

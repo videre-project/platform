@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import {
   and,
@@ -11,8 +11,8 @@ import {
   sql,
   type CompiledSql,
   type SqlFragment
-} from '@videre/sql-builder';
-import { table } from '../../schema.g.ts';
+} from '@videreproject/sql-builder';
+import { table } from '@videreproject/sql-schema';
 import { collectionCtes } from './collection.ts';
 import { normalizeUniqueMode } from './modes.ts';
 import {

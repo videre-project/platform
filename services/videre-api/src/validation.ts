@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { error } from 'itty-router';
 import type { IRequest } from 'itty-router';
@@ -70,7 +70,7 @@ export const withValidation = (
   return ({ proxy }: IRequest, { params }: Context, ..._: any[]) => {
     for (const [key, validator] of Object.entries(map)) {
       const value = proxy?.params?.[key] ?? proxy?.query?.[key] ?? getDefault(key);
-      // @ts-ignore - Validator is a proxy that extends the function type.
+      // @ts-expect-error - Validator is a proxy that extends the function type.
       if (validator?.required || value !== undefined) {
         const result = validator(params, key, value);
         if (result) return result;

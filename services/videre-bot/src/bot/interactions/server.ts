@@ -1,16 +1,17 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
+import type {
+  SlashCreatorOptions} from 'slash-create/web';
 import {
   Collection,
   SlashCreator,
-  SlashCreatorOptions,
   CloudflareWorkerServer
 } from 'slash-create/web';
 
-import type Env from "@/env";
+import type Env from "@bot/env";
 
 import type { Command, CommandCallbacks } from './commands';
 

@@ -1,18 +1,18 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { EmbedBuilder } from '@discordjs/builders';
 import { type APISelectMenuOption, ButtonStyle } from 'discord-api-types/v10';
 import { CommandOptionType } from 'slash-create/web';
 
-import { FORMATS } from '@videre-api/db/schema.g';
+import { FORMATS } from '@videreproject/constants';
 import type { IEvent } from '@videre-api/db/queries';
 
-import { toUSLocale, Timestamp } from '@/utils/formatters/date';
-import Bindings, { type APIResponse, Query } from '@/bindings';
-import { ErrorEmbed } from '@/responses';
+import { toUSLocale, Timestamp } from '@bot/utils/formatters/date';
+import Bindings, { type APIResponse, Query } from '@bot/bindings';
+import { ErrorEmbed } from '@bot/responses';
 
 import eventEmoji from '^/emojis/eventTypes';
 import { Button, StringSelectMenu } from '../components';
@@ -43,7 +43,7 @@ const eventMenuMapper: ButtonMapper = (data: IEvent[]) => {
     }),
     new Button({
       custom_id: 'events/right+1',
-      label: '→',
+      label: ' -> ',
       style: ButtonStyle.Secondary,
     })
   ]

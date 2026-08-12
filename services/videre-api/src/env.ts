@@ -1,16 +1,16 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import { Url } from "url";
+import type { Url } from "url";
 
 
 export default interface Env {
   PGHOST: Url;
-  PGDATABASE: String;
-  PGUSER: String;
-  PGPASSWORD: String;
+  PGDATABASE: string;
+  PGUSER: string;
+  PGPASSWORD: string;
   PGPORT?: string;
   PGSSL?: string | boolean;
   CF_CLIENT_ID?: string;

@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import {
   and,
@@ -10,9 +10,9 @@ import {
   sql,
   type CompiledSql,
   type SqlFragment
-} from '@videre/sql-builder';
+} from '@videreproject/sql-builder';
 import { clampListLimit, clampOffset } from '../../../queryPolicy.ts';
-import { table } from '../../schema.g.ts';
+import { table } from '@videreproject/sql-schema';
 
 
 export type PriceHistoryParams = {

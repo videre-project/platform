@@ -1,14 +1,14 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import {
   compile,
   jsonBuildObjectFromColumns,
   sql as sqlFragment,
   type CompiledSql
-} from '@videre/sql-builder';
+} from '@videreproject/sql-builder';
 
 import type { PendingSql, Sql } from '@/db/postgres';
 

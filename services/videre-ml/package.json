@@ -10,6 +10,7 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
+    "@videreproject/constants": "workspace:*",
     "itty-router": "^5.0.16"
   },
   "devDependencies": {

@@ -1,5 +1,9 @@
-import { FORMATS } from '@videre-api/db/schema.g';
-import type { FormatType } from '@videre-api/db/schema.g';
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+import { FORMATS, type FormatType } from '@videreproject/constants';
 
 import type Env from './env';
 

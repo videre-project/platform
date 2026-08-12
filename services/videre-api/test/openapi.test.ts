@@ -1,7 +1,12 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { CARD_RARITIES, FORMATS } from '../src/db/schema.g.ts';
+import { CARD_RARITIES, FORMATS } from '@videreproject/constants';
 import { OPENAPI_DOCUMENT, openApiResponse } from '../src/openapi.ts';
 
 test('serves the canonical OpenAPI document with the OpenAPI media type', async () => {

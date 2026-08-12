@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { Router } from 'itty-router';
 
@@ -24,7 +24,7 @@ export default Router({ base: '/metagame' })
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {
-      let query = getMetagame(sql, params);
+      const query = getMetagame(sql, params);
       const limit = clampListLimit(params.limit);
 
       return await Execute(sql`

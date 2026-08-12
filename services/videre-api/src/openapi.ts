@@ -1,9 +1,9 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
-import { CARD_COLORS, CARD_RARITIES, FORMATS } from './db/schema.g.ts';
+import { CARD_COLORS, CARD_RARITIES, FORMATS } from '@videreproject/constants';
 import { MAX_INLINE_COLLECTION_IDS } from './queryPolicy.ts';
 
 const nullable = <Schema extends Record<string, unknown>>(schema: Schema): Schema & { nullable: true } => ({

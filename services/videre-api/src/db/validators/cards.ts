@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import { error } from 'itty-router';
 
@@ -10,7 +10,7 @@ import {
   parseCardUniqueMode,
   parseSortDirection
 } from '../searchOptions.ts';
-import { CARD_RARITIES, CARD_RARITY_ALIASES, FORMATS } from '../schema.g.ts';
+import { FORMATS, normalizeCardRarity } from '@videreproject/constants';
 
 type ValidationParams = Record<string, unknown>;
 
@@ -29,14 +29,6 @@ const LEGALITY_ALIASES = new Map([
   ['banned',     'banned'],
   ['restricted', 'restricted'],
   ['suspended',  'suspended'],
-]);
-
-const RARITY_ALIASES = new Map([
-  ...CARD_RARITIES.map((rarity) => [normalizeLookupKey(rarity), rarity] as const),
-  ...CARD_RARITY_ALIASES.map((entry) => [
-    normalizeLookupKey(entry.alias),
-    entry.rarity
-  ] as const),
 ]);
 
 export const CardFormatValidator = (
@@ -80,9 +72,6 @@ export const CardRarityValidator = (
 
   params[key] = rarity;
 };
-
-export const normalizeCardRarity = (value: string): string | undefined =>
-  RARITY_ALIASES.get(normalizeLookupKey(value));
 
 export const CardSearchQueryValidator = (
   params: ValidationParams,

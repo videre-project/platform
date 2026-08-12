@@ -1,3 +1,8 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
 export type Column = {
   key: string;
   label: string;
@@ -27,11 +32,12 @@ export function formatTable(columns: Column[], rows: Record<string, any>[]) {
       case 'right':
         value = ' '.repeat(cpad + padding) + value + ' '.repeat(padding);
         break;
-      case 'center':
+      case 'center': {
         const leftPad = Math.floor(cpad / 2) + padding;
         const rightPad = Math.ceil(cpad / 2) + padding;
         value = ' '.repeat(leftPad) + value + ' '.repeat(rightPad);
         break;
+      }
     }
     return value;
   }

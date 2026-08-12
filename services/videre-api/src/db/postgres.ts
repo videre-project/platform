@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import postgres from 'postgres';
 
@@ -16,7 +16,9 @@ export type Sql = postgres.Sql<{}>;
 // postgres.PendingQuery<T> expects a readonly tuple type. API query wrappers
 // use result interfaces instead, so this alias deliberately keeps the driver
 // boundary permissive.
-export type PendingSql<T extends any> = postgres.PendingQuery<any>;
+export type PendingSql<T> = postgres.PendingQuery<any> & {
+  readonly __resultType?: T;
+};
 
 export type RowList<T extends readonly any[]> = postgres.RowList<T>;
 

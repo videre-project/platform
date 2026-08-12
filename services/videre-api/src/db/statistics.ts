@@ -1,7 +1,7 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import type { PendingSql, Sql } from "./postgres.ts";
 
@@ -13,9 +13,9 @@ export type CI = `±${number}%`;
  * A row-wise query of wins, losses, ties used within an aggregate query.
  */
 export type RecordQuery = {
-  wins: PendingSql<Number[]>,
-  losses: PendingSql<Number[]>,
-  draws: PendingSql<Number[]>
+  wins: PendingSql<number[]>,
+  losses: PendingSql<number[]>,
+  draws: PendingSql<number[]>
 };
 
 /**
@@ -25,7 +25,7 @@ export type RecordStatistics = {
   /**
    * The total number of matches or games played.
    */
-  count: PendingSql<Number>,
+  count: PendingSql<number>,
   /**
    * The average winrate.
    */

@@ -1,15 +1,15 @@
-/* @file
- * Copyright (c) 2026, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import {
   compile,
   sql,
   tableColumns,
   type CompiledSql
-} from '@videre/sql-builder';
-import { table } from '../../schema.g.ts';
+} from '@videreproject/sql-builder';
+import { table } from '@videreproject/sql-schema';
 import { CARD_FACE_FIELDS } from './types.ts';
 
 const cardFaces = table('card_faces', 'cf');

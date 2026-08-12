@@ -1,11 +1,12 @@
-/* @file
- * Copyright (c) 2024, The Videre Project Authors. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
-*/
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
 
 import type { ComponentEdgeContext } from 'slash-create/web';
 
-import { type SelectMenu, ActionRow, Button } from './index';
+import type { Button } from './index';
+import { type SelectMenu, ActionRow } from './index';
 
 
 // Type of ordered array of 'SelectMenu', 'Button', and 'Button';
@@ -43,7 +44,6 @@ export async function navigatePage(
   mapper: ButtonMapper,
   offset: number
 ) {
-  // @ts-ignore - Extract the components from the original message.
   const rows = ctx.message.components as any[];
 
   // Extract the page number from the placeholder.

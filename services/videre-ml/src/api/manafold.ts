@@ -1,3 +1,8 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
 import type { IRequest } from 'itty-router';
 
 import { Error } from '@videre-api/responses';
@@ -10,7 +15,7 @@ import {
   KNOWN_FORMATS,
   SUPPORTED_FORMATS,
 } from '../formats';
-import type { Format, SupportedFormat } from '../formats';
+import type { SupportedFormat } from '../formats';
 
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 
@@ -141,4 +146,3 @@ async function dispatch(
     return Error(502, `The '${format}' Manafold model could not be reached.`);
   }
 }
-

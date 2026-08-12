@@ -4,7 +4,6 @@
 **/
 
 import type {
-  ComponentActionRow,
   ModalCommandOptions,
   ModalInteractionContext
 } from 'slash-create/web';
@@ -30,7 +29,7 @@ export class Modal implements ModalOptions {
   /** The custom ID of the modal. */
   readonly custom_id: string;
   /** The components of the modal. */
-  readonly components: ComponentActionRow[];
+  readonly components: ModalCommandOptions['components'];
 
   /** The callback to execute when the modal recieves a response. */
   readonly callback: (ctx: ModalInteractionContext) => void;

@@ -6,13 +6,13 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy src/index.ts",
-		"db:generate-types": "node scripts/generate-db-types.mjs",
-		"db:check-types": "node scripts/generate-db-types.mjs --check",
 		"typecheck": "tsc -p tsconfig.test.json",
 		"test": "node --test --experimental-strip-types test/*.test.mjs test/*.test.ts"
 	},
 	"dependencies": {
-		"@videre/sql-builder": "workspace:*",
+		"@videreproject/constants": "workspace:*",
+		"@videreproject/sql-schema": "workspace:*",
+		"@videreproject/sql-builder": "workspace:*",
 		"itty-router": "^5.0.16",
 		"postgres": "^3.4.4"
 	},
