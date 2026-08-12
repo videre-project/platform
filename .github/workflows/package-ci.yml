@@ -98,7 +98,11 @@ jobs:
         run: pnpm db:check-types
 
       - name: Build shared packages
-        run: pnpm --filter './packages/*' -r run build
+        run: |
+          pnpm --filter @videreproject/constants run build
+          pnpm --filter @videreproject/sql-builder run build
+          pnpm --filter @videreproject/sql-schema run build
+          pnpm --filter @videreproject/ui run build
 
       - name: Typecheck packages and services
         run: pnpm --filter './packages/*' --filter './services/*' -r run typecheck
