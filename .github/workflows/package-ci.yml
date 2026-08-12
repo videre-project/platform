@@ -34,12 +34,11 @@ jobs:
     name: Validate workspace
     runs-on: ubuntu-latest
     env:
-      PGHOST: ${{ secrets.PGHOST }}
-      PGPORT: ${{ secrets.PGPORT }}
-      PGDATABASE: ${{ secrets.PGDATABASE }}
-      PGUSER: ${{ secrets.PGUSER }}
-      PGPASSWORD: ${{ secrets.PGPASSWORD }}
-      PGSSL: ${{ secrets.PGSSL }}
+      PGHOST: 127.0.0.1
+      PGPORT: 15432
+      PGDATABASE: mtgo
+      PGUSER: public_api
+      PGSSL: false
 
     steps:
       - name: Check out repository
@@ -63,6 +62,35 @@ jobs:
         if: inputs.version != ''
         run: node scripts/set-package-version.mjs "${{ inputs.version }}"
 
+      - name: Start public database bridge
+        env:
+          CLOUDFLARED_VERSION: 2026.7.3
+          CLOUDFLARED_HOSTNAME: public-db.videreproject.com
+          CLOUDFLARED_PORT: 15432
+        run: |
+          set -euo pipefail
+          cloudflared="$RUNNER_TEMP/cloudflared"
+          curl --fail --silent --show-error --location \
+            "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64" \
+            --output "$cloudflared"
+          chmod +x "$cloudflared"
+          "$cloudflared" access tcp \
+            --hostname "$CLOUDFLARED_HOSTNAME" \
+            --url "127.0.0.1:${CLOUDFLARED_PORT}" \
+            > "$RUNNER_TEMP/cloudflared.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/cloudflared.pid"
+
+          for attempt in {1..30}; do
+            if (echo >/dev/tcp/127.0.0.1/$CLOUDFLARED_PORT) >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat "$RUNNER_TEMP/cloudflared.log"
+          echo 'cloudflared did not open the local database port.' >&2
+          exit 1
+
       - name: Lint
         run: pnpm lint
 
@@ -80,3 +108,10 @@ jobs:
 
       - name: Build website
         run: pnpm build
+
+      - name: Stop public database bridge
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/cloudflared.pid" ]]; then
+            kill "$(cat "$RUNNER_TEMP/cloudflared.pid")" 2>/dev/null || true
+          fi
