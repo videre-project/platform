@@ -33,3 +33,9 @@ node_modules/
 build/
 dist/
 **/*.tsbuildinfo
+packages/ui/storybook-static/
+packages/ui/test-results/
+packages/ui/playwright-report/
+artifacts/
+infra/verdaccio/storage/
+infra/verdaccio/htpasswd
