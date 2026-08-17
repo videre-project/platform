@@ -21,6 +21,10 @@ import {
 import { getDeckStatistics } from '../src/db/queries/events/getDeckStatistics.ts';
 import { getMatchupMatrix } from '../src/db/queries/events/getMatchupMatrix.ts';
 import { getMetagame } from '../src/db/queries/events/getMetagame.ts';
+import {
+  getSideboarding,
+  getSideboardingMatchups,
+} from '../src/db/queries/events/getSideboarding.ts';
 
 const sql = postgres({
   host: process.env.PGHOST ?? '127.0.0.1',
@@ -135,6 +139,28 @@ test('event builders return events, decks, and matches for a real event', async 
   const matchups = await getMatchupMatrix(sql, { event_id: candidate.id });
   assert.ok(matchups.length > 0);
   assert.ok(Array.isArray(matchups[0].matchups));
+
+  const sideboarding = await getSideboarding(sql, { event_id: candidate.id });
+  assert.ok(sideboarding.length > 0);
+  assert.ok(sideboarding.every((row) => row.game_one_count > 0));
+  assert.ok(sideboarding.some((row) => row.postboard_game_count > 0));
+  assert.match(sideboarding[0].game_one_winrate, /%$/);
+  assert.match(sideboarding[0].game_one_ci, /^±/);
+
+  const sideboardingMatchups = await getSideboardingMatchups(sql, {
+    event_id: candidate.id,
+  });
+  assert.ok(sideboardingMatchups.length > 0);
+  assert.ok(Array.isArray(sideboardingMatchups[0].matchups));
+  assert.ok(sideboardingMatchups[0].matchups.length > 0);
+  assert.ok('postboard_game_winrate' in sideboardingMatchups[0].matchups[0]);
+
+  const filteredSideboardingMatchups = await getSideboardingMatchups(sql, {
+    event_id: candidate.id,
+    archetype: sideboardingMatchups[0].archetype,
+  });
+  assert.ok(filteredSideboardingMatchups.length > 0);
+  assert.equal(filteredSideboardingMatchups[0].archetype, sideboardingMatchups[0].archetype);
 });
 
 async function run(query) {

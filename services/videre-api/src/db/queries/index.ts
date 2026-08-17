@@ -5,6 +5,7 @@
 
 export * from './cards';
 export * from './events';
+export * from './events/getSideboarding';
 export * from './prices';
 export * from './products';
 export * from './sets';

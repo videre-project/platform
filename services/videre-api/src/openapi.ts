@@ -60,6 +60,18 @@ const listResponse = (itemSchema: Record<string, unknown>) => ({
   ],
 });
 
+const eventAggregateParameters = [
+  { name: 'format', in: 'path', required: true, schema: { type: 'string', enum: FORMATS.map((value) => value.toLowerCase()) } },
+  stringParameter('min_date', { type: 'string', format: 'date' }),
+  stringParameter('max_date', { type: 'string', format: 'date' }),
+  ...paginationParameters,
+];
+
+const sideboardingMatchupParameters = [
+  ...eventAggregateParameters,
+  stringParameter('archetype'),
+];
+
 export const OPENAPI_DOCUMENT = {
   openapi: '3.0.3',
   info: {
@@ -174,6 +186,24 @@ export const OPENAPI_DOCUMENT = {
         responses: response(listResponse(ref('Price'))),
       },
     },
+    '/sideboarding/{format}': {
+      get: {
+        operationId: 'getSideboarding', tags: ['Metagame'],
+        summary: 'Analyze sideboarding performance and changes by archetype',
+        description: 'Aggregate sideboarding analysis for a format. The current response compares Game 1 (pre-board) with Games 2 and 3 (post-board) performance by archetype. This route family is also intended to expose aggregate mainboard and sideboard card changes derived from archetype decklists.',
+        parameters: eventAggregateParameters,
+        responses: response(listResponse(ref('Sideboarding'))),
+      },
+    },
+    '/sideboarding/{format}/matchups': {
+      get: {
+        operationId: 'getSideboardingMatchups', tags: ['Metagame'],
+        summary: 'Analyze sideboarding performance across archetype matchups',
+        description: 'Aggregate sideboarding analysis for each non-mirror archetype pairing. The current response compares Game 1 (pre-board) with Games 2 and 3 (post-board) matchup performance; the sideboarding route family is also intended to provide aggregate decklist changes.',
+        parameters: sideboardingMatchupParameters,
+        responses: response(listResponse(ref('SideboardingMatrix'))),
+      },
+    },
   },
   components: {
     parameters: {
@@ -281,6 +311,43 @@ export const OPENAPI_DOCUMENT = {
           source: { type: 'string' }, url: nullable({ type: 'string', format: 'uri' }), kind: nullable({ type: 'string' }),
           name: nullable({ type: 'string' }), cardset: nullable({ type: 'string' }), rarity: nullable({ type: 'string' }),
           version: nullable({ type: 'string' }), foil: nullable({ type: 'boolean' }),
+        },
+      },
+      Sideboarding: {
+        type: 'object',
+        required: ['id', 'archetype', 'game_one_count', 'game_one_winrate', 'game_one_ci'],
+        properties: {
+          id: { type: 'integer' },
+          archetype: { type: 'string' },
+          game_one_count: { type: 'integer' },
+          game_one_winrate: { type: 'string' },
+          game_one_ci: { type: 'string' },
+          postboard_game_count: nullable({ type: 'integer' }),
+          postboard_game_winrate: nullable({ type: 'string' }),
+          postboard_game_ci: nullable({ type: 'string' }),
+        },
+      },
+      SideboardingMatchup: {
+        type: 'object',
+        required: ['id', 'archetype', 'game_one_count', 'game_one_winrate', 'game_one_ci'],
+        properties: {
+          id: { type: 'integer' },
+          archetype: { type: 'string' },
+          game_one_count: { type: 'integer' },
+          game_one_winrate: { type: 'string' },
+          game_one_ci: { type: 'string' },
+          postboard_game_count: nullable({ type: 'integer' }),
+          postboard_game_winrate: nullable({ type: 'string' }),
+          postboard_game_ci: nullable({ type: 'string' }),
+        },
+      },
+      SideboardingMatrix: {
+        type: 'object',
+        required: ['id', 'archetype', 'matchups'],
+        properties: {
+          id: { type: 'integer' },
+          archetype: { type: 'string' },
+          matchups: arrayOf(ref('SideboardingMatchup')),
         },
       },
     },

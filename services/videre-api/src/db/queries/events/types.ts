@@ -288,3 +288,39 @@ export type IMatchupMatrix = {
   archetype: string,
   matchups: IMatchupSummary[]
 };
+
+export type ISideboarding = {
+  id: number,
+  archetype: string,
+  game_one_count: number,
+  game_one_winrate: Percentage,
+  game_one_ci: CI,
+  postboard_game_count: number | null,
+  postboard_game_winrate: Percentage | null,
+  postboard_game_ci: CI | null,
+};
+
+const sideboardingSummaryShape = {
+  id: field<number>(),
+  archetype: field<string>(),
+  game_one_count: field<number>(),
+  game_one_winrate: field<Percentage>(),
+  game_one_ci: field<CI>(),
+  postboard_game_count: field<number | null>(),
+  postboard_game_winrate: field<Percentage | null>(),
+  postboard_game_ci: field<CI | null>(),
+};
+
+export type ISideboardingSummary = typeof sideboardingSummaryShape;
+
+export type SideboardingSummaryField = keyof ISideboardingSummary;
+
+export const SIDEBOARDING_SUMMARY_FIELDS = Object.keys(
+  sideboardingSummaryShape
+) as readonly SideboardingSummaryField[];
+
+export type ISideboardingMatrix = {
+  id: number,
+  archetype: string,
+  matchups: ISideboardingSummary[]
+};

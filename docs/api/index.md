@@ -43,10 +43,11 @@ Event routes return imported MTGO tournament data and Videre aggregate views.
 | `/metagame` | Per-archetype deck share, non-mirror match win rate, and non-mirror game win rate. |
 | `/archetypes` | Card adoption statistics inside each Videre archetype label. |
 | `/matchups` | Archetype-versus-archetype match and game win rates. |
+| `/sideboarding` | Sideboarding performance plus aggregate mainboard and sideboard changes. |
 
 Aggregate routes such as `/metagame`, `/archetypes`, and `/matchups` summarize an event window selected by `format`, `event_id`, `min_date`, and `max_date`. They are derived from imported deck, match, standing, and archetype-label rows.
 
-The aggregate routes expose different summaries over those imported rows: `/metagame` returns archetype share and win-rate rows, `/archetypes` returns card-adoption rows inside each archetype, and `/matchups` returns archetype-pair win-rate rows. Raw event routes such as `/events`, `/decks`, `/matches`, and `/standings` expose the event metadata and source rows used to build those summaries.
+The aggregate routes expose different summaries over those imported rows: `/metagame` returns archetype share and win-rate rows, `/archetypes` returns card-adoption rows inside each archetype, `/matchups` returns archetype-pair win-rate rows, and `/sideboarding` provides the broader sideboarding analysis surface, currently separating pre-board from post-board performance and intended to include aggregate decklist changes. Raw event routes such as `/events`, `/decks`, `/matches`, and `/standings` expose the event metadata and source rows used to build those summaries.
 
 For provenance and freshness details, see [Data Sources And Freshness](../reference/data-sources.md).
 

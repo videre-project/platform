@@ -23,9 +23,21 @@ test('documents client generation schemas and public catalog operations', () => 
   assert.ok(OPENAPI_DOCUMENT.paths['/cards/search']);
   assert.ok(OPENAPI_DOCUMENT.paths['/products']);
   assert.ok(OPENAPI_DOCUMENT.paths['/prices']);
+  assert.ok(OPENAPI_DOCUMENT.paths['/sideboarding/{format}']);
+  assert.ok(OPENAPI_DOCUMENT.paths['/sideboarding/{format}/matchups']);
+  assert.match(
+    OPENAPI_DOCUMENT.paths['/sideboarding/{format}'].get.description,
+    /mainboard and sideboard card changes/,
+  );
+  assert.match(
+    OPENAPI_DOCUMENT.paths['/sideboarding/{format}/matchups'].get.description,
+    /aggregate decklist changes/,
+  );
   assert.ok(OPENAPI_DOCUMENT.components.schemas.Card);
   assert.ok(OPENAPI_DOCUMENT.components.schemas.Product);
   assert.ok(OPENAPI_DOCUMENT.components.schemas.Price);
+  assert.ok(OPENAPI_DOCUMENT.components.schemas.Sideboarding);
+  assert.ok(OPENAPI_DOCUMENT.components.schemas.SideboardingMatrix);
 });
 
 test('derives card rarity and format enums from generated database constants', () => {

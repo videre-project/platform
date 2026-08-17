@@ -171,6 +171,7 @@ The API publishes its [OpenAPI 3.0 specification](https://api.videreproject.com/
 * [Metagame](docs/api/metagame.md)
 * [Archetypes](docs/api/archetypes.md)
 * [Matchups](docs/api/matchups.md)
+* [Sideboarding](docs/api/sideboarding.md)
 * [MTGO manifest](docs/api/mtgo.md)
 * [Card search syntax](docs/reference/card-search.md)
 * [Data sources and freshness](docs/reference/data-sources.md)

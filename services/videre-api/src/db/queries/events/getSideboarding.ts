@@ -1,0 +1,182 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+import type { PendingSql, Sql } from '../../postgres.ts';
+import { fromResults } from '../../statistics.ts';
+
+import { getMatches } from './getEvents.ts';
+import type { ISideboarding, ISideboardingMatrix } from './types.ts';
+
+const segmentStatistics = (
+  sql: Sql,
+  alias: string,
+  prefix: string,
+): PendingSql<unknown[]> => {
+  const games = sql.unsafe(`${alias}.games`);
+  const statistics = fromResults(sql, {
+    wins: sql`LENGTH(${games}) - LENGTH(REPLACE(${games}, 'W', ''))`,
+    losses: sql`LENGTH(${games}) - LENGTH(REPLACE(${games}, 'L', ''))`,
+    draws: sql`LENGTH(${games}) - LENGTH(REPLACE(${games}, 'T', ''))`,
+  });
+
+  return sql`
+    ${statistics.count} AS ${sql.unsafe(`${prefix}_count`)},
+    TO_CHAR(${statistics.mean}, 'FM990.00%') AS ${sql.unsafe(`${prefix}_winrate`)},
+    TO_CHAR(${statistics.ci}, '±FM990.00%') AS ${sql.unsafe(`${prefix}_ci`)}
+  `;
+};
+
+const gameEntries = (sql: Sql, params: { [key: string]: any }): PendingSql<unknown[]> => {
+  const matchEntries = getMatches(sql, params);
+  const archetypeFilter = params.archetype
+    ? sql`AND archetype1 = ${params.archetype}`
+    : sql``;
+
+  return sql`
+    WITH match_entries AS (${matchEntries})
+    SELECT
+      id1,
+      id2,
+      archetype1,
+      archetype2,
+      SPLIT_PART(games, '-', 1) AS game_one,
+      CASE
+        WHEN POSITION('-' IN games) > 0
+        THEN SUBSTRING(games FROM POSITION('-' IN games) + 1)
+        ELSE ''
+      END AS postboard_games
+    FROM match_entries
+    WHERE archetype1 != archetype2
+      ${archetypeFilter}
+  `;
+};
+
+export const getSideboarding = (
+  sql: Sql,
+  params: { [key: string]: any },
+): PendingSql<ISideboarding[]> => {
+  const entries = gameEntries(sql, params);
+
+  return sql`
+    WITH
+      entries AS (${entries}),
+      game_one_entries AS (
+        SELECT id1, id2, archetype1, archetype2, game_one AS games
+        FROM entries
+        WHERE game_one IN ('W', 'L', 'T')
+      ),
+      postboard_entries AS (
+        SELECT id1, id2, archetype1, archetype2, postboard_games AS games
+        FROM entries
+        WHERE postboard_games <> ''
+      ),
+      game_one_stats AS (
+        SELECT
+          id1 AS id,
+          archetype1 AS archetype,
+          ${segmentStatistics(sql, 'g', 'game_one')}
+        FROM game_one_entries g
+        GROUP BY id1, archetype1
+      ),
+      postboard_stats AS (
+        SELECT
+          id1 AS id,
+          archetype1 AS archetype,
+          ${segmentStatistics(sql, 'p', 'postboard_game')}
+        FROM postboard_entries p
+        GROUP BY id1, archetype1
+      )
+    SELECT
+      g.id,
+      g.archetype,
+      g.game_one_count,
+      g.game_one_winrate,
+      g.game_one_ci,
+      p.postboard_game_count,
+      p.postboard_game_winrate,
+      p.postboard_game_ci
+    FROM game_one_stats g
+    LEFT JOIN postboard_stats p ON p.id = g.id
+    ORDER BY g.game_one_count DESC, g.game_one_winrate DESC
+  `;
+};
+
+export const getSideboardingMatchups = (
+  sql: Sql,
+  params: { [key: string]: any },
+): PendingSql<ISideboardingMatrix[]> => {
+  const entries = gameEntries(sql, params);
+
+  return sql`
+    WITH
+      entries AS (${entries}),
+      game_one_entries AS (
+        SELECT id1, id2, archetype1, archetype2, game_one AS games
+        FROM entries
+        WHERE game_one IN ('W', 'L', 'T')
+      ),
+      postboard_entries AS (
+        SELECT id1, id2, archetype1, archetype2, postboard_games AS games
+        FROM entries
+        WHERE postboard_games <> ''
+      ),
+      game_one_stats AS (
+        SELECT
+          id1,
+          id2,
+          archetype1,
+          archetype2,
+          ${segmentStatistics(sql, 'g', 'game_one')}
+        FROM game_one_entries g
+        GROUP BY id1, id2, archetype1, archetype2
+      ),
+      postboard_stats AS (
+        SELECT
+          id1,
+          id2,
+          archetype1,
+          archetype2,
+          ${segmentStatistics(sql, 'p', 'postboard_game')}
+        FROM postboard_entries p
+        GROUP BY id1, id2, archetype1, archetype2
+      ),
+      sideboarding AS (
+        SELECT
+          g.id1,
+          g.id2,
+          g.archetype1,
+          g.archetype2,
+          g.game_one_count,
+          g.game_one_winrate,
+          g.game_one_ci,
+          p.postboard_game_count,
+          p.postboard_game_winrate,
+          p.postboard_game_ci
+        FROM game_one_stats g
+        LEFT JOIN postboard_stats p ON p.id1 = g.id1 AND p.id2 = g.id2
+      )
+    SELECT
+      source.id1 AS id,
+      source.archetype1 AS archetype,
+      json_agg(
+        json_build_object(
+          'id', source.id2,
+          'archetype', source.archetype2,
+          'game_one_count', source.game_one_count,
+          'game_one_winrate', source.game_one_winrate,
+          'game_one_ci', source.game_one_ci,
+          'postboard_game_count', source.postboard_game_count,
+          'postboard_game_winrate', source.postboard_game_winrate,
+          'postboard_game_ci', source.postboard_game_ci
+        )
+        ORDER BY source.game_one_count DESC, source.game_one_winrate DESC
+      ) AS matchups
+    FROM sideboarding source
+    GROUP BY source.id1, source.archetype1
+    ORDER BY SUM(source.game_one_count) DESC
+  `;
+};
+
+export default getSideboarding;

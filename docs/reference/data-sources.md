@@ -40,6 +40,7 @@ This table maps each route family to the data source behind it.
 | `/metagame` | MTGOBot-derived | Aggregate over imported decks and non-mirror matches. |
 | `/archetypes` | MTGOBot-derived | Aggregate over imported decklists and Videre archetype labels. |
 | `/matchups` | MTGOBot-derived | Aggregate over imported matches and archetype labels. |
+| `/sideboarding` | MTGOBot-derived | Aggregate sideboarding performance from ordered match games, with planned decklist-change summaries derived from archetype decklists. |
 | `/cards` | CardExporter | Imported MTGO card catalog, faces, legalities, and generated fields. |
 | `/sets` | CardExporter | Imported or inferred MTGO set metadata and catalog counts. |
 | `/products` | CardExporter | Imported non-card MTGO catalog entries. |
@@ -63,6 +64,7 @@ Derived event routes:
 - `/metagame` returns archetype share and non-mirror win rates.
 - `/archetypes` returns card adoption inside archetypes.
 - `/matchups` returns archetype-versus-archetype win rates.
+- `/sideboarding` separates Game 1 from post-board game win rates and is the planned home for aggregate sideboard-change analysis.
 
 Raw routes expose the imported rows needed to reproduce an event, build a local dataset, or apply an external classification. Derived routes expose Videre's current model of a format over an event window.
 

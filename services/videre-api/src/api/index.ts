@@ -22,6 +22,7 @@ import mtgo from './mtgo';
 import prices from './prices';
 import products from './products';
 import sets from './sets';
+import sideboarding from './sideboarding';
 import standings from './standings';
 
 
@@ -54,6 +55,8 @@ export default Router({
   .all('/products/*', products.fetch)
   .all('/sets', sets.fetch)
   .all('/sets/*', sets.fetch)
+  .all('/sideboarding', sideboarding.fetch)
+  .all('/sideboarding/*', sideboarding.fetch)
   .all('/standings', standings.fetch)
   .all('/standings/*', standings.fetch)
   .all('*', () => Error(404, 'Could not find the requested resource.'));
