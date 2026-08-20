@@ -1,12 +1,14 @@
-# Card Search Syntax
+# Card search syntax
 
 This page documents the `q` syntax used by the card routes:
 
 ```text
 GET /cards?q=...
-POST /cards/search?q=...
+QUERY /cards/search?q=...
 GET /cards/random?q=...
 ```
+
+The same query syntax applies to the compatibility form, `POST /cards/search`.
 
 For route shapes, response fields, collection search, and examples, see [Cards API](../api/cards.md). For shared response, pagination, caching, and rate-limit behavior, see [API Overview](../api/index.md) and [Rate Limits](rate-limits.md).
 
@@ -14,7 +16,7 @@ The syntax is an MTGO-focused subset inspired by Scryfall search. Supported term
 
 `q` is a compact form for building the same filters exposed as query parameters. Plain words search names and oracle text. Tagged terms constrain a word to a specific field. Comparison operators apply to ordered fields such as mana value, release date, and rarity.
 
-## How Queries Are Parsed
+## How queries are parsed
 
 The parser splits `q` on whitespace. Text inside double quotes stays together:
 
@@ -37,7 +39,7 @@ The `q` parameter accepts letters, numbers, punctuation, symbols, and whitespace
 
 The parser supports plain text, tagged terms, comparisons, and narrow negation. Full boolean grouping and parenthesized `or` syntax are outside the supported `q` grammar. Explicit query parameters cover structured behavior beyond `q`.
 
-## Common Recipes
+## Common recipes
 
 Common examples:
 
@@ -55,7 +57,7 @@ Common examples:
 
 Search boxes can send the user's text as plain `q`. Untagged text can match both card names and oracle text, while `name:` limits matching to card names.
 
-## Exact Name Shorthand
+## Exact name shorthand
 
 The `!"..."` shorthand performs an exact card-name lookup inside `q`:
 
@@ -66,7 +68,7 @@ The `!"..."` shorthand performs an exact card-name lookup inside `q`:
 
 This maps to the same exact-name filter as `exact=Lightning Bolt` to match canonical card names and printed card titles. Canonical-name matches rank ordinary printings ahead of printings with a different `printed_name`, though printed-title matches still rank the printed-title row first. By default, print rows will always be returned unless `unique=cards` is supplied.
 
-## Name And Text
+## Name and text
 
 | Syntax | Meaning |
 |---|---|
@@ -80,7 +82,7 @@ Untagged text searches names and oracle text. Name matching includes canonical n
 
 `exact:` is stricter than `name:`. It matches resolved card names from autocomplete or known decklist entries; partial user input generally belongs in `name:` or untagged text. When a canonical name and a printed title both match the query, canonical-name matches sort first. Within canonical-name matches, rows without a separate `printed_name` sort before alternate-title printings.
 
-## Set, Printing, And Catalog Terms
+## Set, printing, and catalog terms
 
 | Syntax | Meaning |
 |---|---|
@@ -133,7 +135,7 @@ Only `=`, `<=`, and `>=` are supported for color comparisons.
 
 The default operators follow common deckbuilding search behavior. `c:U` means "has blue among its colors", while `id:RG` means "can fit in a red-green color identity". Explicit operators override those defaults.
 
-## Numeric And Date Comparisons
+## Numeric and date comparisons
 
 Numeric terms support `=`, `<`, `<=`, `>`, and `>=`.
 
@@ -214,7 +216,7 @@ If a query includes the same term as both included and excluded, the API treats 
 
 Single-word type terms match parsed type, supertype, and subtype arrays. A quoted multi-word type term falls back to a contains check against the printed type line, which supports cases such as `t:"time lord"`.
 
-## Formats And Legalities
+## Formats and legalities
 
 `format:` filters to cards that are legal in the format:
 
@@ -247,7 +249,7 @@ When a query supplies `format` without an explicit legality, the API assumes `le
 
 This makes `format:modern` return cards that are legal in Modern. Explicit legality terms return banned, restricted, suspended, or not-legal cards.
 
-## Artist And Flavor Text
+## Artist and flavor text
 
 ```text
 /cards?q=artist:"Christopher Rush"
@@ -261,14 +263,14 @@ Artist and flavor filters search card and face attributes. They are case-insensi
 
 These fields support catalog discovery rather than normal deck legality or gameplay filtering. Older or unusual MTGO catalog rows may omit them when the upstream data lacks those values.
 
-## Boolean Flags
+## Boolean flags
 
 The `is:` namespace contains API-supported card flags:
 
 | Syntax | Meaning |
 |---|---|
 | `is:token` | Return token rows. |
-| `is:product` | On `POST /cards/search`, return product catalog rows instead of card rows. |
+| `is:product` | On QUERY or POST `/cards/search`, return product catalog rows instead of card rows. |
 | `is:promo` | Promo label is present. |
 | `is:multiface` | The catalog entry has additional face rows. |
 | `is:multi-face` | Alias for `is:multiface`. |
@@ -283,11 +285,11 @@ The `is:` namespace contains API-supported card flags:
 
 Normal searches hide tokens by default. `is:token` changes the search to token rows. `include_tokens=true` is a query parameter, not a `q` term; it allows tokens to appear alongside normal cards.
 
-`is:product` is a collection-aware bridge for `POST /cards/search` when a submitted MTGO collection mixes card IDs and product IDs. Product results are still classified by the product catalog table populated by CardExporter. Note that for general product queries, the `/products` endpoint is the preferred route for only scanning product catalog rows.
+`is:product` bridges collection-aware QUERY and POST `/cards/search` when a submitted MTGO collection mixes card IDs and product IDs. Product results come from the product catalog table populated by CardExporter, while `/products` remains the general route for product-catalog searches.
 
 `is:multiface` and `is:split` are MTGO catalog predicates. They find cards with additional face rows or split/subcard relationships; paper layout taxonomy can differ.
 
-## Sorting And Uniqueness
+## Sorting and uniqueness
 
 Sort and uniqueness terms can be supplied through `q`:
 
@@ -337,7 +339,7 @@ Negation is currently supported for type terms and `is:` flags:
 ```text
 /cards?q=t:artifact -t:creature
 /cards?q=-is:token
-POST /cards/search?q=-is:product
+QUERY /cards/search?q=-is:product
 /cards?q=-is:promo
 /cards?q=-is:multiface
 ```
@@ -346,7 +348,7 @@ Negation support is limited to type terms and `is:` flags. A token such as `-art
 
 General negative filters require explicit API parameters or a dedicated route-level option.
 
-## URL Encoding
+## URL encoding
 
 Clients URL-encode characters such as spaces, quotes, braces, `<`, `>`, and `=`. These examples show the readable form:
 
@@ -366,7 +368,7 @@ Encoded form:
 
 Most client libraries handle this when query parameters are supplied as a map or `URLSearchParams`. Manually assembled query strings must encode quotes, braces, and comparison operators because those characters have special meaning in URLs.
 
-## Unsupported Scryfall Terms
+## Unsupported Scryfall terms
 
 The parser intentionally supports a smaller grammar than Scryfall. Unlisted terms either become plain text search or are rejected by the route validator. Current gaps include full Scryfall layout predicates, keyword ability predicates, artist IDs, watermark and border filters, price filters, game and paper-set availability terms, and full boolean grouping.
 

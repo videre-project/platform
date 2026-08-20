@@ -1,15 +1,16 @@
 # Cards API
 
-For shared response, pagination, caching, and rate-limit behavior, see [API Overview](index.md).
+For shared response, pagination, caching, and rate-limit behavior, see [API overview](index.md).
 
 Videre's card API searches MTGO card catalog entries from the same PostgreSQL database that backs the event API. The card routes include deckbuilding metadata, search operators, token rows when requested, card-face data, legality data, and CDN image URLs. Sealed products and other non-card catalog objects are documented in the [Products API](products.md).
 
-For the full `q` parameter grammar, including aliases, comparison operators, and unsupported Scryfall terms, see [Card Search Syntax](../reference/card-search.md).
+For the full `q` parameter grammar, including aliases, comparison operators, and unsupported Scryfall terms, see [Card search syntax](../reference/card-search.md).
 
 The card routes are:
 
 ```text
 GET /cards
+QUERY /cards/search
 POST /cards/search
 GET /cards/named
 GET /cards/autocomplete
@@ -19,7 +20,7 @@ GET /cards/:id
 
 `/cards` returns a paginated list. `/cards/search` accepts the same filters with an optional request-local collection for personalized search. `/cards/named` returns one card by exact or fuzzy card name lookup. `/cards/autocomplete` returns matching card-name suggestions. `/cards/random` returns one random card from the same filtered search space as `/cards`. `/cards/:id` returns one searchable card object by MTGO catalog ID, including card faces when the object has multiple faces or subcard data.
 
-## Query Text
+## Query text
 
 The `q` parameter accepts plain text plus tagged search terms. Untagged words search card names and oracle text. The dedicated syntax reference has the full operator list; this section shows the common forms used by the card routes.
 
@@ -33,7 +34,7 @@ Quoted values keep spaces together. Explicit query parameters and tagged `q` ter
 
 `q` supports comparison operators such as `mv<=2`, `pow>=4`, `r>=rare`, `c<=U`, and `released>=2024-01-01`. The explicit query parameters cover exact filters and list controls.
 
-## Named Lookup
+## Named lookup
 
 `/cards/named` accepts exactly one of `exact` or `fuzzy`:
 
@@ -83,7 +84,7 @@ Example autocomplete response, from `/cards/autocomplete?q=lightn&limit=5`:
 }
 ```
 
-## Random Card
+## Random card
 
 `/cards/random` accepts the same filters as `/cards` and returns one randomly selected matching card:
 
@@ -95,7 +96,7 @@ Example autocomplete response, from `/cards/autocomplete?q=lightn&limit=5`:
 
 The response shape matches `/cards/:id`: a wrapper with a one-row `data` array. This is still a cacheable `GET` route, so an identical random-card URL can return the same cached card until the public GET cache expires.
 
-## Common Filters
+## Common filters
 
 Name and text:
 
@@ -167,7 +168,7 @@ Catalog filters cover MTGO-specific identifiers:
 /cards?q=artid:147
 ```
 
-## Formats And Legalities
+## Formats and legalities
 
 Format filters use MTGO format codes. If a format filter omits the legality, the API treats it as `legal`.
 
@@ -180,7 +181,7 @@ Format filters use MTGO format codes. If a format filter omits the legality, the
 
 The response includes a `legalities` object keyed by format code.
 
-## Tokens, Products, And Uniqueness
+## Tokens, products, and uniqueness
 
 Tokens are cards in the MTGO catalog. Default card searches return non-token cards; `include_tokens=true` includes token rows alongside non-token cards, and token-only filters return token rows without non-token cards.
 
@@ -194,7 +195,7 @@ Tokens are cards in the MTGO catalog. Default card searches return non-token car
 ```
 
 Sealed products and other non-card MTGO catalog objects are returned by `/products`.
-For collection splitting, `POST /cards/search?q=is:product` returns matching rows from the product catalog instead of the card catalog. This is intended for collection payloads that mix card and product MTGO catalog IDs; general product queries should still use `/products`, though this offers a more convenient single-query path for collection-backed search.
+For collection splitting, `QUERY /cards/search?q=is:product` returns matching rows from the product catalog rather than the card catalog. POST supports the same request for compatibility, which allows a collection payload to mix card and product MTGO catalog IDs. Use `/products` for general product queries.
 
 The `unique` option controls print collapsing:
 
@@ -207,12 +208,12 @@ The `unique` option controls print collapsing:
 
 MTGO foil clones are preserved in the database as catalog variants rather than independent card rows. Those variants usually lack separate `/cards` results, and ordinary foil clone catalog IDs therefore lack separate CDN images.
 
-## Collection-Aware Search
+## Collection-aware search
 
-`POST /cards/search` personalizes card search against a caller-provided MTGO collection. The query string accepts the same filters, sorting, and pagination controls as `GET /cards`; the JSON body adds a `collection` object.
+`QUERY /cards/search` personalizes card search against a caller-provided MTGO collection. Its query string accepts the filters, sorting, and pagination controls supported by `GET /cards`, while the JSON body adds a `collection` object. `POST /cards/search` accepts the same request for compatibility; clients that support QUERY should use it so equivalent requests can share the Worker cache.
 
 ```http
-POST /cards/search?q=lightning%20bolt&unique=prints
+QUERY /cards/search?q=lightning%20bolt&unique=prints
 Content-Type: application/json
 ```
 
@@ -245,22 +246,28 @@ Collection matching:
 
 When omitted, `mode` defaults to `only` and `match` defaults to `prints`.
 
-Collection-backed responses include `in_collection` on each returned card and summarize the collection in `parameters.collection` by mode, match, and size rather than echoing the full ID list. `GET /cards` remains the cacheable public search path; collection-backed POST responses are private.
+Collection-backed responses include `in_collection` on each returned card and summarize the collection in `parameters.collection` by mode, match, and size, without echoing the full ID list. Successful QUERY and POST responses use the public card-search cache policy:
 
-`POST /cards/search` is rate limited because each request is personalized and cannot be shared through the public GET cache. See [Rate Limits](../reference/rate-limits.md) for the current public threshold.
+```text
+Cache-Control: max-age=3600, s-maxage=1800
+```
+
+The Worker derives one cache key for equivalent QUERY and POST requests from the route, query parameters, content type, API cache version, and normalized request body. The URL contains only a hash of those inputs, while numeric ID arrays are deduplicated and sorted before hashing so equivalent collections reuse the same entry.
+
+Both methods use the collection-aware card-search rate limit. See [Rate limits](../reference/rate-limits.md) for the current threshold.
 
 Example collection-backed requests:
 
 ```text
-POST /cards/search?q=type:creature&unique=cards
-POST /cards/search?exact=Lightning%20Bolt&unique=prints
-POST /cards/search?q=dragon&order=rank
-POST /cards/search?q=is:product
+QUERY /cards/search?q=type:creature&unique=cards
+QUERY /cards/search?exact=Lightning%20Bolt&unique=prints
+QUERY /cards/search?q=dragon&order=rank
+QUERY /cards/search?q=is:product
 ```
 
-When `q=is:product` or `is_product=true` is supplied to `POST /cards/search`, collection matching is exact by MTGO catalog ID. Product rows use the Products API response shape plus `in_collection` when a collection is provided. Product catalog IDs are not oracle-grouped, so `collection.match=oracle` has no additional effect for product results.
+When `q=is:product` or `is_product=true` is supplied to QUERY or POST `/cards/search`, collection matching is exact by MTGO catalog ID. Product rows use the Products API response shape plus `in_collection` when a collection is provided. Product catalog IDs are not oracle-grouped, so `collection.match=oracle` has no additional effect for product results.
 
-## Response Shape
+## Response shape
 
 Card result objects include the MTGO catalog fields used for deckbuilding and search:
 
@@ -303,7 +310,7 @@ in_collection
 
 The `name` field is the canonical mechanical card name used by existing clients; `canonical_name` is the same value under an explicit field name. `printed_name` is `null` unless the MTGO catalog row has a different printed title, such as Universes Within-style promotional treatments. `display_name` is `printed_name` when present and otherwise the canonical name. `oracle_text` is imported from the MTGO catalog row and can contain the printed title on rows where `printed_name` is set.
 
-`in_collection` is present only on `POST /cards/search` responses that include a collection.
+`in_collection` is present only on QUERY or POST `/cards/search` responses that include a collection.
 
 Catalog flags such as `is_token`, `is_promo`, `is_multiface`, and `is_split` reflect imported MTGO catalog fields. Some flag values can be `null` when the source catalog row lacks that value.
 
@@ -395,7 +402,7 @@ Abbreviated printed-title card object:
 }
 ```
 
-## Sorting And Pagination
+## Sorting and pagination
 
 ```text
 /cards?q=dragon&order=name&dir=asc&limit=25&offset=50

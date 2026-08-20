@@ -1,12 +1,12 @@
-# Responses And Errors
+# Responses and errors
 
 This page documents the response conventions used by `https://api.videreproject.com`.
 
-For route-specific fields, see the endpoint docs under [`docs/api`](../api/index.md). For cache and runtime limits, see [Rate Limits](rate-limits.md).
+For route-specific fields, see the endpoint docs under [`docs/api`](../api/index.md). For cache and runtime limits, see [Rate limits](rate-limits.md).
 
 The API is intentionally conservative about response shapes. Most routes return arrays at the top level, even when the route normally contains one row. That keeps list, detail, and aggregate consumers close to the same parsing model: check the HTTP status, inspect `parameters` and `meta`, then read `data`.
 
-## JSON Responses
+## JSON responses
 
 API-generated responses use JSON and include:
 
@@ -15,6 +15,8 @@ Content-Type: application/json
 ```
 
 The API uses two success envelopes. List routes use a paginated list envelope. Detail and aggregate routes use a direct query envelope. Both include the parsed request parameters and query metadata so clients can inspect what the API actually applied.
+
+Browser clients can send JSON QUERY requests to `/cards/search` and `/prices`; the public API CORS policy allows QUERY and exposes the `Accept-Query: application/json` response header. POST requests use the same request and response shapes for compatibility.
 
 Cloudflare edge rejections, such as rate-limit blocks, can return an infrastructure response rather than the API's JSON error envelope. HTTP status is the first discriminator for every response.
 
@@ -26,7 +28,7 @@ Parsing order:
 4. If `object=list`, treat `data` as a paginated page.
 5. Otherwise, treat `data` as a direct query result array.
 
-## List Envelope
+## List envelope
 
 Paginated list routes return:
 
@@ -94,7 +96,7 @@ Card search uses probe pagination by default. `include_total=true` asks for an e
 
 Probe pagination provides enough information for infinite scroll and "load more" interfaces. Exact totals provide table copy such as "1-25 of 3,214".
 
-## Direct Query Envelope
+## Direct query envelope
 
 Detail and aggregate routes return:
 
@@ -119,7 +121,7 @@ This envelope is used when pagination metadata is not part of the route's contra
 
 Pagination metadata such as `limit`, `offset`, `has_more`, and `next_offset` appears on direct query routes only when the route explicitly documents it. Routes that can return many rows and need paging use the list envelope.
 
-## Error Envelope
+## Error envelope
 
 API-generated errors use:
 
@@ -143,7 +145,7 @@ API-generated errors use:
 
 The error `message` is meant for debugging and simple client display. HTTP status and route context define program behavior; `message` is not a stable machine-readable error code.
 
-## Empty Results
+## Empty results
 
 Many routes return `400 Bad Request` for an empty result:
 
@@ -177,7 +179,7 @@ This behavior differs from APIs that return `200` with an empty list. It lets de
 - If status is `400` and `message` is `No results found.`, expose `data` as `[]`.
 - If status is `400` for any other message, expose it as a validation or request error.
 
-## Validation Errors
+## Validation errors
 
 Validation errors use `400 Bad Request` and describe the invalid parameter:
 
@@ -195,7 +197,7 @@ Common validation failures include:
 - Missing required parameter.
 - Invalid format, legality, rarity, sort, or direction value.
 - Invalid card search text.
-- Invalid collection body for `POST /cards/search`.
+- Invalid collection body for QUERY or POST `/cards/search`.
 - Collection ID pools larger than 10,000 IDs.
 - Collection IDs that are not positive integers.
 
@@ -203,9 +205,9 @@ The request must change before retrying.
 
 Validation happens before database work. A validation error means the API could not safely interpret the request, not that the database lacked matching rows.
 
-## Timeout And Fatal Errors
+## Timeout and fatal errors
 
-Requests have a Worker timeout and database queries have a shorter query timeout. Current values are documented in [Rate Limits](rate-limits.md).
+Requests have a Worker timeout and database queries have a shorter query timeout. Current values are documented in [Rate limits](rate-limits.md).
 
 Timeout and fatal route errors use API-generated error envelopes when they are created inside the Worker:
 
@@ -231,9 +233,9 @@ Database execution failures are sanitized before being returned to clients. Oper
 
 `408` and `500` are retryable with backoff. If the same query repeatedly times out, narrow the filters, reduce `limit`, or omit exact totals before retrying again.
 
-## Rate-Limit Responses
+## Rate-limit responses
 
-`POST /cards/search` has a Cloudflare edge rate limit. Requests rejected at the edge can return a Cloudflare response rather than the API envelope because Cloudflare handles them before the Worker runs.
+QUERY and POST `/cards/search` share a Cloudflare edge rate limit. Requests rejected at the edge can return a Cloudflare response rather than the API envelope because Cloudflare handles them before the Worker runs.
 
 Status code:
 
@@ -256,7 +258,7 @@ Unknown routes return:
 
 This means the route was not registered. It is different from an existing route returning `No results found.`
 
-## Status Summary
+## Status summary
 
 Common response handling:
 

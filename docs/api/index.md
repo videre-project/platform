@@ -1,4 +1,4 @@
-# API Overview
+# API overview
 
 The Videre API is served from:
 
@@ -12,12 +12,12 @@ Examples in these docs use real or abbreviated API output. Long arrays, nullable
 
 Reference docs:
 
-- [Card Search Syntax](../reference/card-search.md)
-- [Data Sources And Freshness](../reference/data-sources.md)
-- [Rate Limits](../reference/rate-limits.md)
-- [Responses And Errors](../reference/responses-and-errors.md)
+- [Card search syntax](../reference/card-search.md)
+- [Data sources and freshness](../reference/data-sources.md)
+- [Rate limits](../reference/rate-limits.md)
+- [Responses and errors](../reference/responses-and-errors.md)
 
-## Route Families
+## Route families
 
 Catalog routes return MTGO catalog data independent of tournament results.
 
@@ -51,19 +51,34 @@ The aggregate routes expose different summaries over those imported rows: `/meta
 
 For provenance and freshness details, see [Data Sources And Freshness](../reference/data-sources.md).
 
-## Shared Behavior
+## Shared behavior
 
-Successful `GET` responses are cached by the Worker cache with:
+The Worker caches successful `GET` responses with:
 
 ```text
 Cache-Control: max-age=3600, s-maxage=1800
 ```
 
-The Worker cache stores successful `GET` responses under a key that includes the full URL and an internal cache version. Error responses pass through without cache storage. `POST /cards/search` responses are private because the request body can contain a caller-provided collection; those responses use:
+The Worker cache stores successful `GET` responses under a key that includes the full URL and an internal cache version. Error responses pass through without cache storage.
+
+## Body-based requests
+
+The catalog routes accept JSON request bodies through HTTP QUERY. QUERY is the preferred method, while POST remains available for clients that require the compatibility form:
+
+| Route | Methods |
+|---|---|
+| `/cards/search` | `QUERY`, `POST` |
+| `/prices` | `QUERY`, `POST` |
+
+Both methods accept the same request body and share a cache entry when the route, query parameters, content type, API cache version, and normalized body are equivalent. The Worker stores a synthetic internal GET key containing a hash of those inputs, which keeps submitted catalog IDs out of the cache URL. It skips cache storage for validation errors, server errors, and responses marked `private` or `no-store`.
+
+Successful QUERY responses include:
 
 ```text
-Cache-Control: private, no-store
+Accept-Query: application/json
 ```
+
+The public API CORS policy allows QUERY and exposes `Accept-Query` to browser clients. Successful body-based responses then follow their route's cache policy: card search uses the standard public policy, latest prices expire at the next scheduled daily refresh at 05:40 in Europe/Berlin, and historical prices use a one-year immutable policy.
 
 `GET /cards/random` uses the same GET cache path as other public routes. An identical random-card URL can therefore return the cached random result until the cache expires or the cache version changes.
 
@@ -84,7 +99,7 @@ Autocomplete uses a tighter limit policy because suggestion responses are intend
 |---|---:|---:|
 | `/cards/autocomplete` | 20 | 100 |
 
-Probe-paginated list endpoints fetch one extra row to determine whether another page exists. In those responses, `meta.total` is `null`, while `meta.has_more` and `meta.next_offset` describe the next page. Card search routes (`GET /cards` and `POST /cards/search`) also accept `include_total=true`; when that parameter is supplied, the API runs an exact count query and returns the result in `meta.total`. Card search also calculates an exact total automatically when `limit=500`, the maximum page size. Other list endpoints that calculate totals directly return a numeric `meta.total` without `include_total`.
+Probe-paginated list endpoints fetch one extra row to determine whether another page exists. In those responses, `meta.total` is `null`, while `meta.has_more` and `meta.next_offset` describe the next page. Card search routes (`GET /cards`, `QUERY /cards/search`, and `POST /cards/search`) also accept `include_total=true`; when that parameter is supplied, the API runs an exact count query and returns the result in `meta.total`. Card search also calculates an exact total automatically when `limit=500`, the maximum page size. Other list endpoints that calculate totals directly return a numeric `meta.total` without `include_total`.
 
 When `meta.has_more` is true, request the same route again with `offset=meta.next_offset`. Keep the other filters unchanged while paging, since changing the filter set changes the result order and page boundaries.
 
@@ -110,17 +125,17 @@ Format values use Videre's generated MTGO format constants. Common values includ
 - `pauper`
 - `premodern`
 
-## Rate Limits
+## Rate limits
 
-The public edge rate limit currently applies only to collection-backed card search. For the full guardrail summary, see [Rate Limits](../reference/rate-limits.md).
+The public edge rate limit currently applies only to collection-backed card search. For the full guardrail summary, see [Rate limits](../reference/rate-limits.md).
 
-- `POST /cards/search`: 20 requests per 10 seconds per client IP and Cloudflare colo.
+- `QUERY /cards/search` and `POST /cards/search`: 20 requests per 10 seconds per client IP and Cloudflare colo.
 
 Other HTTP routes rely on cache behavior, pagination limits, Worker timeouts, database query timeouts, and database pool limits.
 
-## Response Envelopes
+## Response envelopes
 
-This section summarizes the top-level shapes. For client-facing error behavior, empty-result handling, validation errors, pagination modes, and edge rate-limit responses, see [Responses And Errors](../reference/responses-and-errors.md).
+This section summarizes the top-level shapes. For client-facing error behavior, empty-result handling, validation errors, pagination modes, and edge rate-limit responses, see [Responses and errors](../reference/responses-and-errors.md).
 
 Paginated list endpoints return:
 
