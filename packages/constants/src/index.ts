@@ -23,6 +23,7 @@ export {
 } from './enums.g'
 
 export {
+  BASIC_LAND_NAMES,
   RETIRED_FORMATS,
 } from './constants'
 
