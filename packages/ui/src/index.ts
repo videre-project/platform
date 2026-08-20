@@ -181,6 +181,13 @@ export {
 export { getManaSymbolSvgPath } from './utils/mana-symbols'
 export { getProductImageUrl } from './utils/videre-cdn'
 export {
+  WinrateIntervalPlot,
+} from './components/dashboard/dashboard-visuals'
+export type {
+  WinrateConfidenceInterval,
+  WinrateIntervalPlotProps,
+} from './components/dashboard/dashboard-visuals'
+export {
   CARD_FORMATS,
   compareFormats,
   getFormatBackgroundColor,

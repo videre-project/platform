@@ -29,9 +29,9 @@ import { Clock, Dices, Trophy } from 'lucide-react'
 
 import { DashboardFilters } from '../components/dashboard/DashboardFilters'
 import {
-  BetaChart,
   DensityLayer,
   NoDataState,
+  WinrateIntervalPlot,
   getBetaCI,
 } from '../components/dashboard/dashboard-visuals'
 import { Button } from '../primitives/Button'
@@ -1063,58 +1063,23 @@ function WinrateSlider({
         </span>
       </div>
       <div className="relative h-2 w-full" onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
-        <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-secondary" />
-
-        {matches > 0 && (
+        <WinrateIntervalPlot
+          winrate={winrate}
+          matches={matches}
+          confidenceInterval={ci}
+        />
+        {matches > 0 && hoverPercent !== null && hoverPosition && (
           <>
-            <BetaChart winrate={winrate} matches={matches} />
             <div
-              className="absolute top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full"
-              style={{ left: `${ci.start}%`, width: `${ci.end - ci.start}%` }}
+              className="absolute top-1/2 z-20 h-3 w-px -translate-y-1/2 bg-white shadow-[0_0_4px_rgba(0,0,0,0.5)]"
+              style={{ left: `${hoverPercent}%` }}
+            />
+            <div
+              className="pointer-events-none fixed z-50 rounded border bg-popover px-2 py-1 text-xs font-medium text-popover-foreground shadow-md"
+              style={{ left: `${hoverPosition.x + 8}px`, top: `${hoverPosition.y + 8}px` }}
             >
-              <div
-                className="h-full w-full"
-                style={{
-                  background: `linear-gradient(to right, #f43f5e ${Math.max(0, ((50 - ci.start) / (ci.end - ci.start)) * 100)}%, #10b981 ${Math.max(0, ((50 - ci.start) / (ci.end - ci.start)) * 100)}%)`,
-                }}
-              />
+              {hoverPercent.toFixed(1)}%
             </div>
-            <div
-              className={cn(
-                'absolute top-1/2 h-2 w-px -translate-y-1/2',
-                ci.start >= 50 ? 'bg-emerald-500' : 'bg-rose-500',
-              )}
-              style={{ left: `${ci.start}%` }}
-            />
-            <div
-              className={cn(
-                'absolute top-1/2 h-2 w-px -translate-y-1/2',
-                ci.end >= 50 ? 'bg-emerald-500' : 'bg-rose-500',
-              )}
-              style={{ left: `${ci.end}%` }}
-            />
-            <div className="absolute left-1/2 top-1/2 h-3 w-px -translate-y-1/2 bg-muted-foreground/30" />
-            {hoverPercent !== null && hoverPosition && (
-              <>
-                <div
-                  className="absolute top-1/2 z-20 h-3 w-px -translate-y-1/2 bg-white shadow-[0_0_4px_rgba(0,0,0,0.5)]"
-                  style={{ left: `${hoverPercent}%` }}
-                />
-                <div
-                  className="pointer-events-none fixed z-50 rounded border bg-popover px-2 py-1 text-xs font-medium text-popover-foreground shadow-md"
-                  style={{ left: `${hoverPosition.x + 8}px`, top: `${hoverPosition.y + 8}px` }}
-                >
-                  {hoverPercent.toFixed(1)}%
-                </div>
-              </>
-            )}
-            <div
-              className={cn(
-                'absolute top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-sm',
-                winrate >= 50 ? 'bg-emerald-500' : 'bg-rose-500',
-              )}
-              style={{ left: `${winrate}%` }}
-            />
           </>
         )}
       </div>

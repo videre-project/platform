@@ -3,7 +3,9 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import type { ElementType } from 'react'
+import { useId, type ElementType } from 'react'
+
+import { cn } from '../../lib/cn'
 
 export function NoDataState({
   icon: Icon,
@@ -86,6 +88,7 @@ export function DensityLayer(props: {
 export function BetaChart({ winrate, matches }: { winrate: number; matches: number }) {
   const width = 100
   const height = 32
+  const gradientId = `betaSplitGradient-${useId().replaceAll(':', '')}`
   const wins = Math.round(matches * (winrate / 100))
   const losses = matches - wins
   const alpha = wins + 1
@@ -117,7 +120,7 @@ export function BetaChart({ winrate, matches }: { winrate: number; matches: numb
       preserveAspectRatio="none"
     >
       <defs>
-        <linearGradient id="betaSplitGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#f43f5e" />
           <stop offset="50%" stopColor="#f43f5e" />
           <stop offset="50%" stopColor="#10b981" />
@@ -126,16 +129,92 @@ export function BetaChart({ winrate, matches }: { winrate: number; matches: numb
       </defs>
       <path
         d={`M 0,${height} L ${pathData} L ${width},${height} Z`}
-        fill="url(#betaSplitGradient)"
+        fill={`url(#${gradientId})`}
       />
       <path
         d={`M 0,${height} L ${pathData} L ${width},${height}`}
-        stroke="url(#betaSplitGradient)"
+        stroke={`url(#${gradientId})`}
         strokeWidth="0.5"
         fill="none"
         vectorEffect="non-scaling-stroke"
       />
     </svg>
+  )
+}
+
+export type WinrateConfidenceInterval = {
+  start: number
+  end: number
+}
+
+export type WinrateIntervalPlotProps = {
+  winrate: number
+  matches: number
+  confidenceInterval: WinrateConfidenceInterval
+  className?: string
+  showDistribution?: boolean
+}
+
+/**
+ * Compact winrate plot shared by dashboard metrics and contextual tooltips.
+ * The interval uses the same red/green split and beta density as the dashboard.
+ */
+export function WinrateIntervalPlot({
+  winrate,
+  matches,
+  confidenceInterval,
+  className,
+  showDistribution = true,
+}: WinrateIntervalPlotProps) {
+  const intervalStart = Math.max(0, Math.min(100, confidenceInterval.start))
+  const intervalEnd = Math.max(intervalStart, Math.min(100, confidenceInterval.end))
+  const intervalWidth = intervalEnd - intervalStart
+  const split = intervalWidth > 0
+    ? Math.max(0, Math.min(100, ((50 - intervalStart) / intervalWidth) * 100))
+    : 0
+
+  return (
+    <div className={cn('relative h-2 w-full', className)}>
+      <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-secondary" />
+      {matches > 0 && showDistribution && <BetaChart winrate={winrate} matches={matches} />}
+      {intervalWidth > 0 && (
+        <div
+          className="absolute top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full"
+          style={{ left: `${intervalStart}%`, width: `${intervalWidth}%` }}
+        >
+          <div
+            className="h-full w-full"
+            style={{
+              background: `linear-gradient(to right, #f43f5e ${split}%, #10b981 ${split}%)`,
+            }}
+          />
+        </div>
+      )}
+      <div
+        className={cn(
+          'absolute top-1/2 h-2 w-px -translate-y-1/2',
+          intervalStart >= 50 ? 'bg-emerald-500' : 'bg-rose-500',
+        )}
+        style={{ left: `${intervalStart}%` }}
+      />
+      <div
+        className={cn(
+          'absolute top-1/2 h-2 w-px -translate-y-1/2',
+          intervalEnd >= 50 ? 'bg-emerald-500' : 'bg-rose-500',
+        )}
+        style={{ left: `${intervalEnd}%` }}
+      />
+      <div className="absolute left-1/2 top-1/2 h-3 w-px -translate-y-1/2 bg-muted-foreground/30" />
+      {matches > 0 && (
+        <div
+          className={cn(
+            'absolute left-0 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-sm',
+            winrate >= 50 ? 'bg-emerald-500' : 'bg-rose-500',
+          )}
+          style={{ left: `${Math.max(0, Math.min(100, winrate))}%` }}
+        />
+      )}
+    </div>
   )
 }
 
