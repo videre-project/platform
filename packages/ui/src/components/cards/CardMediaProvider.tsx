@@ -91,6 +91,7 @@ function createStandaloneContext(): CardMediaContextValue {
         if (!url || failedUrls.has(url) || preloadedUrls.has(url)) continue
         preloadedUrls.add(url)
         const image = new Image()
+        image.fetchPriority = 'low'
         image.src = url
         void image.decode()
           .then(() => decodedUrls.add(url))
@@ -188,6 +189,7 @@ export function CardMediaProvider({
 
       preloadedUrls.current.add(url)
       const image = new Image()
+      image.fetchPriority = 'low'
       image.src = url
       void image.decode()
         .then(() => decodedUrls.current.add(url))
