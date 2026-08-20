@@ -155,7 +155,6 @@ export function StackOverlay({
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             Stack <span className="text-muted-foreground/50 font-normal">({count})</span>
           </span>
-          <span className="text-[9px] text-muted-foreground/40 italic">← resolves last · resolves next → </span>
         </div>
 
         {/* Cards laid out left-to-right, resolving card on the right */}
