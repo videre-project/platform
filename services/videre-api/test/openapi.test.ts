@@ -38,6 +38,11 @@ test('documents client generation schemas and public catalog operations', () => 
   assert.ok(OPENAPI_DOCUMENT.components.schemas.Price);
   assert.ok(OPENAPI_DOCUMENT.components.schemas.Sideboarding);
   assert.ok(OPENAPI_DOCUMENT.components.schemas.SideboardingMatrix);
+
+  const cardSearch = OPENAPI_DOCUMENT.paths['/cards/search'];
+  assert.equal(cardSearch['x-query'].operationId, 'searchCardsWithCollectionQuery');
+  assert.deepEqual(cardSearch['x-query'].parameters, cardSearch.post.parameters);
+  assert.equal(OPENAPI_DOCUMENT.paths['/prices']['x-query'].operationId, 'getPricesQuery');
 });
 
 test('derives card rarity and format enums from generated database constants', () => {

@@ -4,9 +4,12 @@
 **/
 
 import { Router } from 'itty-router';
+import type { IRequest } from 'itty-router';
 
+import { CACHE_POLICY, QUERY_MEDIA_TYPE, prepareBodyCache } from '@/cache';
 import { Execute } from '@/db/helpers';
 import { withPostgres, type Sql } from '@/db/postgres';
+import type { Context } from '@/handler';
 import {
   getCard,
   getCardCount,
@@ -100,6 +103,29 @@ export const autocompleteArgs = {
   limit:          Optional(NumberValidator),
 };
 
+const readCardSearchBody = async (req: any, { params }: any) => {
+  const collection = await readCardCollection(req);
+  if (collection instanceof Response) {
+    collection.headers.set('Cache-Control', 'private, no-store');
+    return collection;
+  }
+
+  if (collection !== null) {
+    params.collection = collection;
+  }
+};
+
+const cacheCardSearch = (req: any, ctx: any, env: any) => prepareBodyCache(
+  req,
+  ctx,
+  env,
+  {
+    namespace: 'cards-search',
+    body: ctx.params,
+    policy: CACHE_POLICY,
+  },
+);
+
 export default Router({ base: '/cards' })
   .get('/',
     withValidation(args),
@@ -110,28 +136,22 @@ export default Router({ base: '/cards' })
   )
   .post('/search',
     withValidation(args),
-    async (req, { params }) => {
-      const collection = await readCardCollection(req);
-      if (collection instanceof Response) {
-        collection.headers.set('Cache-Control', 'private, no-store');
-        return collection;
-      }
-
-      if (collection !== null) {
-        params.collection = collection;
-      }
-    },
+    readCardSearchBody,
+    cacheCardSearch,
     withPostgres,
     async (req, { sql, params }) => {
       const response = await searchCards(sql, params, { allowProductSearch: true });
       if (response instanceof Response) {
-        // Avoid caching search results for POST requests since request bodies
-        // are user-defined and not unique to the request URL.
         response.headers.set('Cache-Control', 'private, no-store');
         return response;
       }
 
-      return asJSON(response, { headers: { 'Cache-Control': 'private, no-store' } });
+      return asJSON(response, {
+        headers: {
+          'Accept-Query': QUERY_MEDIA_TYPE,
+          'Cache-Control': CACHE_POLICY,
+        },
+      });
     }
   )
   .get('/named',
@@ -238,6 +258,26 @@ export default Router({ base: '/cards' })
         ? { ...response, data: normalizeCards(response.data) }
         : response;
     }
+  )
+  .query('/search',
+    withValidation(args),
+    readCardSearchBody,
+    cacheCardSearch,
+    withPostgres,
+    async (_req: IRequest, { sql, params }: Context) => {
+      const response = await searchCards(sql, params, { allowProductSearch: true });
+      if (response instanceof Response) {
+        response.headers.set('Cache-Control', 'private, no-store');
+        return response;
+      }
+
+      return asJSON(response, {
+        headers: {
+          'Accept-Query': QUERY_MEDIA_TYPE,
+          'Cache-Control': CACHE_POLICY,
+        },
+      });
+    }
   );
 
 type CardSearchOptions = {
@@ -256,7 +296,7 @@ const searchCards = async (sql: Sql, params: any, options: CardSearchOptions = {
   const start = performance.now();
   if (searchParams.is_product === true) {
     if (options.allowProductSearch !== true) {
-      return Error(400, '`is:product` is supported on POST /cards/search. Use /products for product catalog search.');
+      return Error(400, '`is:product` is supported on POST or QUERY /cards/search. Use /products for product catalog search.');
     }
 
     return searchProducts(sql, searchParams, start);

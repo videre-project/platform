@@ -99,6 +99,14 @@ export const OPENAPI_DOCUMENT = {
     '/cards/search': {
       post: {
         operationId: 'searchCardsWithCollection', tags: ['Cards'], summary: 'Search cards using a collection',
+        description: 'The same JSON request is also available through HTTP QUERY for shared response caching. POST remains supported for compatibility.',
+        parameters: cardSearchParameters,
+        requestBody: { required: false, content: jsonContent(ref('CardSearchRequest')) },
+        responses: response(listResponse({ oneOf: [ref('Card'), ref('Product')] })),
+      },
+      'x-query': {
+        operationId: 'searchCardsWithCollectionQuery',
+        description: 'Preferred HTTP QUERY form of searchCardsWithCollection. POST remains supported for compatibility.',
         parameters: cardSearchParameters,
         requestBody: { required: false, content: jsonContent(ref('CardSearchRequest')) },
         responses: response(listResponse({ oneOf: [ref('Card'), ref('Product')] })),
@@ -162,6 +170,17 @@ export const OPENAPI_DOCUMENT = {
     '/prices': {
       post: {
         operationId: 'getPrices', tags: ['Prices'], summary: 'Get prices for MTGO catalog IDs',
+        description: 'The same JSON request is also available through HTTP QUERY for shared response caching. POST remains supported for compatibility.',
+        requestBody: { required: true, content: jsonContent(ref('PriceRequest')) },
+        responses: response({ allOf: [listResponse(ref('Price')), {
+          type: 'object', properties: { meta: { allOf: [ref('ListMeta'), {
+            type: 'object', properties: { missing_ids: arrayOf({ type: 'integer' }) },
+          }] } },
+        }] }),
+      },
+      'x-query': {
+        operationId: 'getPricesQuery',
+        description: 'Preferred HTTP QUERY form of getPrices. POST remains supported for compatibility.',
         requestBody: { required: true, content: jsonContent(ref('PriceRequest')) },
         responses: response({ allOf: [listResponse(ref('Price')), {
           type: 'object', properties: { meta: { allOf: [ref('ListMeta'), {

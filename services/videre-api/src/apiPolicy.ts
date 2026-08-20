@@ -8,4 +8,7 @@ import { cors } from 'itty-router';
 export const {
   preflight: publicApiPreflight,
   corsify: applyPublicApiCors,
-} = cors();
+} = cors({
+  allowMethods: ['GET', 'POST', 'QUERY', 'OPTIONS'],
+  exposeHeaders: ['Accept-Query'],
+});

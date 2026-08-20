@@ -28,7 +28,7 @@ import {
 
 const sql = postgres({
   host: process.env.PGHOST ?? '127.0.0.1',
-  port: Number(process.env.PGPORT ?? 6432),
+  port: Number(process.env.PGPORT ?? 6434),
   database: process.env.PGDATABASE ?? 'mtgo',
   username: process.env.PGUSER ?? 'public_api',
   password: process.env.PGPASSWORD || undefined,

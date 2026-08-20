@@ -6,7 +6,9 @@
 import { Router } from 'itty-router';
 import type { IRequest } from 'itty-router';
 
+import { QUERY_MEDIA_TYPE, prepareBodyCache } from '@/cache';
 import { withPostgres } from '@/db/postgres';
+import { getPriceCachePolicy } from '@/priceCache';
 import {
   getBatchPrices,
   getLatestPrice,
@@ -44,6 +46,7 @@ export const historyArgs = {
 export default Router({ base: '/prices' })
   .post('/',
     readBatchPriceParams,
+    cacheBatchPrices,
     withPostgres,
     handleBatchPriceRequest
   )
@@ -100,6 +103,12 @@ export default Router({ base: '/prices' })
 
       return buildListResponse(params, data, data.length, start);
     }
+  )
+  .query('/',
+    readBatchPriceParams,
+    cacheBatchPrices,
+    withPostgres,
+    handleBatchPriceRequest
   );
 
 async function readBatchPriceParams(req: IRequest, { params }: any, _env: any): Promise<Response | void> {
@@ -113,10 +122,27 @@ async function readBatchPriceParams(req: IRequest, { params }: any, _env: any): 
   params.date = body.date;
 }
 
+function cacheBatchPrices(req: IRequest, ctx: any, env: any) {
+  return prepareBodyCache(
+    req,
+    ctx,
+    env,
+    {
+      namespace: 'prices-batch',
+      body: {
+        ids: ctx.params.ids,
+        date: ctx.params.date,
+      },
+      policy: getPriceCachePolicy(ctx.params.date),
+    },
+  );
+}
+
 async function handleBatchPriceRequest(req: IRequest, { sql, params }: any, _env: any): Promise<Response> {
+  const date = params.date as 'latest' | string;
   const queryParams: PriceBatchParams = {
     ids: params.ids as readonly number[],
-    date: params.date as 'latest' | string,
+    date,
   };
   const start = performance.now();
   const data = normalizePrices(await getBatchPrices(sql, queryParams));
@@ -130,7 +156,12 @@ async function handleBatchPriceRequest(req: IRequest, { sql, params }: any, _env
   );
   (response.meta as Record<string, unknown>).missing_ids = missingIds;
 
-  return asJSON(response, { headers: { 'Cache-Control': 'private, no-store' } });
+  return asJSON(response, {
+    headers: {
+      'Accept-Query': QUERY_MEDIA_TYPE,
+      'Cache-Control': getPriceCachePolicy(date),
+    },
+  });
 }
 
 function normalizePrices(rows: readonly ICatalogPrice[]): PriceResponseRow[] {

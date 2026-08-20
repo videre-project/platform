@@ -13,6 +13,7 @@ import {
   buildLatestPriceQuery,
   buildPriceHistoryQuery
 } from '../src/db/queries/prices/buildPricesQuery.ts';
+import { getPriceCachePolicy } from '../src/priceCache.ts';
 
 type PriceRouteBody = {
   object: 'list' | 'error';
@@ -30,7 +31,7 @@ type PriceRouteBody = {
 
 const sql = postgres({
   host: process.env.PGHOST ?? '127.0.0.1',
-  port: Number(process.env.PGPORT ?? 6432),
+  port: Number(process.env.PGPORT ?? 6434),
   database: process.env.PGDATABASE ?? 'mtgo',
   username: process.env.PGUSER ?? 'public_api',
   password: process.env.PGPASSWORD || undefined,
@@ -205,11 +206,32 @@ test('HTTP POST /prices accepts collection ID bodies', { skip: !apiBaseUrl }, as
   assert.deepEqual(body.meta.missing_ids, [1]);
 });
 
+test('HTTP QUERY /prices matches POST batch responses', { skip: !apiBaseUrl }, async () => {
+  const payload = {
+    ids: [11],
+    date: 'latest',
+  };
+  const post = await postPriceRoute('/prices', payload);
+  const query = await queryPriceRoute('/prices', payload);
+
+  assert.deepEqual(query.data, post.data);
+  assert.deepEqual(query.meta.missing_ids, post.meta.missing_ids);
+});
+
 test('HTTP POST /prices validates empty ID lists', { skip: !apiBaseUrl }, async () => {
   const body = await postPriceRouteStatus('/prices', { ids: [] }, 400);
 
   assert.equal(body.object, 'error');
   assert.match(body.message, /ids cannot be empty/);
+});
+
+test('price cache policies follow the daily refresh boundary', () => {
+  const justBeforeRefresh = getPriceCachePolicy('latest', new Date('2026-08-19T03:39:00.000Z'));
+  const historical = getPriceCachePolicy('2026-08-18', new Date('2026-08-19T00:00:00.000Z'));
+
+  assert.match(justBeforeRefresh, /max-age=60/);
+  assert.match(historical, /immutable/);
+  assert.match(historical, /max-age=31536000/);
 });
 
 async function apiBatchPrices(params: Parameters<typeof buildBatchPricesQuery>[0]) {
@@ -269,6 +291,20 @@ async function fetchPriceRoute(path: string) {
 async function postPriceRoute(path: string, payload: unknown) {
   const response = await fetch(new URL(path, apiBaseUrl ?? 'http://localhost'), {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await response.json() as PriceRouteBody;
+
+  assert.equal(response.status, 200, JSON.stringify(body));
+  return body;
+}
+
+async function queryPriceRoute(path: string, payload: unknown) {
+  const response = await fetch(new URL(path, apiBaseUrl ?? 'http://localhost'), {
+    method: 'QUERY',
     headers: {
       'Content-Type': 'application/json',
     },

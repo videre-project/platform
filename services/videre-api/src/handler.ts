@@ -4,6 +4,7 @@
 **/
 
 import router from './api';
+import { applyPublicApiCors } from './apiPolicy';
 import type { CacheHandler} from './cache';
 import { updateCache } from './cache';
 import type { Sql } from './db/postgres';
@@ -27,14 +28,16 @@ export const MAX_DB_QUERY_EXECUTION = 10_000; // 10 seconds
 export interface Context {
   cf: ExecutionContext;
   params: { [key: string]: any };
-  cache: CacheHandler;
+  cache?: CacheHandler;
+  cachePolicy?: string;
   sql: Sql;
 }
 
 export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
   new Promise((resolve) => {
+    const respond = (response: Response) => applyPublicApiCors(response, req);
     const timeout = setTimeout(
-      () => resolve(Error(408, 'Request timed out')),
+      () => resolve(respond(Error(408, 'Request timed out'))),
       MAX_TIMEOUT
     );
 
@@ -42,7 +45,7 @@ export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
       .fetch(req, ctx, env)
       .catch((err) => {
         console.error('[Handler] Fatal route error:', err);
-        return Error(500, 'Encountered a fatal error.');
+        return respond(Error(500, 'Encountered a fatal error.'));
       })
       .then((res) => ctx.cache ? updateCache(res, ctx) : res)
       .then((res) => {

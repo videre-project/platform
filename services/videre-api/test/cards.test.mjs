@@ -16,7 +16,7 @@ import { buildProductsQuery } from '../src/db/queries/products/buildProductsQuer
 
 const sql = postgres({
   host: process.env.PGHOST ?? '127.0.0.1',
-  port: Number(process.env.PGPORT ?? 6432),
+  port: Number(process.env.PGPORT ?? 6434),
   database: process.env.PGDATABASE ?? 'mtgo',
   username: process.env.PGUSER ?? 'public_api',
   password: process.env.PGPASSWORD || undefined,
@@ -741,6 +741,20 @@ const postCardRoute = async (path, payload) => {
   return body;
 };
 
+const queryCardRoute = async (path, payload) => {
+  const response = await fetch(new URL(path, apiBaseUrl), {
+    method: 'QUERY',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 200, JSON.stringify(body));
+  return body;
+};
+
 const postCardRouteStatus = async (path, payload, status) => {
   const response = await fetch(new URL(path, apiBaseUrl), {
     method: 'POST',
@@ -813,6 +827,21 @@ test('HTTP POST /cards/search supports product-only collection searches', { skip
   assert.ok(body.data.every((product) => product.in_collection === true));
   assert.ok(body.data.every((product) => product.image_url.includes('/products/')));
   assert.equal(body.parameters.is_product, true);
+});
+
+test('HTTP QUERY /cards/search matches POST collection searches', { skip: !apiBaseUrl }, async () => {
+  const payload = {
+    collection: {
+      ids: [605, 605],
+      mode: 'only',
+      match: 'prints',
+    },
+  };
+  const post = await postCardRoute('/cards/search?unique=prints&limit=5', payload);
+  const query = await queryCardRoute('/cards/search?unique=prints&limit=5', payload);
+
+  assert.deepEqual(query.data, post.data);
+  assert.deepEqual(query.parameters.collection, post.parameters.collection);
 });
 
 test('HTTP POST /cards/search rejects invalid collection IDs', { skip: !apiBaseUrl }, async () => {

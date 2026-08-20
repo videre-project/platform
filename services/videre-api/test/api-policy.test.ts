@@ -13,7 +13,7 @@ const request = (method = 'GET') => new Request('https://api.videreproject.com/c
   headers: {
     Origin: 'http://localhost:3000',
     ...(method === 'OPTIONS' ? {
-      'Access-Control-Request-Method': 'GET',
+      'Access-Control-Request-Method': method === 'OPTIONS' ? 'QUERY' : 'GET',
       'Access-Control-Request-Headers': 'content-type',
     } : {}),
   },
@@ -30,5 +30,5 @@ test('answers catalog CORS preflight requests', () => {
 
   assert.equal(response?.status, 204);
   assert.equal(response?.headers.get('access-control-allow-origin'), '*');
-  assert.equal(response?.headers.get('access-control-allow-methods'), '*');
+  assert.match(response?.headers.get('access-control-allow-methods') || '', /QUERY/);
 });
