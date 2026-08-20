@@ -30,8 +30,8 @@ export default Router({ base: '/sideboarding' })
     withPostgres,
     async ({ archetype }, { sql, params }) => {
       if (archetype) params.limit = 1;
-      const query = getSideboardingMatchups(sql, params);
       const limit = clampListLimit(params.limit);
+      const query = getSideboardingMatchups(sql, { ...params, limit });
 
       return await Execute(sql`
         SELECT * FROM (${query})

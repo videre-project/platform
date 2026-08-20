@@ -112,14 +112,31 @@ export const getSideboardingMatchups = (
   return sql`
     WITH
       entries AS (${entries}),
+      top_archetypes AS (
+        SELECT
+          id1,
+          archetype1
+        FROM entries
+        WHERE game_one IN ('W', 'L', 'T')
+        GROUP BY id1, archetype1
+        ORDER BY COUNT(*) DESC
+        LIMIT ${params.limit ?? 100}
+      ),
+      scoped_entries AS (
+        SELECT e.*
+        FROM entries e
+        INNER JOIN top_archetypes top
+          ON top.id1 = e.id1
+         AND top.archetype1 = e.archetype1
+      ),
       game_one_entries AS (
         SELECT id1, id2, archetype1, archetype2, game_one AS games
-        FROM entries
+        FROM scoped_entries
         WHERE game_one IN ('W', 'L', 'T')
       ),
       postboard_entries AS (
         SELECT id1, id2, archetype1, archetype2, postboard_games AS games
-        FROM entries
+        FROM scoped_entries
         WHERE postboard_games <> ''
       ),
       game_one_stats AS (
