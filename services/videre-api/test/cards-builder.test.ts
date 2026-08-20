@@ -375,7 +375,7 @@ test('card detail SQL keeps nested placeholders and values together', () => {
 
   assert.ok(placeholders.length > 0);
   assert.equal(Math.max(...placeholders), query.values.length);
-  assert.deepEqual(query.values, [605, null, null, null, 605, 1, 0]);
+  assert.deepEqual(query.values, [605, 605, 605, null, null, null, 605, 605, 1, 0]);
 });
 
 test('builder SQL searches canonical and printed names', () => {

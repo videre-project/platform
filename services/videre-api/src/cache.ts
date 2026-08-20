@@ -18,7 +18,7 @@ export const CACHE_POLICY = `max-age=3600, s-maxage=1800`;
  * Default cache namespace. Override CACHE_VERSION when deploying API behavior
  * or backing data changes that should not share cached responses.
  */
-export const DEFAULT_CACHE_VERSION = '1';
+export const DEFAULT_CACHE_VERSION = '2';
 
 export const QUERY_MEDIA_TYPE = 'application/json';
 

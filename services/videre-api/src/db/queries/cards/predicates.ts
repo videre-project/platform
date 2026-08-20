@@ -50,13 +50,22 @@ const genericSearchOnly = ['simpleCount', 'uniqueNameFastPath'] as const;
 const simpleCountOnly = ['simpleCount'] as const;
 
 const cards = table('cards', 'c');
+const cardCatalogVariants = table('card_catalog_variants', 'ccv');
 const cardLegalities = table('card_legalities', 'cl');
 const sets = table('sets', 's');
 const multiFaces = table('card_faces', 'cf_multi');
 
 const cardFilterDefinitions = [
   cardFilter(
-    paramFilter('id', (value) => eq(cards.column('id'), value)),
+    paramFilter('id', (value) => sql`(
+      ${eq(cards.column('id'), value)}
+      OR EXISTS (
+        SELECT 1
+        FROM ${cardCatalogVariants.source}
+        WHERE ${cardCatalogVariants.column('catalog_id')} = ${value}
+          AND ${cardCatalogVariants.column('card_id')} = ${cards.column('id')}
+      )
+    )`),
     genericSearchOnly
   ),
   cardFilter(

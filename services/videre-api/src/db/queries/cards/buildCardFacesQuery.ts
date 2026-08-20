@@ -13,6 +13,7 @@ import { table } from '@videreproject/sql-schema';
 import { CARD_FACE_FIELDS } from './types.ts';
 
 const cardFaces = table('card_faces', 'cf');
+const cardCatalogVariants = table('card_catalog_variants', 'ccv');
 
 export type CardFacesQueryParams = {
   readonly id?: number | null,
@@ -23,5 +24,11 @@ export const buildCardFacesQuery = (params: CardFacesQueryParams): CompiledSql =
     SELECT ${tableColumns(cardFaces, CARD_FACE_FIELDS)}
     FROM ${cardFaces.source}
     WHERE ${cardFaces.column('card_id')} = ${params.id ?? null}::int
+      OR EXISTS (
+        SELECT 1
+        FROM ${cardCatalogVariants.source}
+        WHERE ${cardCatalogVariants.column('catalog_id')} = ${params.id ?? null}::int
+          AND ${cardCatalogVariants.column('card_id')} = ${cardFaces.column('card_id')}
+      )
     ORDER BY ${cardFaces.column('face_index')}
   `);

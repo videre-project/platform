@@ -11,6 +11,7 @@ import postgres from 'postgres';
 import { buildCardCountQuery } from '../src/db/queries/cards/buildCardCountQuery.ts';
 import { buildCardFacesQuery } from '../src/db/queries/cards/buildCardFacesQuery.ts';
 import { buildCardNameAutocompleteQuery } from '../src/db/queries/cards/buildCardNameAutocompleteQuery.ts';
+import { buildCardQuery } from '../src/db/queries/cards/getCard.ts';
 import { buildCardsQuery } from '../src/db/queries/cards/buildCardsQuery.ts';
 import { buildProductsQuery } from '../src/db/queries/products/buildProductsQuery.ts';
 
@@ -305,7 +306,7 @@ test('oracle-collapsed unique mode never returns more rows than print mode', asy
   assert.ok(prints >= cards);
 });
 
-test('foil clone catalog IDs are variants, not card search rows', async () => {
+test('foil clone catalog IDs resolve to parent card metadata', async () => {
   const cloneRows = await apiCards({ id: 606, unique: 'prints', limit: 1 });
   const [variant] = await sql`
     SELECT catalog_id, card_id, variant_type, is_foil
@@ -313,15 +314,37 @@ test('foil clone catalog IDs are variants, not card search rows', async () => {
     WHERE catalog_id = ${606}::int
   `;
 
-  assert.equal(cloneRows.length, 0);
-  if (variant) {
-    assert.deepEqual(variant, {
-      catalog_id: 606,
-      card_id: 605,
-      variant_type: 'foil_clone',
-      is_foil: true,
-    });
-  }
+  assert.equal(cloneRows.length, 1);
+  assert.equal(cloneRows[0].id, 606);
+  assert.equal(cloneRows[0].name, 'Lightning Bolt');
+  assert.equal(cloneRows[0].type_line, 'Instant');
+  assert.equal(cloneRows[0].mana_cost, '{R}');
+  assert.equal(cloneRows[0].image_url, 'https://r2.videreproject.com/cards/605-300px.png');
+  assert.deepEqual(variant, {
+    catalog_id: 606,
+    card_id: 605,
+    variant_type: 'foil_clone',
+    is_foil: true,
+  });
+
+  const collectionRows = await apiCards({
+    unique: 'prints',
+    limit: 1,
+    collection: {
+      ids: [606],
+      mode: 'only',
+      match: 'prints',
+    },
+  });
+
+  assert.equal(collectionRows.length, 1);
+  assert.equal(collectionRows[0].id, 606);
+  assert.equal(collectionRows[0].in_collection, true);
+
+  const detailQuery = buildCardQuery({ id: 606, unique: 'prints', limit: 1, offset: 0 });
+  const [detail] = await sql.unsafe(detailQuery.text, [...detailQuery.values]);
+  assert.equal(detail.id, 606);
+  assert.ok(Array.isArray(detail.faces));
 });
 
 test('type filters can require and exclude card types together', async () => {

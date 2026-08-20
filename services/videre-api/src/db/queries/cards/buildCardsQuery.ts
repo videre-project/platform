@@ -54,7 +54,7 @@ export const buildCardsQuery = (params: CardQueryParams): CompiledSql => {
     ${candidateQuery}
     SELECT ${selectFields(cardSelectFields(params))}
     FROM candidate_cards cc
-    INNER JOIN ${cards.source} ON ${cards.column('id')} = ${candidateColumn('id')}
+    INNER JOIN ${cards.source} ON ${cards.column('id')} = ${candidateColumn('source_id')}
     LEFT JOIN ${sets.source} ON ${sets.column('code')} = ${cards.column('set_code')}
     LEFT JOIN LATERAL (
       SELECT jsonb_object_agg(
@@ -73,6 +73,7 @@ export const buildCardsQuery = (params: CardQueryParams): CompiledSql => {
 
 const baseCardSelectFields = {
   ...tableColumnFields(cards, CARD_COLUMN_FIELDS),
+  id: candidateColumn('id'),
   canonical_name: cards.column('name'),
   display_name: sql`coalesce(${cards.column('printed_name')}, ${cards.column('name')})`,
   set_name: sets.column('name'),
@@ -91,7 +92,7 @@ const baseCardSelectFields = {
   set_release_date: sets.column('release_date'),
   set_type: sets.column('set_type'),
   legalities: sql`coalesce(${ident('l', 'legalities')}, '{}'::jsonb)`,
-  image_url: sql`cdn_card_image_base_url() || ${cards.column('id')} || '-300px.png'`,
+  image_url: sql`cdn_card_image_base_url() || ${candidateColumn('image_id')} || '-300px.png'`,
 } satisfies Record<keyof ICard, SqlFragment>;
 
 function cardSelectFields(params: CardQueryParams): Record<string, SqlFragment> {
@@ -103,6 +104,6 @@ function cardSelectFields(params: CardQueryParams): Record<string, SqlFragment> 
     : baseCardSelectFields;
 }
 
-function candidateColumn(column: 'id' | 'in_collection'): SqlFragment {
+function candidateColumn(column: 'id' | 'source_id' | 'image_id' | 'in_collection'): SqlFragment {
   return ident('cc', column);
 }

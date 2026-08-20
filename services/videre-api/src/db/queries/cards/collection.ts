@@ -14,6 +14,7 @@ import type { CardCollectionFilter, CardQueryParams } from './types.ts';
 
 const collectionCardsAlias = 'collection_cards';
 const collectionMatchesAlias = 'collection_matches';
+const collectionVariantsAlias = 'collection_variants';
 
 type CardQueryParamsWithCollection = CardQueryParams & {
   readonly collection: CardCollectionFilter,
@@ -35,18 +36,24 @@ export function collectionCtes(params: CardQueryParams): SqlFragment {
   const collection = params.collection as CardCollectionFilter;
   const matchQuery = collection.match === 'oracle'
     ? sql`
-      SELECT DISTINCT matched_cards.id AS card_id
+      SELECT DISTINCT matched_cards.id AS card_id,
+        NULL::int AS requested_id
       FROM ${ident(collectionCardsAlias)} collection_cards
+      LEFT JOIN ${ident(collectionVariantsAlias)} variants
+        ON variants.catalog_id = collection_cards.card_id
       INNER JOIN cards owned_cards
-        ON owned_cards.id = collection_cards.card_id
+        ON owned_cards.id = coalesce(variants.card_id, collection_cards.card_id)
       INNER JOIN cards matched_cards
         ON matched_cards.oracle_id = owned_cards.oracle_id
     `
     : sql`
-      SELECT DISTINCT owned_cards.id AS card_id
+      SELECT DISTINCT owned_cards.id AS card_id,
+        collection_cards.card_id AS requested_id
       FROM ${ident(collectionCardsAlias)} collection_cards
+      LEFT JOIN ${ident(collectionVariantsAlias)} variants
+        ON variants.catalog_id = collection_cards.card_id
       INNER JOIN cards owned_cards
-        ON owned_cards.id = collection_cards.card_id
+        ON owned_cards.id = coalesce(variants.card_id, collection_cards.card_id)
     `;
 
   return sql`
@@ -54,10 +61,48 @@ export function collectionCtes(params: CardQueryParams): SqlFragment {
       SELECT DISTINCT value::int AS card_id
       FROM jsonb_array_elements_text((${JSON.stringify(collection.ids)})::text::jsonb) ids(value)
     ),
+    ${ident(collectionVariantsAlias)} AS MATERIALIZED (
+      SELECT catalog_id, card_id
+      FROM card_catalog_variants
+      WHERE catalog_id IN (
+        SELECT card_id
+        FROM ${ident(collectionCardsAlias)}
+      )
+    ),
     ${ident(collectionMatchesAlias)} AS MATERIALIZED (
       ${matchQuery}
     ),
   `;
+}
+
+export function collectionCandidateJoin(params: CardQueryParams): SqlFragment {
+  return hasCollection(params)
+    && params.collection.mode === 'only'
+    && params.collection.match === 'prints'
+    ? sql`LEFT JOIN ${ident(collectionMatchesAlias)} cm ON cm.card_id = c.id`
+    : raw('');
+}
+
+export function collectionCandidateIdExpression(params: CardQueryParams): SqlFragment {
+  if (hasCollection(params)
+    && params.collection.mode === 'only'
+    && params.collection.match === 'prints') {
+    return sql`coalesce(cm.requested_id, c.id)`;
+  }
+
+  if (params.id !== undefined && params.id !== null) {
+    return sql`${params.id}::int`;
+  }
+
+  return sql`${ident('c', 'id')}`;
+}
+
+export function collectionCandidateSourceIdExpression(): SqlFragment {
+  return sql`${ident('c', 'id')}`;
+}
+
+export function collectionCandidateImageIdExpression(): SqlFragment {
+  return sql`${ident('c', 'id')}`;
 }
 
 export function collectionPredicate(

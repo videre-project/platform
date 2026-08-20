@@ -15,6 +15,10 @@ import {
 import { table } from '@videreproject/sql-schema';
 import {
   collectionCandidateOrder,
+  collectionCandidateIdExpression,
+  collectionCandidateImageIdExpression,
+  collectionCandidateJoin,
+  collectionCandidateSourceIdExpression,
   collectionCtes,
   collectionSelectExpression,
   collectionUniqueRepresentativeOrder
@@ -85,7 +89,9 @@ function genericCandidateQuery(options: CardCandidateQueryOptions): SqlFragment 
       SELECT *
       FROM (
         SELECT ${uniqueMode === 'cards' ? sql`DISTINCT ON (${cards.column('oracle_id')})` : raw('')}
-          ${cards.column('id')},
+          ${collectionCandidateIdExpression(params)} AS id,
+          ${collectionCandidateSourceIdExpression()} AS source_id,
+          ${collectionCandidateImageIdExpression()} AS image_id,
           ${cards.column('oracle_id')},
           ${collectionSelectExpression(params)} AS in_collection,
           CASE
@@ -103,6 +109,7 @@ function genericCandidateQuery(options: CardCandidateQueryOptions): SqlFragment 
           ${sets.column('release_date')}
         FROM ${cards.source}
         LEFT JOIN ${sets.source} ON ${sets.column('code')} = ${cards.column('set_code')}
+        ${collectionCandidateJoin(params)}
         WHERE ${cardPredicates(params)}
         ${uniqueCardOrder}
       ) filtered_cards
@@ -126,7 +133,9 @@ function fastUniqueNameCandidateQuery(options: CardCandidateQueryOptions): SqlFr
   return sql`
     WITH candidate_cards AS MATERIALIZED (
       SELECT
-        ${cards.column('id')},
+        ${collectionCandidateIdExpression(params)} AS id,
+        ${collectionCandidateSourceIdExpression()} AS source_id,
+        ${collectionCandidateImageIdExpression()} AS image_id,
         ${cards.column('oracle_id')},
         ${collectionSelectExpression(params)} AS in_collection,
         0::real AS search_rank,
@@ -138,6 +147,7 @@ function fastUniqueNameCandidateQuery(options: CardCandidateQueryOptions): SqlFr
         ${sets.column('release_date')}
       FROM ${cards.source}
       LEFT JOIN ${sets.source} ON ${sets.column('code')} = ${cards.column('set_code')}
+      ${collectionCandidateJoin(params)}
       WHERE ${and([
         tokenPredicate(cards.alias, params),
         typePredicateForCard(cards.alias, params.type, 'a_type'),
