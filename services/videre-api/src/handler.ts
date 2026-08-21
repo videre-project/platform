@@ -23,6 +23,12 @@ export const MAX_TIMEOUT = 15_000; // 15 seconds
 export const MAX_DB_QUERY_EXECUTION = 10_000; // 10 seconds
 
 /**
+ * Maximum time to wait for a PostgreSQL socket to close after a response.
+ * postgres.js measures this timeout in seconds.
+ */
+const POSTGRES_CLOSE_TIMEOUT = 0.1;
+
+/**
  * The request context passed through the handler
  */
 export interface Context {
@@ -41,7 +47,7 @@ export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
 
     const closePostgres = (): Promise<void> => {
       if (!ctx.sql) return Promise.resolve();
-      closePromise ??= ctx.sql.end({ timeout: 1 })
+      closePromise ??= ctx.sql.end({ timeout: POSTGRES_CLOSE_TIMEOUT })
         .catch((err) => console.error('[Postgres] Failed to close client:', err));
       return closePromise;
     };
