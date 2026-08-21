@@ -47,7 +47,7 @@ export async function onRequestGet({
   const cacheSeconds = getSecondsUntilNextMetagameRefresh()
   const state = readMetagameShareParameters(requestUrl.searchParams)
   const parameters = createMetagameSearchParameters(state)
-  parameters.set('v', '1')
+  parameters.set('v', '4')
 
   const cacheUrl = new URL('/og/metagame.png', requestUrl.origin)
   cacheUrl.search = parameters.toString()
@@ -56,7 +56,7 @@ export async function onRequestGet({
   if (cached) return cached
 
   const renderUrl = new URL('/__og/metagame', requestUrl.origin)
-  renderUrl.search = createMetagameSearchParameters(state).toString()
+  renderUrl.search = parameters.toString()
 
   try {
     const screenshot = await env.BROWSER.quickAction('screenshot', {
@@ -77,14 +77,9 @@ export async function onRequestGet({
       },
       screenshotOptions: {
         type: 'png',
-        captureBeyondViewport: false,
-        clip: {
-          x: 0,
-          y: 0,
-          width: 1200,
-          height: 630,
-        },
+        captureBeyondViewport: true,
       },
+      selector: '.metagame-chart-section.is-static-render',
       actionTimeout: 60000,
       cacheTTL: cacheSeconds,
     })

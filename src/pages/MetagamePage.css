@@ -321,7 +321,7 @@
   position: relative;
   box-sizing: content-box;
   width: calc(480px + var(--metagame-columns) * var(--metagame-column-width, 36px) + 2rem);
-  padding: 24px 40px 24px 24px;
+  padding: 24px 56px;
   background: hsl(var(--background));
   text-rendering: geometricPrecision;
 }
@@ -376,7 +376,7 @@
   position: absolute;
   z-index: 2;
   top: 24px;
-  left: 24px;
+  left: 56px;
   width: 480px;
   height: 64px;
   padding: 0;
@@ -1065,6 +1065,11 @@
 
 .metagame-chart-section.is-static-render .metagame-matrix-header {
   transform: none !important;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header > span:last-child > span {
+  width: 11ch;
+  max-width: 11ch;
 }
 
 .metagame-chart-section.is-static-render .metagame-matrix-header-scroll {

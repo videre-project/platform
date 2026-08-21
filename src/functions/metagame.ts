@@ -35,6 +35,12 @@ class TitleHandler {
   }
 }
 
+class RemoveElementHandler {
+  element(element: Element) {
+    element.remove()
+  }
+}
+
 export async function onRequestGet({ request, env }: MetagamePagesContext): Promise<Response> {
   const requestUrl = new URL(request.url)
   const state = readMetagameShareParameters(requestUrl.searchParams)
@@ -42,7 +48,7 @@ export async function onRequestGet({ request, env }: MetagamePagesContext): Prom
   const canonicalUrl = createMetagameShareUrl(requestUrl.origin, state)
   const imageUrl = new URL('/og/metagame.png', requestUrl.origin)
   imageUrl.search = parameters.toString()
-  imageUrl.searchParams.set('v', '1')
+  imageUrl.searchParams.set('v', '4')
 
   const dateLabel = formatMetagameShareDateRange(state.dateRange)
   const title = `${state.format} MTGO Metagame — ${dateLabel}`
@@ -58,6 +64,8 @@ export async function onRequestGet({ request, env }: MetagamePagesContext): Prom
     .on('meta[property="og:description"]', new ContentAttributeHandler(description))
     .on('meta[property="og:url"]', new ContentAttributeHandler(canonicalUrl.toString()))
     .on('meta[property="og:image"]', new ContentAttributeHandler(imageUrl.toString()))
+    .on('meta[property="og:image:width"]', new RemoveElementHandler())
+    .on('meta[property="og:image:height"]', new RemoveElementHandler())
     .on('meta[property="og:image:alt"]', new ContentAttributeHandler(imageAlt))
     .on('meta[name="twitter:title"]', new ContentAttributeHandler(title))
     .on('meta[name="twitter:description"]', new ContentAttributeHandler(description))

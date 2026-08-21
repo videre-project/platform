@@ -22,10 +22,6 @@ export default function MetagameOgImagePage() {
       data-metagame-og-ready={ready ? 'true' : undefined}
       aria-label={`${format} metagame share image`}
     >
-      <div className="metagame-og-brand" aria-hidden="true">
-        <img src="/logo.png" alt="" />
-        <span>Videre Project</span>
-      </div>
       {error ? (
         <section className="metagame-og-error">
           <AlertCircle size={28} />
@@ -35,16 +31,14 @@ export default function MetagameOgImagePage() {
           </div>
         </section>
       ) : (
-        <div className="metagame-og-chart-frame">
-          <MetagameChart
-            data={data}
-            format={format}
-            from={dateRange.from}
-            to={dateRange.to}
-            loading={loading}
-            staticRender
-          />
-        </div>
+        <MetagameChart
+          data={data}
+          format={format}
+          from={dateRange.from}
+          to={dateRange.to}
+          loading={loading}
+          staticRender
+        />
       )}
     </main>
   )

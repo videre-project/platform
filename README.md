@@ -60,15 +60,9 @@ pnpm deploy:site
 
 Deployment requires an authenticated Wrangler/Cloudflare environment. The Pages configuration is in [`wrangler.toml`](wrangler.toml).
 
-The metagame share preview is generated dynamically by Pages Functions and the
-Cloudflare Browser Run binding. Its page metadata is served from `/metagame`,
-and its cached 1200×630 image is served from `/og/metagame.png` using the same
-normalized `format`, `min_date`, and `max_date` parameters. Image expiry is
-aligned with MTGOBot's 01:30 UTC reset and two-hour refresh schedule.
+The metagame share preview is generated dynamically by Pages Functions and the Cloudflare Browser Run binding. Its page metadata is served from `/metagame`, and its cached chart image is served from `/og/metagame.png` using the same normalized `format`, `min_date`, and `max_date` parameters. The image preserves the chart-only composition formerly used by the PNG export. Image expiry is aligned with MTGOBot's 01:30 UTC reset and two-hour refresh schedule.
 
-The Pages Function source lives under `src/functions`. The deployment script
-stages small root-level entrypoints for standard Pages Functions routing before
-publishing; the generated `functions/` directory is ignored by Git.
+The Pages Function source lives under `src/functions`. The deployment script stages small root-level entrypoints for standard Pages Functions routing before publishing; the generated `functions/` directory is ignored by Git.
 
 ## Shared packages
 
