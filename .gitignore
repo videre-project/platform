@@ -21,6 +21,7 @@ yarn-error.log*
 
 # Cloudflare Wrangler CLI
 .wrangler
+/functions/
 
 # Dependency directories
 node_modules/

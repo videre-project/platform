@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "include": [
+    "/metagame",
+    "/metagame/",
+    "/og/metagame.png"
+  ],
+  "exclude": []
+}

@@ -17,5 +17,6 @@
     "jsx": "react-jsx"
   },
   "include": ["src", "packages/ui/src"],
+  "exclude": ["src/functions"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
