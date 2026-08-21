@@ -1,0 +1,1416 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Metagame page ===== */
+.metagame-page-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.metagame-page-main {
+  flex: 1;
+  padding: 4.5rem 0 5rem;
+  background:
+    radial-gradient(circle at 50% -10rem, hsl(var(--cyan) / 0.09), transparent 35rem),
+    hsl(var(--background));
+}
+
+.metagame-page-heading {
+  display: grid;
+  max-width: none;
+  grid-template-columns: minmax(0, 680px) auto;
+  align-items: end;
+  column-gap: 1rem;
+  margin-bottom: 2rem;
+  padding-right: max(0px, calc(100% - var(--metagame-matrix-content-end, 1088px)));
+}
+
+.metagame-page-share-button {
+  justify-self: end;
+  margin-bottom: 0.15rem;
+}
+
+.metagame-page-heading h1 {
+  margin-bottom: 0.2rem;
+  font-size: 2rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.metagame-page-heading p {
+  max-width: 680px;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.metagame-filter-content {
+  display: grid;
+  grid-template-columns: 190px minmax(290px, auto) 1fr;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 2.25rem;
+}
+
+.metagame-filter-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.metagame-filter-field > span {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.metagame-date-picker,
+.metagame-date-picker > button {
+  width: 100%;
+}
+
+.metagame-export-button {
+  justify-self: end;
+}
+
+.metagame-chart-controls {
+  top: 0.5rem;
+}
+
+.metagame-chart-controls .metagame-filter-content {
+  width: max-content;
+  grid-template-columns: 190px calc(290px - 0.4rem);
+}
+
+.metagame-chart-controls .metagame-filter-field > span {
+  font-size: 0.63rem;
+}
+
+.metagame-chart-controls .metagame-filter-field > button,
+.metagame-chart-controls .metagame-date-picker > button {
+  height: 34px;
+  font-size: 0.8rem;
+}
+
+.metagame-error-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-color: hsl(var(--destructive) / 0.6);
+  background: hsl(var(--destructive) / 0.08);
+}
+
+.metagame-error-card > svg {
+  flex: none;
+  color: hsl(var(--rose));
+}
+
+.metagame-error-card > div {
+  flex: 1;
+}
+
+.metagame-error-card strong {
+  font-size: 0.875rem;
+}
+
+.metagame-error-card p {
+  margin-top: 0.2rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+}
+
+.metagame-chart-section {
+  position: relative;
+  min-width: 0;
+}
+
+.metagame-tooltip-content {
+  min-width: 12rem;
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: 0.55rem 0.7rem;
+  border-color: hsl(var(--border));
+  background: hsl(var(--popover) / 0.98);
+  color: hsl(var(--popover-foreground));
+  font-size: 0.75rem;
+  line-height: 1.25;
+  pointer-events: none;
+}
+
+.metagame-tooltip-heading {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: hsl(var(--popover-foreground));
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.metagame-tooltip-matchup-heading {
+  display: grid;
+  gap: 0.08rem;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.metagame-tooltip-matchup-heading > span:nth-child(2) {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.metagame-tooltip-content dl {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.metagame-tooltip-content dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.25rem;
+  white-space: nowrap;
+}
+
+.metagame-tooltip-content dt {
+  color: hsl(var(--muted-foreground));
+}
+
+.metagame-tooltip-content dd {
+  margin: 0;
+  color: hsl(var(--popover-foreground));
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.metagame-tooltip-content :is(dt, dd) {
+  font-size: inherit;
+}
+
+.metagame-tooltip-winrate {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.metagame-tooltip-winrate-plot {
+  position: relative;
+  min-height: 2.1rem;
+  padding: 1.75rem 0.15rem 0.15rem;
+}
+
+.metagame-tooltip-winrate-layer {
+  position: absolute;
+  right: 0.15rem;
+  bottom: 0.15rem;
+  left: 0.15rem;
+  height: 0.5rem;
+}
+
+.metagame-tooltip-winrate-layer.is-previous {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.metagame-tooltip-winrate-layer.is-current {
+  z-index: 1;
+}
+
+.metagame-tooltip-winrate-layer.is-current.is-muted {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.metagame-tooltip-winrate-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.metagame-tooltip-winrate-summary strong {
+  color: hsl(var(--popover-foreground));
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.metagame-tooltip-winrate.is-muted .metagame-tooltip-winrate-summary strong,
+.metagame-tooltip-winrate.is-muted .metagame-tooltip-winrate-ci,
+.metagame-tooltip-winrate.is-muted .metagame-tooltip-winrate-games {
+  color: hsl(var(--muted-foreground));
+}
+
+.metagame-tooltip-winrate-value {
+  display: inline-grid;
+  grid-template-columns: max-content 0.3rem 0.6rem 0.6rem;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.metagame-tooltip-winrate-value-whole {
+  text-align: right;
+}
+
+.metagame-tooltip-winrate-value-decimal {
+  text-align: center;
+}
+
+.metagame-tooltip-winrate-value-fraction {
+  text-align: left;
+}
+
+.metagame-tooltip-winrate-value-percent {
+  margin-left: 0.05em;
+}
+
+.metagame-tooltip-winrate-ci {
+  margin-left: 0.4rem;
+  color: hsl(var(--popover-foreground) / 0.82);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.metagame-tooltip-winrate-games {
+  margin-left: auto;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.metagame-tooltip-winrate-comparison {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding-left: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+/* Keep the decimal-point correction from appearing as a visible second layout. */
+.metagame-tooltip-winrate-comparison.is-alignment-pending {
+  visibility: hidden;
+}
+
+.metagame-tooltip-winrate-comparison strong {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.metagame-tooltip-winrate-comparison .metagame-tooltip-winrate-ci,
+.metagame-tooltip-winrate-comparison .metagame-tooltip-winrate-games {
+  color: hsl(var(--muted-foreground));
+}
+
+.metagame-chart :is(.metagame-share-track, .metagame-winrate-track, .metagame-matchup-cell):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.metagame-chart-section.is-static-render {
+  position: relative;
+  box-sizing: content-box;
+  width: calc(480px + var(--metagame-columns) * var(--metagame-column-width, 36px) + 2rem);
+  padding: 24px 40px 24px 24px;
+  background: hsl(var(--background));
+  text-rendering: geometricPrecision;
+}
+
+.metagame-chart-titlebar {
+  display: none;
+  padding: 0 0 0.75rem;
+}
+
+.metagame-chart-controls {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.metagame-chart-controls .metagame-filter-content {
+  margin-bottom: 0;
+  pointer-events: auto;
+}
+
+.metagame-chart-titlebar h2 {
+  font-size: 1.1rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.metagame-chart-titlebar p {
+  display: none;
+  margin-top: 0.25rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+}
+
+.metagame-chart-titlebar a {
+  color: hsl(var(--cyan));
+  font-weight: 600;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-titlebar,
+.metagame-chart-section.is-static-render .metagame-chart-titlebar p {
+  display: block;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-controls {
+  display: none;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-titlebar {
+  position: absolute;
+  z-index: 2;
+  top: 24px;
+  left: 24px;
+  width: 480px;
+  height: 64px;
+  padding: 0;
+  background: hsl(var(--background));
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-titlebar h2,
+.metagame-chart-section.is-static-render .metagame-chart-titlebar p {
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-titlebar h2 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-titlebar p {
+  font-size: 13px;
+}
+
+.metagame-chart-scroll {
+  overflow-x: clip;
+  overflow-y: visible;
+  padding-bottom: 1rem;
+}
+
+.metagame-mobile-label-rail {
+  display: none;
+}
+
+.metagame-chart {
+  --metagame-column-width: 36px;
+  --metagame-header-height: 92px;
+  --metagame-row-height: 30px;
+
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  column-gap: 1rem;
+  grid-template-columns: 270px 210px minmax(0, 1fr);
+  color: hsl(var(--foreground));
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+}
+
+/* Loading charts keep the same column, row, matrix, and axis geometry as the
+   populated charts so changing a format or date range never flashes the old
+   data or causes the page to jump when the request completes. */
+.metagame-chart-skeleton-section {
+  min-width: 0;
+}
+
+.metagame-chart-skeleton-section .metagame-chart-titlebar {
+  display: none;
+}
+
+.metagame-skeleton-surface {
+  display: block;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--sidebar-border) / 0.22) 0%,
+    hsl(var(--muted) / 0.3) 50%,
+    hsl(var(--sidebar-border) / 0.22) 100%
+  );
+  background-size: 200% 100%;
+  animation: metagame-shimmer 1.6s ease-in-out infinite;
+}
+
+.metagame-chart-skeleton .metagame-panel-header {
+  pointer-events: none;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-header-label {
+  width: 5.5rem;
+  height: 0.7rem;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-header-label:first-child {
+  width: 7rem;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-archetype {
+  width: 68%;
+  height: 0.65rem;
+  margin-right: 0.4rem;
+  margin-left: auto;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-bar {
+  height: 1.5rem;
+  margin: 0 0.4rem;
+}
+
+.metagame-chart-skeleton .metagame-winrate-row .metagame-skeleton-bar {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-matrix-label {
+  width: 2.6rem;
+  height: 0.65rem;
+  transform: rotate(-43deg);
+  transform-origin: left center;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-matrix-cell {
+  width: calc(100% - 0.35rem);
+  height: 1.5rem;
+  margin: 0.175rem;
+}
+
+.metagame-chart-skeleton .metagame-skeleton-note {
+  width: 15rem;
+  height: 0.65rem;
+}
+
+.metagame-card-trends-skeleton {
+  pointer-events: none;
+}
+
+.metagame-card-trends-skeleton .metagame-skeleton-card-heading {
+  width: 5rem;
+  height: 0.7rem;
+}
+
+.metagame-card-trends-skeleton .metagame-skeleton-card-metric {
+  width: 4.5rem;
+  height: 0.65rem;
+}
+
+.metagame-card-trends-skeleton .metagame-skeleton-card-name {
+  width: 76%;
+  height: 0.7rem;
+}
+
+.metagame-card-trends-skeleton .metagame-skeleton-card-mana {
+  width: 2.25rem;
+  height: 0.55rem;
+}
+
+.metagame-card-trends-skeleton .metagame-skeleton-card-bar {
+  width: 100%;
+  height: 1.4rem;
+}
+
+.metagame-card-trends-skeleton .metagame-skeleton-card-axis {
+  width: 100%;
+  height: 0.55rem;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart {
+  width: max-content;
+  margin-right: 0;
+  grid-template-columns:
+    270px
+    210px
+    calc(var(--metagame-columns) * var(--metagame-column-width));
+}
+
+.metagame-share-panel,
+.metagame-winrate-panel {
+  min-width: 0;
+}
+
+.metagame-matrix-panel {
+  min-width: 0;
+  background: transparent;
+}
+
+.metagame-winrate-panel {
+  position: relative;
+}
+
+.metagame-matrix-panel {
+  overflow: visible;
+}
+
+.metagame-share-panel,
+.metagame-winrate-panel {
+  border-right: 0;
+}
+
+.metagame-panel-header,
+.metagame-matrix-header {
+  height: var(--metagame-header-height);
+}
+
+.metagame-panel-header {
+  background: transparent;
+}
+
+.metagame-matrix-header {
+  background: transparent;
+}
+
+.metagame-panel-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0.65rem 0.55rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.6875rem;
+  font-weight: 550;
+}
+
+.metagame-panel-header.is-right {
+  justify-content: flex-end;
+}
+
+.metagame-share-panel > .metagame-panel-header {
+  display: grid;
+  grid-template-columns: 142px 1fr;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.metagame-share-panel > .metagame-panel-header > span {
+  text-align: right;
+}
+
+.metagame-share-panel > .metagame-panel-header > span:first-child {
+  padding-right: 0.55rem;
+}
+
+.metagame-winrate-panel > .metagame-panel-header {
+  padding-right: 0.4rem;
+}
+
+.metagame-axis-arrow {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  overflow: visible;
+  vertical-align: -0.12rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.35;
+}
+
+.metagame-chart-row {
+  height: var(--metagame-row-height);
+  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.25);
+  background: transparent;
+  transition: opacity 140ms ease, filter 140ms ease;
+}
+
+.metagame-chart-row.is-matchup-dimmed {
+  opacity: 0.34;
+  filter: saturate(0.72);
+}
+
+.metagame-share-row {
+  display: grid;
+  grid-template-columns: 142px 1fr;
+  align-items: center;
+}
+
+.metagame-archetype-name {
+  overflow: hidden;
+  padding: 0 0.55rem 0 0.25rem;
+  color: hsl(var(--foreground) / 0.9);
+  font-size: 0.8rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metagame-share-track,
+.metagame-winrate-track {
+  position: relative;
+  height: 24px;
+  overflow: visible;
+  background: hsl(var(--muted) / 0.52);
+}
+
+.metagame-share-fill,
+.metagame-winrate-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+}
+
+.metagame-share-fill {
+  background: hsl(var(--cyan) / 0.82);
+}
+
+.metagame-share-label {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  padding-left: 0.35rem;
+  color: white;
+  font-size: 0.8rem;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.metagame-share-label.is-inline {
+  padding-right: 0.35rem;
+  padding-left: 0;
+  transform: translate(-100%, -50%);
+}
+
+.metagame-share-label.has-dark-text {
+  color: hsl(222 84% 5%);
+}
+
+.metagame-share-label.has-light-text {
+  color: white;
+}
+
+.metagame-share-label.is-inline.has-dark-text {
+  color: hsl(222 84% 5%);
+}
+
+.metagame-share-label.is-inline.has-light-text {
+  color: white;
+}
+
+.metagame-winrate-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 0.4rem;
+  background: transparent;
+  border-bottom-color: transparent;
+}
+
+.metagame-winrate-track {
+  width: 100%;
+  z-index: 1;
+}
+
+.metagame-winrate-fill {
+  opacity: 1;
+}
+
+.metagame-winrate-baseline {
+  position: absolute;
+  z-index: 0;
+  top: var(--metagame-header-height);
+  bottom: 30px;
+  left: calc(var(--winrate-baseline) + var(--winrate-baseline-offset));
+  width: 0.5px;
+  background: repeating-linear-gradient(
+    to bottom,
+    hsl(var(--foreground) / 0.24) 0 3px,
+    transparent 3px calc(var(--metagame-row-height) - 3px),
+    hsl(var(--foreground) / 0.24) calc(var(--metagame-row-height) - 3px) var(--metagame-row-height)
+  );
+  pointer-events: none;
+}
+
+.metagame-winrate-fill {
+  z-index: 2;
+}
+
+.metagame-confidence-graphic {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.metagame-winrate-label {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  min-width: max-content;
+  font-size: 0.8rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.metagame-winrate-label.is-left {
+  color: hsl(222 84% 5%);
+  transform: translate(calc(-100% - 8px), -50%);
+}
+
+.metagame-winrate-label.is-right {
+  color: hsl(var(--foreground));
+  transform: translate(8px, -50%);
+}
+
+.metagame-winrate-label.has-dark-text {
+  color: hsl(222 84% 5%);
+}
+
+.metagame-winrate-label.has-light-text {
+  color: white;
+}
+
+.metagame-winrate-label.is-left.has-dark-text,
+.metagame-winrate-label.is-right.has-dark-text {
+  color: hsl(222 84% 5%);
+}
+
+.metagame-winrate-label.is-left.has-light-text,
+.metagame-winrate-label.is-right.has-light-text {
+  color: white;
+}
+
+.metagame-axis {
+  position: relative;
+  display: block;
+  height: 30px;
+  padding: 0.35rem 0 0;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  font-size: 0.65rem;
+}
+
+.metagame-axis > span {
+  position: absolute;
+  top: 0.35rem;
+  transform: translateX(-50%);
+}
+
+.metagame-axis > span::before {
+  position: absolute;
+  top: -0.35rem;
+  left: 50%;
+  width: 1px;
+  height: 0.4rem;
+  background: hsl(var(--muted-foreground) / 0.75);
+  content: '';
+  transform: translateX(-50%);
+}
+
+.metagame-axis > span:first-child {
+  left: 0;
+}
+
+.metagame-axis > span:nth-child(2) {
+  left: 50%;
+}
+
+.metagame-axis > span:last-child {
+  left: 100%;
+}
+
+.metagame-share-panel .metagame-axis {
+  margin-left: 142px;
+}
+
+.metagame-winrate-panel .metagame-axis {
+  margin-right: 0.4rem;
+  margin-left: 0.4rem;
+}
+
+.metagame-matrix-header,
+.metagame-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--metagame-columns), var(--metagame-column-width));
+}
+
+.metagame-matrix-header-scroll {
+  position: relative;
+  height: var(--metagame-header-height);
+  overflow: visible;
+  clip-path: inset(-7rem -7rem 0 0);
+}
+
+.metagame-matrix-header {
+  width: max-content;
+  min-width: 100%;
+}
+
+.metagame-matrix-viewport {
+  position: relative;
+  overflow: hidden;
+  --metagame-scrollbar-clearance: 0.5rem;
+}
+
+.metagame-matrix-viewport::before,
+.metagame-matrix-viewport::after {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: var(--metagame-scrollbar-clearance);
+  width: 1.5rem;
+  pointer-events: none;
+  content: '';
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.metagame-matrix-viewport::before {
+  left: 0;
+  background: linear-gradient(to right, hsl(var(--background)), transparent);
+}
+
+.metagame-matrix-viewport::after {
+  right: 0;
+  background: linear-gradient(to left, hsl(var(--background)), transparent);
+}
+
+.metagame-matrix-viewport.has-left-overflow::before,
+.metagame-matrix-viewport.has-right-overflow::after {
+  opacity: 1;
+}
+
+.metagame-matrix-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+
+.metagame-matrix-content {
+  width: max-content;
+  min-width: 100%;
+}
+
+.metagame-matrix-header > span {
+  position: relative;
+  height: var(--metagame-header-height);
+}
+
+.metagame-matrix-header > span::after {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  height: 0.4rem;
+  background: hsl(var(--muted-foreground) / 0.75);
+  content: '';
+}
+
+.metagame-matrix-header > span.is-edge-hidden-right::after {
+  display: none;
+}
+
+.metagame-matrix-header > span.is-edge-faded-left::after,
+.metagame-matrix-header > span.is-edge-faded-right::after {
+  opacity: 0.38;
+}
+
+.metagame-matrix-header > span > span {
+  position: absolute;
+  bottom: 0.45rem;
+  left: 50%;
+  width: 16ch;
+  max-width: 16ch;
+  overflow: hidden;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  transform: rotate(-43deg);
+  transform-origin: left center;
+  white-space: nowrap;
+}
+
+.metagame-matrix-header > span > span.is-edge-faded-left,
+.metagame-matrix-header > span > span.is-edge-faded-right {
+  opacity: 0.38;
+}
+
+.metagame-matrix-header > span > span.is-edge-hidden-right {
+  opacity: 0;
+}
+
+.metagame-matchup-cell {
+  position: relative;
+  display: flex;
+  width: var(--metagame-column-width);
+  height: var(--metagame-row-height);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid hsl(var(--background));
+  color: hsl(222 84% 5%);
+  cursor: default;
+  line-height: 1;
+  transition: opacity 140ms ease, filter 140ms ease, transform 120ms ease;
+}
+
+.metagame-matchup-cell.is-matchup-dimmed {
+  opacity: 0.34;
+  filter: saturate(0.72);
+}
+
+.metagame-matchup-cell:not(.is-mirror):hover {
+  z-index: 2;
+  filter: brightness(1.12);
+  transform: scale(1.06);
+  /* Keep the hover scale from painting into the matrix gutters. */
+  clip-path: inset(1px);
+}
+
+.metagame-matchup-cell strong {
+  position: absolute;
+  top: 50%;
+  font-size: 0.8rem;
+  font-weight: 750;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.metagame-matchup-cell span {
+  position: absolute;
+  top: calc(50% + 0.25rem);
+  min-height: 0.45rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  line-height: 0.45rem;
+}
+
+.metagame-matchup-cell.has-light-text {
+  color: white;
+}
+
+.metagame-matchup-cell.has-dark-text {
+  color: hsl(222 84% 5%);
+}
+
+.metagame-matchup-cell.is-unknown {
+  background: hsl(var(--muted) / 0.52);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.metagame-matchup-cell.is-mirror {
+  background: hsl(var(--background) / 0.75);
+  color: hsl(var(--muted-foreground) / 0.75);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.metagame-matrix-note {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.25rem;
+  overflow: hidden;
+  min-height: 30px;
+  max-height: 2.75rem;
+  padding: 0.35rem 0 0 0.25rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  line-height: 1.15;
+  white-space: normal;
+  background: transparent;
+}
+
+.metagame-matrix-note > span {
+  min-width: 0;
+}
+
+.metagame-matrix-note > span:first-child {
+  white-space: nowrap;
+}
+
+.metagame-matrix-note-tail {
+  white-space: nowrap;
+}
+
+.metagame-chart-section.is-static-render .metagame-chart-scroll {
+  overflow: visible;
+  padding-bottom: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-panel,
+.metagame-chart-section.is-static-render .metagame-matrix-scroll {
+  overflow: visible;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-panel {
+  padding-right: 0;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-content {
+  min-width: 0;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header {
+  transform: none !important;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header-scroll {
+  clip-path: inset(-7rem -7rem 0 0);
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header > span > span.is-edge-faded-left,
+.metagame-chart-section.is-static-render .metagame-matrix-header > span > span.is-edge-faded-right {
+  opacity: 1;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header > span > span.is-edge-hidden-right {
+  opacity: 1;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header > span.is-edge-hidden-right::after {
+  display: block;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-header > span.is-edge-faded-left::after,
+.metagame-chart-section.is-static-render .metagame-matrix-header > span.is-edge-faded-right::after {
+  opacity: 1;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-viewport {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-viewport::before,
+.metagame-chart-section.is-static-render .metagame-matrix-viewport::after {
+  display: none;
+}
+
+.metagame-chart-section.is-static-render .metagame-matrix-note {
+  display: block;
+}
+
+.metagame-chart-section.is-static-render .metagame-matchup-cell:hover {
+  filter: none;
+  transform: none;
+  clip-path: none;
+}
+
+.metagame-chart-section.is-static-render .metagame-mobile-label-rail {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .metagame-page-main {
+    padding: 2.5rem 0 3.5rem;
+    overflow-x: clip;
+  }
+
+  .metagame-page-main .metagame-page-heading {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 1rem;
+    padding-right: 0;
+  }
+
+  .metagame-page-share-button {
+    justify-self: start;
+  }
+
+  .metagame-filter-content {
+    grid-template-columns: 1fr 1.5fr;
+  }
+
+  .metagame-export-button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .metagame-chart-controls {
+    position: static;
+    width: auto;
+    margin-bottom: 1rem;
+  }
+
+  .metagame-chart-controls .metagame-filter-content {
+    width: 100%;
+    grid-template-columns: minmax(0, 190px) minmax(0, 1fr);
+  }
+
+  .metagame-chart-scroll {
+    --metagame-header-height: 108px;
+
+    position: relative;
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: max-content;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-padding-left: 142px;
+  }
+
+  .metagame-chart-scroll.has-right-overflow {
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+  }
+
+  .metagame-chart-scroll > .metagame-chart,
+  .metagame-chart-scroll > .metagame-mobile-label-rail {
+    grid-area: 1 / 1;
+  }
+
+  .metagame-chart-scroll > .metagame-chart {
+    --metagame-header-height: 108px;
+
+    width: max-content;
+    margin-right: 3rem;
+    grid-template-columns:
+      270px
+      210px
+      calc(var(--metagame-columns) * var(--metagame-column-width));
+  }
+
+  .metagame-sideboarding .metagame-chart-scroll > .metagame-chart {
+    grid-template-columns:
+      311px
+      169px
+      calc(var(--metagame-columns) * var(--metagame-column-width));
+  }
+
+  .metagame-mobile-label-rail {
+    position: sticky;
+    z-index: 8;
+    left: 0;
+    display: block;
+    width: 142px;
+    height: max-content;
+    align-self: start;
+    color: hsl(var(--foreground));
+    background: hsl(var(--background));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metagame-mobile-label-rail::after {
+    position: absolute;
+    top: 0;
+    right: -1.5rem;
+    bottom: 0;
+    width: 1.5rem;
+    background: linear-gradient(to right, hsl(var(--background)), transparent);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+
+  .metagame-chart-scroll.has-left-overflow .metagame-mobile-label-rail::after {
+    opacity: 1;
+  }
+
+  .metagame-mobile-label-rail > header {
+    display: flex;
+    height: var(--metagame-header-height, 92px);
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 0 0.55rem 0.55rem 0.25rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.68rem;
+    font-weight: 550;
+    line-height: 1.2;
+    text-align: right;
+  }
+
+  .metagame-mobile-label-row {
+    display: flex;
+    height: var(--metagame-row-height, 30px);
+    align-items: center;
+    justify-content: flex-end;
+    overflow: hidden;
+    padding: 0 0.55rem 0 0.25rem;
+    border-bottom: 1px solid hsl(var(--sidebar-border) / 0.25);
+    background: hsl(var(--background));
+    color: hsl(var(--foreground) / 0.9);
+    font-size: 0.76rem;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: opacity 140ms ease, filter 140ms ease;
+  }
+
+  .metagame-mobile-label-row.is-matchup-dimmed {
+    opacity: 0.34;
+    filter: saturate(0.72);
+  }
+
+  .metagame-mobile-label-row > .metagame-skeleton-archetype {
+    width: 68%;
+    margin-right: 0;
+  }
+
+  .metagame-mobile-label-rail > footer {
+    display: block;
+    height: 30px;
+    background: hsl(var(--background));
+  }
+
+  .metagame-chart-scroll .metagame-matrix-panel {
+    padding-right: 0;
+  }
+
+  .metagame-chart-scroll :is(.metagame-matrix-viewport, .metagame-matrix-scroll) {
+    overflow: visible;
+  }
+
+  .metagame-chart-scroll .metagame-matrix-content {
+    min-width: 0;
+  }
+
+  .metagame-chart-scroll .metagame-matrix-header {
+    min-width: 0;
+    transform: none !important;
+  }
+
+  .metagame-chart-scroll .metagame-matrix-header-scroll {
+    overflow: clip;
+    overflow-clip-margin: 6rem;
+    clip-path: none;
+  }
+
+  .metagame-chart-scroll .metagame-matrix-viewport::before,
+  .metagame-chart-scroll .metagame-matrix-viewport::after {
+    display: none;
+  }
+
+  .metagame-card-mover-list {
+    position: relative;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-left: 9rem;
+  }
+
+  .metagame-card-mover-list.has-right-overflow {
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+  }
+
+  .metagame-card-mover-list h3,
+  .metagame-card-mover-row,
+  .metagame-card-mover-axes {
+    box-sizing: border-box;
+    width: max-content;
+    min-width: 100%;
+    grid-template-columns: 9rem 11rem 9rem;
+    gap: 0.75rem;
+    padding-right: 0.25rem;
+    padding-left: 0;
+  }
+
+  .metagame-card-mover-list h3 > .metagame-mover-list-title,
+  .metagame-card-mover-row > .metagame-mover-main,
+  .metagame-card-mover-axes > span:first-child {
+    position: sticky;
+    z-index: 4;
+    left: 0;
+    min-width: 0;
+    padding-left: 0.25rem;
+    background: hsl(var(--background));
+  }
+
+  .metagame-card-mover-list h3 > .metagame-mover-list-title::after,
+  .metagame-card-mover-row > .metagame-mover-main::after,
+  .metagame-card-mover-axes > span:first-child::after {
+    position: absolute;
+    top: 0;
+    right: -1.5rem;
+    bottom: 0;
+    width: 1.5rem;
+    background: linear-gradient(to right, hsl(var(--background)), transparent);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .metagame-card-mover-list.has-left-overflow h3 > .metagame-mover-list-title::after,
+  .metagame-card-mover-list.has-left-overflow .metagame-card-mover-row > .metagame-mover-main::after,
+  .metagame-card-mover-list.has-left-overflow .metagame-card-mover-axes > span:first-child::after {
+    opacity: 1;
+  }
+
+  .metagame-card-mover-list h3 > .metagame-mover-list-title {
+    grid-column: auto;
+    align-self: stretch;
+    align-items: center;
+  }
+
+  .metagame-card-mover-row {
+    grid-template-columns: 9rem 11rem 9rem;
+    gap: 0.75rem;
+    min-height: 2.6rem;
+  }
+
+  .metagame-card-mover-row > .metagame-mover-main {
+    align-self: stretch;
+    align-content: center;
+  }
+
+  .metagame-card-mover-bar {
+    grid-column: auto;
+  }
+
+  .metagame-card-mover-bar .metagame-difference-track {
+    width: 100%;
+  }
+
+  .metagame-card-mover-axes > span:first-child {
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 1200px) {
+  .metagame-page-heading {
+    padding-right: 4rem;
+  }
+
+  .metagame-matrix-panel {
+    padding-right: 4rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .metagame-page-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .metagame-filter-content {
+    grid-template-columns: 1fr;
+  }
+
+  .metagame-chart-controls .metagame-filter-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metagame-page-main .container-wide {
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+  }
+
+  .metagame-error-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}

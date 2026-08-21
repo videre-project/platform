@@ -5,6 +5,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Github } from 'lucide-react';
+import './Header.css';
+
+export function navigateTo(path: string) {
+  return (event: React.MouseEvent<HTMLElement>) => {
+    if (window.location.pathname === path) return;
+    event.preventDefault();
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+}
 
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -40,17 +50,13 @@ export const Header: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         height: '3.5rem',
+        position: 'relative',
       }}>
         {/* Logo + brand */}
         <a
           href="/"
           aria-label="Videre Project home"
-          onClick={event => {
-            if (window.location.pathname === '/') return;
-            event.preventDefault();
-            window.history.pushState({}, '', '/');
-            window.dispatchEvent(new PopStateEvent('popstate'));
-          }}
+          onClick={navigateTo('/')}
           style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'inherit', textDecoration: 'none' }}
         >
           <img
@@ -64,7 +70,7 @@ export const Header: React.FC = () => {
               objectFit: 'contain',
             }}
           />
-          <span style={{
+          <span className="site-brand-name" style={{
             fontSize: '0.9375rem',
             fontWeight: 600,
             color: 'hsl(var(--foreground))',
@@ -73,6 +79,25 @@ export const Header: React.FC = () => {
             Videre Project
           </span>
         </a>
+
+        <nav className="site-primary-nav" aria-label="Primary navigation">
+          <a
+            href="/events"
+            onClick={navigateTo('/events')}
+            className={window.location.pathname.startsWith('/events') ? 'is-active' : undefined}
+            aria-current={window.location.pathname.startsWith('/events') ? 'page' : undefined}
+          >
+            Events
+          </a>
+          <a
+            href="/metagame"
+            onClick={navigateTo('/metagame')}
+            className={window.location.pathname.startsWith('/metagame') ? 'is-active' : undefined}
+            aria-current={window.location.pathname.startsWith('/metagame') ? 'page' : undefined}
+          >
+            Metagame
+          </a>
+        </nav>
 
         {/* Right actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

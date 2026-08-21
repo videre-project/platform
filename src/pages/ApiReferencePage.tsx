@@ -4,20 +4,15 @@
 **/
 
 import React from 'react';
-import { Header } from './Header';
-import { ApiPreview } from './ApiPreview';
-import { Footer } from './Footer';
+import { ApiPreview } from '@/components/api/ApiPreview';
+import { SiteLayout } from '@/layouts/SiteLayout';
 
 /** Dedicated API reference surface, kept separate from the marketing overview. */
 export const ApiReferencePage: React.FC = () => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header />
-      <main style={{ flex: 1, paddingTop: 'var(--space-lg)' }}>
+    <SiteLayout mainStyle={{ paddingTop: 'var(--space-lg)' }}>
         <ApiPreview />
-      </main>
-      <Footer />
-    </div>
+    </SiteLayout>
   );
 };
 

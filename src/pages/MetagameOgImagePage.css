@@ -1,0 +1,82 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+.metagame-og-image {
+  position: relative;
+  box-sizing: border-box;
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+  padding: 18px 24px;
+  background:
+    radial-gradient(circle at 50% -10rem, hsl(var(--cyan) / 0.12), transparent 35rem),
+    hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.metagame-og-brand {
+  position: absolute;
+  z-index: 4;
+  bottom: 24px;
+  right: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: hsl(var(--foreground) / 0.9);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.metagame-og-brand img {
+  width: 20px;
+  height: 20px;
+}
+
+.metagame-og-chart-frame {
+  width: 1152px;
+  height: 594px;
+  overflow: hidden;
+}
+
+.metagame-og-chart-frame > .metagame-chart-section {
+  transform: scale(0.91);
+  transform-origin: top left;
+}
+
+.metagame-og-image .metagame-chart-section.is-static-render {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.metagame-og-image .metagame-chart-section.is-static-render .metagame-chart-titlebar {
+  top: 16px;
+}
+
+.metagame-og-image .metagame-chart-section.is-static-render .metagame-chart-titlebar h2 {
+  font-size: 26px;
+}
+
+.metagame-og-image .metagame-chart-section.is-static-render .metagame-chart-titlebar p {
+  font-size: 13px;
+}
+
+.metagame-og-error {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.metagame-og-error h1 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 2rem;
+}
+
+.metagame-og-error p {
+  margin: 0.35rem 0 0;
+}

@@ -4,7 +4,7 @@
 **/
 
 import { type ReactNode, useEffect, useState } from 'react';
-import { useNearViewport } from '../hooks/useNearViewport';
+import { useNearViewport } from '@/hooks/useNearViewport';
 
 interface ScaledUiPreviewProps {
   width: number;

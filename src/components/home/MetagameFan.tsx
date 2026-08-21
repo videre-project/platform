@@ -8,7 +8,7 @@ import { DeckGalleryTile } from '@videreproject/ui'
 
 import { useMetagameDecks } from '@/hooks/useMetagameDecks'
 import type { MetagameDeck } from '@/hooks/useMetagameDecks'
-import { useNearViewport } from '@/hooks/useNearViewport'
+import './HomePreviews.css'
 
 function navigateTo(path: string) {
   return (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -86,10 +86,8 @@ function MetagameFanError() {
  * decklist for card-art previews.
  */
 export const MetagameFan: React.FC = () => {
-  const [sectionRef, isNearViewport] = useNearViewport<HTMLElement>()
-
   return (
-    <section id="metagame-fan" className="metagame-fan-section" ref={sectionRef}>
+    <section id="metagame-fan" className="metagame-fan-section">
       <div className="container">
         <div className="metagame-fan-copy">
           <h2>Prepare for the decks you&apos;ll actually face</h2>
@@ -100,7 +98,7 @@ export const MetagameFan: React.FC = () => {
           </p>
         </div>
 
-        {isNearViewport ? <MetagameFanContent /> : <CarouselSkeleton />}
+        <MetagameFanContent />
       </div>
     </section>
   )

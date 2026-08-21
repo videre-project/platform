@@ -4,8 +4,9 @@
 **/
 
 import { useCallback, useEffect, useState } from 'react'
-import { ACTIVE_FORMATS, type FormatCode } from '@videreproject/constants'
+import { ACTIVE_FORMATS, BASIC_LAND_NAMES, type FormatCode } from '@videreproject/constants'
 import type { DeckFeaturedCard, DeckGalleryItem } from '@videreproject/ui'
+import { fetchSharedJSON } from './apiClient'
 
 const API = 'https://api.videreproject.com'
 const CACHE_KEY = 'videre:metagame-formats:v5'
@@ -56,7 +57,7 @@ interface UseMetagameDecksResult {
   refresh: () => void
 }
 
-const BASIC_LANDS = /^(Plains|Island|Swamp|Mountain|Forest|Wastes)$/i
+const BASIC_LAND_NAME_SET = new Set(BASIC_LAND_NAMES.map(name => name.toLocaleLowerCase()))
 const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'] as const
 // Decklist tuples arrive as PostgreSQL-style rows, e.g. (24029,"Breeding Pool",2)
 const TUPLE_RE = /^\((\d+),\s*(?:"([^"]*)"|([^,()]+)),\s*(\d+)\)$/
@@ -86,9 +87,11 @@ async function fetchJson<T>(
   signal: AbortSignal,
   init?: Omit<RequestInit, 'signal'>,
 ): Promise<T | null> {
-  const res = await fetch(url, { ...init, signal })
-  if (!res.ok) return null
-  return (await res.json()) as T
+  try {
+    return await fetchSharedJSON<T>(url, signal, init)
+  } catch {
+    return null
+  }
 }
 
 function resolveDeckColors(cards: DeckFeaturedCard[], cardById: Map<number, CardRow>): string[] {
@@ -170,7 +173,7 @@ export function useMetagameDecks(): UseMetagameDecksResult {
             `${API}/cards/search?limit=500&unique=prints`,
             ac.signal,
             {
-              method: 'POST',
+              method: 'QUERY',
               headers: { 'content-type': 'application/json' },
               body: JSON.stringify({
                 collection: { ids: catalogIds, mode: 'only', match: 'prints' },
@@ -193,7 +196,7 @@ export function useMetagameDecks(): UseMetagameDecksResult {
         const losses = matches - wins
         const mainboard = parsedMainboards[index]
         const featuredCards = mainboard
-          .filter(card => !BASIC_LANDS.test(card.name))
+          .filter(card => !BASIC_LAND_NAME_SET.has(card.name.toLocaleLowerCase()))
           .slice(0, 5)
 
         const galleryItem: DeckGalleryItem = {

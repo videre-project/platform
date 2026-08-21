@@ -1,0 +1,43 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Primary navigation ===== */
+.site-primary-nav {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.site-primary-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38rem 0.7rem;
+  border-radius: calc(var(--radius) - 2px);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.site-primary-nav a:hover,
+.site-primary-nav a.is-active {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted) / 0.55);
+}
+
+@media (max-width: 820px) {
+  .site-brand-name {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .site-primary-nav a {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+}

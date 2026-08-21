@@ -4,8 +4,10 @@
 **/
 
 import React from 'react';
-import { Header } from './Header';
-import { OverviewContent } from './OverviewContent';
+import { Header } from '@/components/Header';
+import { OverviewContent } from '@/components/home/OverviewContent';
+import './HomePage.css';
+import '@/components/home/HomePreviews.css';
 
 /**
  * Build-only composition for the social preview image.

@@ -3,55 +3,16 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import React, { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { Header } from './components/Header';
-import { OverviewContent } from './components/OverviewContent';
-import { UpgradeCallToAction } from './components/UpgradeCallToAction';
-import { EcosystemOverview } from './components/EcosystemOverview';
-import { Footer } from './components/Footer';
-import { FrequentlyAskedQuestions } from './components/FrequentlyAskedQuestions';
-import { OgImagePreview } from './components/OgImagePreview';
-import { useNearViewport } from './hooks/useNearViewport';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 
-const ApiReferencePage = lazy(() => import('./components/ApiReferencePage'));
-const ProductFeaturePreviews = lazy(async () => ({
-  default: (await import('./components/ProductFeaturePreviews')).ProductFeaturePreviews,
-}));
-const ReplayPreview = lazy(async () => ({
-  default: (await import('./components/ReplayPreview')).ReplayPreview,
-}));
+import HomePage from './pages/HomePage';
+import { OgImagePreview } from './pages/OgImagePreview';
 
-interface DeferredChunkProps {
-  minHeight: number;
-  children: ReactNode;
-}
-
-/** Defers below-the-fold feature chunks while reserving their page space. */
-const DeferredChunk: React.FC<DeferredChunkProps> = ({ minHeight, children }) => {
-  const [ref, isNearViewport] = useNearViewport<HTMLDivElement>('500px 0px');
-
-  return (
-    <div
-      ref={ref}
-      className="deferred-chunk-shell"
-      style={{ minHeight: isNearViewport ? undefined : minHeight }}
-    >
-      {isNearViewport ? (
-        <Suspense
-          fallback={
-            <div
-              className="deferred-chunk-fallback"
-              style={{ minHeight }}
-              aria-hidden="true"
-            />
-          }
-        >
-          {children}
-        </Suspense>
-      ) : null}
-    </div>
-  );
-};
+const ApiReferencePage = lazy(() => import('./pages/ApiReferencePage'));
+const MetagamePage = lazy(() => import('./pages/MetagamePage'));
+const EventsPage = lazy(() => import('./pages/EventsPage'));
+const EventDetailsPage = lazy(() => import('./pages/EventDetailsPage'));
+const MetagameOgImagePage = lazy(() => import('./pages/MetagameOgImagePage'));
 
 const ApiReferenceLoading: React.FC = () => (
   <div
@@ -86,30 +47,44 @@ export const App: React.FC = () => {
     );
   }
 
+  if (pathname === '/metagame' || pathname === '/metagame/') {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <MetagamePage />
+      </Suspense>
+    );
+  }
+
+  if (pathname === '/events' || pathname === '/events/') {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <EventsPage />
+      </Suspense>
+    );
+  }
+
+  const eventMatch = pathname.match(/^\/events\/(-?\d+)\/?$/);
+  if (eventMatch) {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <EventDetailsPage eventId={Number(eventMatch[1])} />
+      </Suspense>
+    );
+  }
+
   if (pathname === '/__og-image') {
     return <OgImagePreview />;
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header />
+  if (pathname === '/__og/metagame' || pathname === '/__og/metagame/') {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <MetagameOgImagePage />
+      </Suspense>
+    );
+  }
 
-      <main style={{ flex: 1 }}>
-        <OverviewContent />
-        <EcosystemOverview />
-        <DeferredChunk minHeight={2400}>
-          <ProductFeaturePreviews />
-        </DeferredChunk>
-        <DeferredChunk minHeight={720}>
-          <ReplayPreview />
-        </DeferredChunk>
-        <FrequentlyAskedQuestions />
-        <UpgradeCallToAction />
-      </main>
-
-      <Footer />
-    </div>
-  );
+  return <HomePage />;
 };
 
 export default App;

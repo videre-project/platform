@@ -1,0 +1,29 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+@media (max-width: 768px) {
+  .site-footer-main {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-xl) var(--space-lg) !important;
+  }
+
+  .site-footer-description {
+    grid-column: 1 / -1;
+  }
+
+  .site-footer-description p {
+    max-width: 34rem !important;
+  }
+
+  .site-footer-bottom {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .site-footer-legal {
+    max-width: none !important;
+    text-align: left !important;
+  }
+}

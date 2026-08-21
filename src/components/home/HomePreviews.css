@@ -1,0 +1,317 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Build-time social preview ===== */
+.og-image-preview {
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+  background: hsl(var(--background));
+}
+
+.og-image-preview > header {
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  left: 0;
+  transform: translateY(16px);
+}
+
+.og-image-preview > header .container {
+  justify-content: center !important;
+}
+
+.og-image-preview > header .container > div:last-child {
+  display: none;
+}
+
+.og-image-preview > header a[href*='github.com'] {
+  display: none;
+}
+
+.og-image-preview > header img {
+  height: 34px !important;
+}
+
+.og-image-preview > header span {
+  font-size: 1.5rem !important;
+}
+
+.og-image-preview .hero-section {
+  height: 630px;
+  margin-top: -3.5rem !important;
+  padding-top: calc(3.5rem + var(--space-3xl)) !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+}
+
+.og-image-preview .hero-section-transition {
+  display: none;
+}
+
+.og-image-preview .hero-section > .container {
+  width: 100%;
+  max-width: 1120px;
+  height: 100%;
+}
+
+.og-image-preview .hero-intro {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+  max-width: 900px;
+  margin: 0 auto -2rem;
+  text-align: center !important;
+  transform: translateY(0.75rem);
+}
+
+.og-image-preview .hero-intro h1 {
+  font-size: 3.5rem;
+  line-height: 1.12;
+}
+
+.og-image-preview .hero-intro .text-sm {
+  width: calc(100% + 5rem);
+  max-width: 980px;
+  margin-right: -2.5rem;
+  margin-left: -2.5rem;
+  font-size: 1.4rem;
+  line-height: 1.45;
+}
+
+.og-image-preview .hero-actions {
+  display: none !important;
+}
+
+.og-image-preview .hero-product-showcase {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: min(100%, 1080px);
+  height: auto;
+  margin: 0 auto;
+  transform: translateY(-3.5rem);
+  --hero-scene-height: 680px;
+  --hero-scroll-distance: 280px;
+}
+
+.og-image-preview .hero-product-scroll-track,
+.og-image-preview .hero-product-sticky,
+.og-image-preview .hero-product-scene {
+  height: 680px !important;
+}
+
+.og-image-preview .hero-product-scroll-track {
+  padding-top: 0 !important;
+}
+
+.og-image-preview .hero-product-sticky {
+  position: static !important;
+}
+
+.og-image-preview .hero-product-scene {
+  overflow: visible;
+}
+
+/* Keep the original fan footprint after removing the individual horizontal
+   rotation. The perspective transform changes each panel's visual bounds, so
+   these small slot adjustments preserve the production composition. */
+.og-image-preview .hero-screenshot-viewport {
+  transform: rotateX(48deg) rotateZ(0deg) !important;
+}
+
+.og-image-preview .hero-product-scene[data-scroll-animation='active'] .hero-screenshot-viewport {
+  transform: translateZ(var(--hero-layer-depth)) rotateX(var(--hero-layer-tilt)) rotateZ(0deg) !important;
+}
+
+.og-image-preview .hero-screenshot-layer--slot-0 {
+  top: 70px;
+  left: 2.5%;
+}
+
+.og-image-preview .hero-screenshot-layer--slot-1 {
+  top: 34px;
+  right: 5%;
+}
+
+.og-image-preview .hero-screenshot-layer--slot-2 {
+  top: 241px;
+  right: 2%;
+}
+
+.og-image-preview .hero-screenshot-layer--slot-3 {
+  bottom: 30px;
+  left: 12%;
+}
+
+.og-image-preview .hero-screenshot-layer {
+  cursor: default;
+}
+
+/* ===== Metagame deck fan (live showcase) ===== */
+.metagame-fan-section {
+  padding: var(--space-2xl) 0;
+}
+
+.metagame-fan-copy {
+  max-width: 760px;
+  margin-bottom: var(--space-md);
+}
+
+.metagame-fan-copy h2 {
+  margin-bottom: 0.35rem;
+}
+
+.metagame-fan {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-md);
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.metagame-fan-item {
+  position: relative;
+  flex: 0 0 calc(25% - 0.75rem);
+  min-width: 0;
+  transition: transform 180ms ease;
+}
+
+.metagame-fan-item:hover {
+  transform: translateY(-4px);
+}
+
+/* Skeleton fan (loading state) */
+.metagame-skeleton-card {
+  width: 100%;
+  border: 1px solid hsl(var(--sidebar-border) / 0.4);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: hsl(var(--card) / 0.65);
+}
+
+.metagame-skeleton-hero {
+  height: 144px;
+  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.4);
+}
+
+.metagame-skeleton-body {
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metagame-skeleton-line {
+  height: 1rem;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+/* Shimmer sweep across skeleton surfaces */
+.metagame-skeleton-hero,
+.metagame-skeleton-line {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--sidebar-border) / 0.22) 0%,
+    hsl(var(--muted) / 0.3) 50%,
+    hsl(var(--sidebar-border) / 0.22) 100%
+  );
+  background-size: 200% 100%;
+  animation: metagame-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes metagame-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error / fallback */
+.metagame-fan-error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-width: 680px;
+  padding: var(--space-lg);
+  border: 1px solid hsl(var(--sidebar-border) / 0.5);
+  border-radius: var(--radius);
+  background: hsl(var(--card) / 0.65);
+}
+
+.metagame-api-chip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--muted) / 0.5);
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--sidebar-border) / 0.5);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.metagame-api-chip:hover {
+  border-color: hsl(var(--sidebar-border));
+  background: hsl(var(--muted) / 0.7);
+}
+
+@media (max-width: 1000px) {
+  .metagame-fan-item {
+    flex-basis: calc(33.333% - 0.6667rem);
+  }
+}
+
+/* Responsive equal-width rows below the four-column desktop layout. */
+@media (max-width: 768px) {
+  .metagame-fan-section {
+    padding: var(--space-xl) 0;
+  }
+
+  .metagame-fan {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.85rem;
+    margin: 0 calc(var(--space-md) * -1);
+    padding: 0.25rem var(--space-md) 1.5rem;
+    overflow-x: auto;
+    scroll-padding: var(--space-md);
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+  }
+
+  .metagame-fan-item {
+    flex: 0 0 min(82vw, 360px);
+    scroll-snap-align: center;
+  }
+
+  .metagame-fan-item:hover {
+    transform: translateY(-3px);
+  }
+}
+
+@media (max-width: 520px) {
+  .metagame-fan-item {
+    flex-basis: min(84vw, 360px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metagame-fan-item,
+  .metagame-skeleton-hero,
+  .metagame-skeleton-line,
+  .metagame-api-chip {
+    transition: none;
+    animation: none;
+  }
+}

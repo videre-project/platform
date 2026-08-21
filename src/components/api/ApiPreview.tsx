@@ -78,7 +78,7 @@ const ALL_VIDERE_ENDPOINTS: Endpoint[] = [
   },
   {
     category: 'Cards & Catalog',
-    method: 'POST',
+    method: 'QUERY',
     path: '/cards/search',
     queryExample: '?q=t:instant&limit=3',
     requestBody: '{\n  "collection": {\n    "ids": [67014, 93020],\n    "mode": "only"\n  }\n}',
@@ -108,6 +108,15 @@ const ALL_VIDERE_ENDPOINTS: Endpoint[] = [
     queryExample: '',
     summary: 'Get card by MTGO catalog ID',
     description: 'Fetch multi-face card structures, face rules text, powers/toughnesses, and catalog IDs directly.',
+  },
+  {
+    category: 'Cards & Catalog',
+    method: 'QUERY',
+    path: '/prices',
+    queryExample: '',
+    requestBody: '{\n  "ids": [67014, 93020],\n  "date": "latest"\n}',
+    summary: 'Get prices for catalog IDs',
+    description: 'Fetch the latest or historical prices for a batch of MTGO catalog IDs with shared POST/QUERY response caching.',
   },
   {
     category: 'Cards & Catalog',
@@ -217,6 +226,10 @@ export const ApiPreview: React.FC = () => {
 
   const fullUrl = `https://api.videreproject.com${ep.path}${ep.queryExample}`;
 
+  const curlRequest = ep.method === 'POST' || ep.method === 'QUERY'
+    ? `curl -X ${ep.method} "${fullUrl}" -H "Content-Type: application/json" -d '${ep.requestBody}'`
+    : `curl "${fullUrl}"`;
+
   const fetchLiveData = async (endpoint: Endpoint) => {
     setLoading(true);
     setErrorText(null);
@@ -224,9 +237,9 @@ export const ApiPreview: React.FC = () => {
 
     try {
       const url = `https://api.videreproject.com${endpoint.path}${endpoint.queryExample}`;
-      const res = endpoint.method === 'POST'
+      const res = endpoint.method === 'POST' || endpoint.method === 'QUERY'
         ? await fetch(url, {
-            method: 'POST',
+            method: endpoint.method,
             headers: { 'Content-Type': 'application/json' },
             body: endpoint.requestBody,
           })
@@ -252,8 +265,8 @@ export const ApiPreview: React.FC = () => {
 
   const handleCopy = () => {
     let command = `curl "${fullUrl}"`;
-    if (ep.method === 'POST') {
-      command = `curl -X POST "${fullUrl}" -H "Content-Type: application/json" -d '${ep.requestBody}'`;
+    if (ep.method === 'POST' || ep.method === 'QUERY') {
+      command = `curl -X ${ep.method} "${fullUrl}" -H "Content-Type: application/json" -d '${ep.requestBody}'`;
     }
     navigator.clipboard.writeText(command);
     setCopied(true);
@@ -353,9 +366,7 @@ export const ApiPreview: React.FC = () => {
               </button>
             </div>
             <pre className="code-block" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-              {ep.method === 'POST'
-                ? `curl -X POST "${fullUrl}" \\\n  -H "Content-Type: application/json" \\\n  -d '${ep.requestBody}'`
-                : `curl "${fullUrl}"`}
+              {curlRequest}
             </pre>
           </div>
 
