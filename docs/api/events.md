@@ -16,14 +16,17 @@ The endpoint is the event index for tournament-backed data. Each returned `id` i
 /events/modern
 /events?format=pioneer&limit=25
 /events/modern?min_date=2026-06-01&max_date=2026-06-26
+/events/modern?kind=Challenge&limit=25
 /events?event_id=12845711
 ```
 
-Supported query parameters are `format`, `event_id`, `min_date`, `max_date`, `limit`, and `offset`.
+Supported query parameters are `format`, `kind`, `event_id`, `min_date`, `max_date`, `limit`, and `offset`.
 
 `format` can be supplied as the path segment or as a query parameter. If both are present, the path value wins because it is parsed as the route parameter.
 
 `event_id` selects one imported event and takes precedence over date filters.
+
+`kind` filters by the MTGO event family, such as `League`, `Preliminary`, `Challenge`, `Showcase`, or `Qualifier`. It is applied before pagination.
 
 `min_date` and `max_date` use calendar dates in `YYYY-MM-DD` form. If no `event_id` or date range is supplied, the API uses the default recent event window described in [API Overview](index.md).
 

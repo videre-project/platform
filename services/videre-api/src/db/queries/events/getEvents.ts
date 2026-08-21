@@ -228,6 +228,7 @@ function eventPredicates(sql: Sql, params: EventQueryParams): PendingSql<unknown
 
   return sql`
     (${params.format ?? null}::FormatType IS NULL OR e.format = ${params.format ?? null}::FormatType)
+    AND (${params.kind ?? null}::EventType IS NULL OR e.kind = ${params.kind ?? null}::EventType)
     AND (${params.min_date ?? null}::date IS NULL OR e.date >= ${params.min_date ?? null}::date)
     AND (${params.max_date ?? null}::date IS NULL OR e.date <= ${params.max_date ?? null}::date)
   `;

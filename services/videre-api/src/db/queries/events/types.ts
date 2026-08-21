@@ -16,6 +16,7 @@ const field = <T>() => undefined as unknown as T;
 
 export type EventQueryParams = {
   readonly format?: string | null,
+  readonly kind?: EventType | string | null,
   readonly event_id?: number | null,
   readonly min_date?: string | null,
   readonly max_date?: string | null,

@@ -9,6 +9,7 @@ import { withPostgres } from '@/db/postgres';
 import { getEvents } from '@/db/queries';
 import {
   FormatTypeValidator,
+  EventTypeValidator,
   DateValidator,
   NumberValidator
 } from '@/db/validators';
@@ -30,8 +31,13 @@ export const eventFilterArgs = {
   limit:      Optional(NumberValidator),
 };
 
-export const args = {
+export const eventListFilterArgs = {
   ...eventFilterArgs,
+  kind:       Optional(EventTypeValidator),
+};
+
+export const args = {
+  ...eventListFilterArgs,
   offset:     Optional(NumberValidator),
 };
 

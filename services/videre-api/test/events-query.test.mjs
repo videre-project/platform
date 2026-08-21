@@ -40,7 +40,7 @@ test.after(async () => {
 
 test('event queries return events, decks, and matches for a real event', async () => {
   const [candidate] = await sql`
-    SELECT e.id, e.format, e.date
+    SELECT e.id, e.format, e.kind, e.date
     FROM Events e
     WHERE EXISTS (
       SELECT 1
@@ -89,6 +89,10 @@ test('event queries return events, decks, and matches for a real event', async (
     max_date: candidate.date,
   });
   assert.ok(filteredEvents.some((event) => event.id === candidate.id));
+
+  const kindFilteredEvents = await getEvents(sql, { kind: candidate.kind });
+  assert.ok(kindFilteredEvents.length > 0);
+  assert.ok(kindFilteredEvents.every((event) => event.kind === candidate.kind));
 
   const decks = await getDecks(sql, { event_id: candidate.id });
   assert.ok(decks.length > 0);

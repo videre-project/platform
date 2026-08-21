@@ -5,8 +5,8 @@
 
 import { error } from 'itty-router';
 
-import { FORMATS } from '@videreproject/constants';
-import type { FormatType } from '@videreproject/constants';
+import { EVENTS, FORMATS } from '@videreproject/constants';
+import type { EventType, FormatType } from '@videreproject/constants';
 
 type ValidationParams = Record<string, unknown>;
 
@@ -23,4 +23,16 @@ export const FormatTypeValidator = (
     return error(400, `Invalid ${key} specified: '${format}'`);
 
   params[key] = format;
+};
+
+export const EventTypeValidator = (
+  params: ValidationParams,
+  key: string,
+  value: unknown
+): Response | void => {
+  const kind = toPascalCase(String(value)) as EventType;
+  if (!EVENTS.includes(kind))
+    return error(400, `Invalid ${key} specified: '${kind}'`);
+
+  params[key] = kind;
 };
