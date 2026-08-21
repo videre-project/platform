@@ -43,7 +43,6 @@ export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
   new Promise((resolve) => {
     const respond = (response: Response) => applyPublicApiCors(response, req);
     let closePromise: Promise<void> | undefined;
-    let timeout: ReturnType<typeof setTimeout>;
 
     const closePostgres = (): Promise<void> => {
       if (!ctx.sql) return Promise.resolve();
@@ -58,7 +57,7 @@ export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
       resolve(response);
     };
 
-    timeout = setTimeout(
+    const timeout: ReturnType<typeof setTimeout> = setTimeout(
       () => void finish(respond(Error(408, 'Request timed out'))),
       MAX_TIMEOUT
     );
