@@ -36,8 +36,24 @@ export interface Context {
 export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
   new Promise((resolve) => {
     const respond = (response: Response) => applyPublicApiCors(response, req);
-    const timeout = setTimeout(
-      () => resolve(respond(Error(408, 'Request timed out'))),
+    let closePromise: Promise<void> | undefined;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const closePostgres = (): Promise<void> => {
+      if (!ctx.sql) return Promise.resolve();
+      closePromise ??= ctx.sql.end({ timeout: 1 })
+        .catch((err) => console.error('[Postgres] Failed to close client:', err));
+      return closePromise;
+    };
+
+    const finish = async (response: Response): Promise<void> => {
+      clearTimeout(timeout);
+      await closePostgres();
+      resolve(response);
+    };
+
+    timeout = setTimeout(
+      () => void finish(respond(Error(408, 'Request timed out'))),
       MAX_TIMEOUT
     );
 
@@ -48,16 +64,9 @@ export default (req: Request, ctx: Context, env: Env): Promise<Response> =>
         return respond(Error(500, 'Encountered a fatal error.'));
       })
       .then((res) => ctx.cache ? updateCache(res, ctx) : res)
-      .then((res) => {
-        clearTimeout(timeout);
-        resolve(res);
-      })
-      .finally(() => {
-        if (ctx.sql) {
-          ctx.cf.waitUntil(
-            ctx.sql.end({ timeout: 1 })
-              .catch((err) => console.error('[Postgres] Failed to close client:', err))
-          );
-        }
+      .then(finish)
+      .catch((err) => {
+        console.error('[Handler] Failed to finish response:', err);
+        return finish(respond(Error(500, 'Encountered a fatal error.')));
       });
   });

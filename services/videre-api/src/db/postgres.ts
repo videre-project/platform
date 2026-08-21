@@ -26,13 +26,16 @@ export function withPostgres(req: any, ctx: Context, env: Env): void {
   ctx.params.host = `${env.PGUSER}@${env.PGHOST}/${env.PGDATABASE}`;
   ctx.params.backend = 'postgres';
 
-  // @ts-expect-error - Input vars must have implicit string operators
+  // @ts-expect-error Cloudflare's socket adapter is provided at runtime.
   ctx.sql = postgres({
     host: env.PGHOST,
     database: env.PGDATABASE,
     username: env.PGUSER,
     password: env.PGPASSWORD,
     port: parseInt(env.PGPORT || '5432'),
+    // Keep one database socket per Worker request. The Cloudflare adapter's
+    // default permits multiple sockets for a single postgres.js client.
+    max: 1,
     // The Cloudflare tunnel terminates TLS before postgres.js sees the socket.
     // Direct database connections keep SSL required unless local config opts out.
     ssl: env.PGHOST.toString().includes('videreproject.com')
