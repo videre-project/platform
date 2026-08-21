@@ -105,7 +105,7 @@ export type { CardFilterPanelProps } from './components/filters/CardFilterPanel'
 export { DataTable } from './components/tables/DataTable'
 export type { DataTableProps } from './components/tables/DataTable'
 export { DataTablePagination } from './components/tables/DataTablePagination'
-export type { DataTablePaginationProps } from './components/tables/DataTablePagination'
+export type { ControlledDataTablePagination, DataTablePaginationProps } from './components/tables/DataTablePagination'
 export { TableBodySkeleton } from './components/tables/TableBodySkeleton'
 export type { TableBodySkeletonProps } from './components/tables/TableBodySkeleton'
 

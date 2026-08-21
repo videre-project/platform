@@ -28,6 +28,18 @@ export function DatePickerWithRange({
   presets,
   size,
 }: React.HTMLAttributes<HTMLDivElement> & DatePickerWithRangeProps) {
+  const [isMobile, setIsMobile] = React.useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 560px)').matches
+  ))
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 560px)')
+    const handleChange = () => setIsMobile(mediaQuery.matches)
+    handleChange()
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
   return (
     <div className={cn('grid gap-2', className)}>
       <Popover>
@@ -56,16 +68,19 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <div className="flex">
+        <PopoverContent
+          className="w-auto p-0 max-[560px]:max-w-[calc(100vw-1rem)] max-[560px]:overflow-hidden"
+          align="end"
+        >
+          <div className="flex max-[560px]:flex-col">
             {presets && (
-              <div className="flex min-w-[140px] flex-col gap-2 border-r border-border p-2">
+              <div className="flex min-w-[140px] flex-col gap-2 border-r border-border p-2 max-[560px]:grid max-[560px]:min-w-0 max-[560px]:grid-cols-3 max-[560px]:border-r-0 max-[560px]:border-b">
                 {presets.map(preset => (
                   <Button
                     key={preset.label}
                     variant="ghost"
                     size="sm"
-                    className="justify-start text-left font-normal"
+                    className="justify-start text-left font-normal max-[560px]:min-w-0 max-[560px]:px-2"
                     onClick={() => setDate(preset.getValue())}
                   >
                     {preset.label}
@@ -79,7 +94,7 @@ export function DatePickerWithRange({
               defaultMonth={date?.from}
               selected={date}
               onSelect={setDate}
-              numberOfMonths={2}
+              numberOfMonths={isMobile ? 1 : 2}
             />
           </div>
         </PopoverContent>

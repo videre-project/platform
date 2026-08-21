@@ -20,6 +20,7 @@ import { CatalogCardImage } from './CatalogCardImage'
 export interface CardTooltipData {
   catalogId: number
   name?: string
+  imageUrl?: string | null
   otherFaceCatalogId?: number | null
 }
 
@@ -156,6 +157,7 @@ export function CardTooltipProvider({
               <CatalogCardImage
                 catalogId={activeCard.catalogId}
                 name={activeCard.name ?? ''}
+                imageUrl={activeCard.imageUrl ?? undefined}
                 alt={activeCard.name ?? ''}
                 className="h-full w-full object-cover"
                 loading="eager"
@@ -183,11 +185,13 @@ export function CardTooltipProvider({
 export function useCardTooltipHover({
   catalogId,
   name,
+  imageUrl,
   otherFaceCatalogId,
   enabled = true,
 }: {
   catalogId?: number | null
   name?: string
+  imageUrl?: string | null
   otherFaceCatalogId?: number | null
   enabled?: boolean
 }) {
@@ -199,8 +203,8 @@ export function useCardTooltipHover({
 
   const onMouseEnter = useCallback((event: ReactMouseEvent) => {
     if (!context || !enabled || !catalogId || catalogId <= 0 || event.buttons !== 0) return
-    context.showTooltip({ catalogId, name, otherFaceCatalogId }, { x: event.clientX, y: event.clientY })
-  }, [catalogId, context, enabled, name, otherFaceCatalogId])
+    context.showTooltip({ catalogId, name, imageUrl, otherFaceCatalogId }, { x: event.clientX, y: event.clientY })
+  }, [catalogId, context, enabled, imageUrl, name, otherFaceCatalogId])
 
   const onMouseMove = useCallback((event: ReactMouseEvent) => {
     if (!context || !enabled || !catalogId || catalogId <= 0) return
