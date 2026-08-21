@@ -11,15 +11,15 @@ import type { ISideboarding, ISideboardingMatrix } from './types.ts';
 
 const segmentStatistics = (
   sql: Sql,
-  alias: string,
+  games: PendingSql<unknown[]>,
   prefix: string,
+  filter: PendingSql<unknown[]>,
 ): PendingSql<unknown[]> => {
-  const games = sql.unsafe(`${alias}.games`);
   const statistics = fromResults(sql, {
     wins: sql`LENGTH(${games}) - LENGTH(REPLACE(${games}, 'W', ''))`,
     losses: sql`LENGTH(${games}) - LENGTH(REPLACE(${games}, 'L', ''))`,
     draws: sql`LENGTH(${games}) - LENGTH(REPLACE(${games}, 'T', ''))`,
-  });
+  }, filter);
 
   return sql`
     ${statistics.count} AS ${sql.unsafe(`${prefix}_count`)},
@@ -62,44 +62,38 @@ export const getSideboarding = (
   return sql`
     WITH
       entries AS (${entries}),
-      game_one_entries AS (
-        SELECT id1, id2, archetype1, archetype2, game_one AS games
-        FROM entries
-        WHERE game_one IN ('W', 'L', 'T')
-      ),
-      postboard_entries AS (
-        SELECT id1, id2, archetype1, archetype2, postboard_games AS games
-        FROM entries
-        WHERE postboard_games <> ''
-      ),
-      game_one_stats AS (
+      -- Both segments use this grouped relation, so compute it once.
+      statistics AS MATERIALIZED (
         SELECT
           id1 AS id,
           archetype1 AS archetype,
-          ${segmentStatistics(sql, 'g', 'game_one')}
-        FROM game_one_entries g
-        GROUP BY id1, archetype1
-      ),
-      postboard_stats AS (
-        SELECT
-          id1 AS id,
-          archetype1 AS archetype,
-          ${segmentStatistics(sql, 'p', 'postboard_game')}
-        FROM postboard_entries p
+          ${segmentStatistics(
+            sql,
+            sql`game_one`,
+            'game_one',
+            sql`game_one IN ('W', 'L', 'T')`,
+          )},
+          ${segmentStatistics(
+            sql,
+            sql`postboard_games`,
+            'postboard_game',
+            sql`postboard_games <> ''`,
+          )}
+        FROM entries
         GROUP BY id1, archetype1
       )
     SELECT
-      g.id,
-      g.archetype,
-      g.game_one_count,
-      g.game_one_winrate,
-      g.game_one_ci,
-      p.postboard_game_count,
-      p.postboard_game_winrate,
-      p.postboard_game_ci
-    FROM game_one_stats g
-    LEFT JOIN postboard_stats p ON p.id = g.id
-    ORDER BY g.game_one_count DESC, g.game_one_winrate DESC
+      id,
+      archetype,
+      game_one_count,
+      game_one_winrate,
+      game_one_ci,
+      postboard_game_count,
+      postboard_game_winrate,
+      postboard_game_ci
+    FROM statistics
+    WHERE game_one_count IS NOT NULL
+    ORDER BY game_one_count DESC, game_one_winrate DESC
   `;
 };
 
@@ -129,50 +123,41 @@ export const getSideboardingMatchups = (
           ON top.id1 = e.id1
          AND top.archetype1 = e.archetype1
       ),
-      game_one_entries AS (
-        SELECT id1, id2, archetype1, archetype2, game_one AS games
-        FROM scoped_entries
-        WHERE game_one IN ('W', 'L', 'T')
-      ),
-      postboard_entries AS (
-        SELECT id1, id2, archetype1, archetype2, postboard_games AS games
-        FROM scoped_entries
-        WHERE postboard_games <> ''
-      ),
-      game_one_stats AS (
+      statistics AS MATERIALIZED (
         SELECT
           id1,
           id2,
           archetype1,
           archetype2,
-          ${segmentStatistics(sql, 'g', 'game_one')}
-        FROM game_one_entries g
-        GROUP BY id1, id2, archetype1, archetype2
-      ),
-      postboard_stats AS (
-        SELECT
-          id1,
-          id2,
-          archetype1,
-          archetype2,
-          ${segmentStatistics(sql, 'p', 'postboard_game')}
-        FROM postboard_entries p
+          ${segmentStatistics(
+            sql,
+            sql`game_one`,
+            'game_one',
+            sql`game_one IN ('W', 'L', 'T')`,
+          )},
+          ${segmentStatistics(
+            sql,
+            sql`postboard_games`,
+            'postboard_game',
+            sql`postboard_games <> ''`,
+          )}
+        FROM scoped_entries
         GROUP BY id1, id2, archetype1, archetype2
       ),
       sideboarding AS (
         SELECT
-          g.id1,
-          g.id2,
-          g.archetype1,
-          g.archetype2,
-          g.game_one_count,
-          g.game_one_winrate,
-          g.game_one_ci,
-          p.postboard_game_count,
-          p.postboard_game_winrate,
-          p.postboard_game_ci
-        FROM game_one_stats g
-        LEFT JOIN postboard_stats p ON p.id1 = g.id1 AND p.id2 = g.id2
+          id1,
+          id2,
+          archetype1,
+          archetype2,
+          game_one_count,
+          game_one_winrate,
+          game_one_ci,
+          postboard_game_count,
+          postboard_game_winrate,
+          postboard_game_ci
+        FROM statistics
+        WHERE game_one_count IS NOT NULL
       )
     SELECT
       source.id1 AS id,

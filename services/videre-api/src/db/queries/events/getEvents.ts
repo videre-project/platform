@@ -17,7 +17,52 @@ import {
 } from './types.ts';
 export type { EventQueryParams, IDeck, IEvent, IMatch } from './types.ts';
 
+export type IDeckEntry = IDeck & {
+  event_id: number,
+  player: string,
+};
+
+type IMatchEntry = Omit<IMatch, 'games'> & {
+  player: string,
+  games: string,
+};
+
+type IMatchDeckJoin = {
+  event_id: number,
+  player: string,
+  id1: number | null,
+  id2: number,
+  deck_id: number,
+  date: Date,
+  format: IMatch['format'],
+  event_type: IMatch['event_type'],
+  archetype1: string,
+  archetype2: string,
+  games: unknown[],
+  result: IMatch['result'],
+};
+
 export const getEvents = (
+  sql: Sql,
+  params: EventQueryParams
+): PendingSql<IEvent[]> => {
+  const eventEntries = getEventEntries(sql, params);
+
+  return sql`
+    ${eventEntries}
+    ORDER BY
+      e.date DESC,
+      e.id DESC
+  `;
+}
+
+/**
+ * Builds the filtered event relation used by aggregate queries.
+ *
+ * Aggregate consumers deliberately leave ordering to their final result. The
+ * public events endpoint adds its date ordering in getEvents instead.
+ */
+export const getEventEntries = (
   sql: Sql,
   params: EventQueryParams
 ): PendingSql<IEvent[]> => {
@@ -25,9 +70,6 @@ export const getEvents = (
     SELECT ${eventSelectFields(sql)}
     FROM Events e
     WHERE ${eventPredicates(sql, params)}
-    ORDER BY
-      e.date DESC,
-      e.id DESC
   `;
 }
 
@@ -35,13 +77,40 @@ export const getDecks = (
   sql: Sql,
   params: EventQueryParams
 ): PendingSql<IDeck[]> => {
-  const eventEntries = getEvents(sql, params);
+  const deckEntries = getDeckEntries(sql, params);
+
+  return sql`
+    SELECT
+      id,
+      name,
+      archetype,
+      archetype_id,
+      mainboard,
+      sideboard
+    FROM (${deckEntries}) d
+    WHERE archetype_id IS NOT NULL
+  `;
+}
+
+/**
+ * Builds the canonical deck relation used by aggregate queries.
+ *
+ * The event and player fields let consumers apply a matched-deck semi-join
+ * without rebuilding the deck/event joins or the full match projection.
+ */
+export const getDeckEntries = (
+  sql: Sql,
+  params: EventQueryParams
+): PendingSql<IDeckEntry[]> => {
+  const eventEntries = getEventEntries(sql, params);
 
   return sql`
     WITH
       event_entries AS (${eventEntries})
     SELECT
       a.deck_id AS id,
+      d.event_id,
+      d.player,
       ${tableFields(sql, 'a', DECK_SUMMARY_ARCHETYPE_FIELDS)},
       ${tableFields(sql, 'd', DECK_SUMMARY_DECK_FIELDS)}
     FROM Archetypes a
@@ -49,9 +118,6 @@ export const getDecks = (
     INNER JOIN event_entries e ON e.id = d.event_id
     WHERE
       e.kind <> 'League'::EventType
-      AND a.archetype_id IS NOT NULL
-    ORDER BY
-      a.id DESC
   `;
 }
 
@@ -59,27 +125,28 @@ export const getMatches = (
   sql: Sql,
   params: EventQueryParams
 ): PendingSql<IMatch[]> => {
-  const eventEntries = getEvents(sql, params);
+  return getMatchEntries(sql, params);
+}
+
+/** Builds the filtered event, match, and deck join used by match aggregates. */
+const getMatchDeckJoin = (
+  sql: Sql,
+  params: EventQueryParams
+): PendingSql<IMatchDeckJoin[]> => {
+  const eventEntries = getEventEntries(sql, params);
 
   return sql`
-    WITH
-      event_entries AS (${eventEntries})
+    WITH event_entries AS (${eventEntries})
     SELECT
       a1.archetype_id AS id1,
       a2.archetype_id AS id2,
-      a1.deck_id,
+      a1.deck_id AS deck_id,
       ${tableFields(sql, 'e', EVENT_DATE_FORMAT_FIELDS)},
       m.event_id,
+      m.player,
       e.kind AS event_type,
       a1.archetype AS archetype1,
-      ARRAY_TO_STRING(ARRAY(
-        SELECT CASE
-          WHEN game.result = 'win' THEN 'W'
-          WHEN game.result = 'loss' THEN 'L'
-          WHEN game.result = 'draw' THEN 'T'
-        END
-        FROM UNNEST(m.games) AS game
-      ), '-') AS games,
+      m.games,
       m.result,
       a2.archetype AS archetype2
     FROM Matches m
@@ -92,10 +159,65 @@ export const getMatches = (
     INNER JOIN event_entries e ON e.id = m.event_id
     WHERE
       e.kind <> 'League'::EventType
-    ORDER BY
-      m.event_id,
-      m.round,
-      m.player
+  `;
+}
+
+/** Converts the raw game results into the string used by match aggregates. */
+export const getMatchEntries = (
+  sql: Sql,
+  params: EventQueryParams
+): PendingSql<IMatchEntry[]> => {
+  const matchDeckJoin = getMatchDeckJoin(sql, params);
+
+  return sql`
+    WITH match_deck_entries AS (${matchDeckJoin})
+    SELECT
+      id1,
+      id2,
+      deck_id,
+      date,
+      format,
+      event_id,
+      player,
+      event_type,
+      archetype1,
+      ARRAY_TO_STRING(ARRAY(
+        SELECT CASE
+          WHEN game.result = 'win' THEN 'W'
+          WHEN game.result = 'loss' THEN 'L'
+          WHEN game.result = 'draw' THEN 'T'
+        END
+        FROM UNNEST(games) AS game
+      ), '-') AS games,
+      result,
+      archetype2
+    FROM match_deck_entries
+  `;
+}
+
+/**
+ * Projects the match relation needed for deck-presence checks. The base join
+ * remains shared with getMatchEntries, while game results stay unexpanded.
+ */
+export const getMatchDeckEntries = (
+  sql: Sql,
+  params: EventQueryParams
+): PendingSql<Omit<IMatchDeckJoin, 'games' | 'result'>[]> => {
+  const matchDeckJoin = getMatchDeckJoin(sql, params);
+
+  return sql`
+    SELECT
+      event_id,
+      player,
+      id1,
+      id2,
+      deck_id,
+      date,
+      format,
+      event_type,
+      archetype1,
+      archetype2
+    FROM (${matchDeckJoin}) matches
   `;
 }
 

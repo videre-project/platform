@@ -49,13 +49,20 @@ export type RecordStatistics = {
  */
 export function fromResults(
   sql: Sql,
-  { wins, losses, draws }: RecordQuery
+  { wins, losses, draws }: RecordQuery,
+  filter?: PendingSql<unknown[]>
 ): RecordStatistics {
+  const aggregate = <T>(expression: PendingSql<T>): PendingSql<T> => (
+    filter
+      ? sql`(${expression} FILTER (WHERE ${filter}))` as PendingSql<T>
+      : expression
+  );
+
   // 'n' represents the total number of games played in a single match.
   const n = sql`((${wins}) + (${losses}) + (${draws}))`;
 
   // The total number of games played across all match entries.
-  const count = sql`SUM(${n})::int`;
+  const count = sql`${aggregate(sql`SUM(${n})`)}::int`;
 
   // The mean winrate, including draws.
   //
@@ -63,14 +70,14 @@ export function fromResults(
   //   x_mean = ∑(n_wins / n_games) * 100% +
   //            ∑(n_losses / n_games) * 0% +
   //            ∑(n_draws  / n_games) * 50%
-  const mean = sql`
+  const mean = sql`${aggregate(sql`
     AVG(
       (CASE
         WHEN ${losses} = ${n} THEN 0
         ELSE ((${wins}) * 1 + (${draws}) * 0.5) / ${n}
       END) * 100.0
     )
-  ::float`;
+  `)}::float` as PendingSql<Percentage>;
 
   // The standard deviation of the average winrate.
   //
@@ -89,14 +96,14 @@ export function fromResults(
   //         ∑(n_draws / n_games) * (50% - x_mean))^2)
   const stddev = sql`
     SQRT(
-      (SUM(${wins})::float / ${count})
+      (${aggregate(sql`SUM(${wins})`)}::float / ${count})
         * POWER((100.0 - ${mean}), 2) +
-      (SUM(${losses})::float / ${count})
+      (${aggregate(sql`SUM(${losses})`)}::float / ${count})
         * POWER((  0.0 - ${mean}), 2) +
-      (SUM(${draws})::float / ${count})
+      (${aggregate(sql`SUM(${draws})`)}::float / ${count})
         * POWER(( 50.0 - ${mean}), 2)
     )
-  ::float`;
+  ::float` as PendingSql<Percentage>;
 
   // The 95% confidence interval for the average winrate.
   //
@@ -106,7 +113,7 @@ export function fromResults(
   //   Z = 1.96 for 95% confidence
   //   σ = standard deviation
   //   n = count
-  const ci = sql`1.96 * (${stddev} / SQRT(${count}))`;
+  const ci = sql`1.96 * (${stddev} / SQRT(${count}))` as PendingSql<CI>;
 
   return { count, mean, stddev, ci };
 }

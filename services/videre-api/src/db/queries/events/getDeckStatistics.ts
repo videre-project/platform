@@ -12,7 +12,7 @@ import {
 
 import type { PendingSql, Sql } from '../../postgres.ts';
 
-import { getDecks, getMatches } from './getEvents.ts';
+import { getDeckEntries, getMatchDeckEntries } from './getEvents.ts';
 import type { ICardStatistics, IDeckStatistics } from './types.ts';
 
 type DeckBoard = 'mainboard' | 'sideboard';
@@ -35,39 +35,58 @@ export const getDeckStatistics = (
   sql: Sql,
   params: { [key: string]: any }
 ): PendingSql<IDeckStatistics[]> => {
-  const deckEntries = getDecks(sql, params);
-  const matchEntries = getMatches(sql, params);
+  const deckEntries = getDeckEntries(sql, params);
+  const matchEntries = getMatchDeckEntries(sql, params);
   const deckArchetypeFilter = params.archetype
     ? sql`AND e.archetype = ${params.archetype}`
     : sql``;
-  const matchArchetypeFilter = params.archetype
-    ? sql`WHERE archetype1 = ${params.archetype}`
+  const presenceArchetypeFilter = params.archetype
+    ? sql`WHERE archetype = ${params.archetype}`
     : sql``;
-  const archetypeCount = sql`COUNT(DISTINCT deck_id)::int`;
+  const archetypeCount = sql`COUNT(DISTINCT id)::int`;
   const archetypePresence = sql`
     (${archetypeCount} * 100.0 /
-     (SELECT ${archetypeCount} FROM match_entries))
+     (SELECT ${archetypeCount} FROM matched_deck_entries))
   `;
   const boardStats = buildDeckBoardStats(sql, deckArchetypeFilter);
 
   return sql`
     WITH
-      match_entries AS (${matchEntries}),
       deck_entries AS (${deckEntries}),
+      -- Presence and its denominator use the same matched-player relation.
+      match_entries AS MATERIALIZED (${matchEntries}),
+      matched_deck_entries AS (
+        SELECT
+          d.id,
+          d.event_id,
+          d.player,
+          d.name,
+          d.archetype,
+          d.archetype_id,
+          d.mainboard,
+          d.sideboard
+        FROM deck_entries d
+        WHERE EXISTS (
+          SELECT 1
+          FROM match_entries m
+          WHERE m.event_id = d.event_id
+            AND m.player = d.player
+        )
+      ),
       presence AS (
         SELECT
-          id1 as id,
-          archetype1 AS archetype,
+          archetype_id AS id,
+          archetype,
           ${archetypeCount} AS count,
           TO_CHAR(${archetypePresence}, 'FM990.00%') AS percentage
-        FROM match_entries
-        ${matchArchetypeFilter}
+        FROM matched_deck_entries
+        ${presenceArchetypeFilter}
         GROUP BY
-          id,
+          archetype_id,
           archetype
       ),
-      mainboard_entries AS (${boardStats.mainboard}),
-      sideboard_entries AS (${boardStats.sideboard})
+      mainboard_entries AS MATERIALIZED (${boardStats.mainboard}),
+      sideboard_entries AS MATERIALIZED (${boardStats.sideboard})
     SELECT
       p.id,
       p.archetype,

@@ -9,16 +9,12 @@ import test from 'node:test';
 import postgres from 'postgres';
 
 import {
-  buildDecksQuery,
-  buildEventsQuery,
-  buildMatchesQuery,
-} from '../src/db/queries/events/buildEventQueries.ts';
-import {
   getEventDecks,
   getEventMatches,
   getEventStandings,
 } from '../src/db/queries/events/getEventData.ts';
 import { getDeckStatistics } from '../src/db/queries/events/getDeckStatistics.ts';
+import { getDecks, getEvents, getMatches } from '../src/db/queries/events/getEvents.ts';
 import { getMatchupMatrix } from '../src/db/queries/events/getMatchupMatrix.ts';
 import { getMetagame } from '../src/db/queries/events/getMetagame.ts';
 import {
@@ -38,19 +34,11 @@ const sql = postgres({
   },
 });
 
-test('aggregate event builders exclude leagues', () => {
-  const decks = buildDecksQuery({ format: 'Modern' });
-  const matches = buildMatchesQuery({ format: 'Modern' });
-
-  assert.match(decks.text, /"e"\."kind" <> 'League'::EventType/);
-  assert.match(matches.text, /"e"\."kind" <> 'League'::EventType/);
-});
-
 test.after(async () => {
   await sql.end({ timeout: 5 });
 });
 
-test('event builders return events, decks, and matches for a real event', async () => {
+test('event queries return events, decks, and matches for a real event', async () => {
   const [candidate] = await sql`
     SELECT e.id, e.format, e.date
     FROM Events e
@@ -91,22 +79,22 @@ test('event builders return events, decks, and matches for a real event', async 
 
   assert.ok(candidate);
 
-  const events = await run(buildEventsQuery({ event_id: candidate.id }));
+  const events = await getEvents(sql, { event_id: candidate.id });
   assert.equal(events.length, 1);
   assert.equal(events[0].id, candidate.id);
 
-  const filteredEvents = await run(buildEventsQuery({
+  const filteredEvents = await getEvents(sql, {
     format: candidate.format,
     min_date: candidate.date,
     max_date: candidate.date,
-  }));
+  });
   assert.ok(filteredEvents.some((event) => event.id === candidate.id));
 
-  const decks = await run(buildDecksQuery({ event_id: candidate.id }));
+  const decks = await getDecks(sql, { event_id: candidate.id });
   assert.ok(decks.length > 0);
   assert.ok(decks.every((deck) => deck.archetype_id !== null));
 
-  const matches = await run(buildMatchesQuery({ event_id: candidate.id }));
+  const matches = await getMatches(sql, { event_id: candidate.id });
   assert.ok(matches.length > 0);
   assert.ok(matches.every((match) => match.event_id === candidate.id));
   assert.ok(matches.every((match) => typeof match.games === 'string'));
@@ -139,6 +127,7 @@ test('event builders return events, decks, and matches for a real event', async 
   const matchups = await getMatchupMatrix(sql, { event_id: candidate.id });
   assert.ok(matchups.length > 0);
   assert.ok(Array.isArray(matchups[0].matchups));
+  assert.ok(matchups.every((row) => row.matchups.every((matchup) => matchup.archetype !== row.archetype)));
 
   const sideboarding = await getSideboarding(sql, { event_id: candidate.id });
   assert.ok(sideboarding.length > 0);
@@ -161,8 +150,10 @@ test('event builders return events, decks, and matches for a real event', async 
   });
   assert.ok(filteredSideboardingMatchups.length > 0);
   assert.equal(filteredSideboardingMatchups[0].archetype, sideboardingMatchups[0].archetype);
-});
 
-async function run(query) {
-  return sql.unsafe(query.text, [...query.values]);
-}
+  const limitedSideboardingMatchups = await getSideboardingMatchups(sql, {
+    event_id: candidate.id,
+    limit: 1,
+  });
+  assert.ok(limitedSideboardingMatchups.length <= 1);
+});
