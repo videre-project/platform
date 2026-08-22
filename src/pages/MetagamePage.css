@@ -321,7 +321,7 @@
   position: relative;
   box-sizing: content-box;
   width: calc(480px + var(--metagame-columns) * var(--metagame-column-width, 36px) + 2rem);
-  padding: 24px 56px;
+  padding: 14px 56px;
   background: hsl(var(--background));
   text-rendering: geometricPrecision;
 }
@@ -375,7 +375,7 @@
 .metagame-chart-section.is-static-render .metagame-chart-titlebar {
   position: absolute;
   z-index: 2;
-  top: 24px;
+  top: 14px;
   left: 56px;
   width: 480px;
   height: 64px;
