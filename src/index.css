@@ -17,7 +17,7 @@
  */
 
 /* ===== Fonts ===== */
-@import '../packages/ui/src/theme.css';
+@import '@videreproject/ui/theme.css';
 
 @font-face {
   font-family: 'Inter';

@@ -85,6 +85,7 @@ interface WinrateBarVisualProps extends HTMLAttributes<HTMLDivElement> {
   heatMaximum: number
   mean?: number
   compact?: boolean
+  renderTarget?: 'browser' | 'takumi'
 }
 
 export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps>(function WinrateBarVisual({
@@ -96,6 +97,7 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
   heatMaximum,
   mean,
   compact = false,
+  renderTarget = 'browser',
   className,
   ...props
 }, ref) {
@@ -144,6 +146,7 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
           {hasRightOverhang && (
             <>
               <line
+                className="metagame-confidence-range"
                 x1={position}
                 x2={confidenceEnd}
                 y1="12"
@@ -154,18 +157,20 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
                 vectorEffect="non-scaling-stroke"
               />
               <line
+                className="metagame-confidence-endpoint"
                 x1={confidenceEnd}
                 x2={confidenceEnd}
                 y1="7.5"
                 y2="17.5"
                 stroke={winrateColor}
-                strokeWidth="2"
+                strokeWidth={renderTarget === 'takumi' ? '1' : '2'}
                 strokeLinecap="butt"
                 vectorEffect="non-scaling-stroke"
               />
             </>
           )}
           <line
+            className="metagame-confidence-range"
             x1={confidenceStart}
             x2={hasRightOverhang ? position : confidenceEnd}
             y1="12"
@@ -176,23 +181,25 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
             vectorEffect="non-scaling-stroke"
           />
           <line
+            className="metagame-confidence-endpoint"
             x1={confidenceStart}
             x2={confidenceStart}
             y1="8"
             y2="17"
             stroke="black"
-            strokeWidth="2"
+            strokeWidth={renderTarget === 'takumi' ? '1' : '2'}
             strokeLinecap="butt"
             vectorEffect="non-scaling-stroke"
           />
           {!hasRightOverhang && (
             <line
+              className="metagame-confidence-endpoint"
               x1={confidenceEnd}
               x2={confidenceEnd}
               y1="8"
               y2="17"
               stroke="black"
-              strokeWidth="2"
+              strokeWidth={renderTarget === 'takumi' ? '1' : '2'}
               strokeLinecap="butt"
               vectorEffect="non-scaling-stroke"
             />

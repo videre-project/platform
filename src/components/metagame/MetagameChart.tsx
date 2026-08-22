@@ -9,14 +9,15 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@videreproject/ui'
+} from '@videreproject/ui/tooltip'
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react'
+import type { MutableRefObject, RefObject } from 'react'
 
 import type {
   MetagameArchetype,
   MetagameData,
   MetagameMatchup,
-} from '@/hooks/useMetagame'
+} from '@/utils/metagameData'
 import { WinrateTooltipPlot } from '@/components/metagame/MetagameTooltip'
 import { MetagameAxisArrow } from '@/components/metagame/MetagameAxisArrow'
 import { MetagameChartSkeleton } from '@/components/metagame/MetagameChartSkeleton'
@@ -39,6 +40,9 @@ interface MetagameChartProps {
   chartRef?: Ref<HTMLElement>
   controls?: ReactNode
   staticRender?: boolean
+  renderTarget?: 'browser' | 'takumi'
+  archetypeLabels?: readonly string[]
+  matrixHeaderLabels?: readonly string[]
 }
 
 const formatDate = (date: Date) => new Intl.DateTimeFormat('en-US', {
@@ -75,6 +79,7 @@ function ChartTooltip({
   plot,
   ariaLabel,
   open,
+  disabled = false,
 }: {
   children: ReactElement<{ 'aria-label'?: string; tabIndex?: number }>
   heading: ReactNode
@@ -82,7 +87,10 @@ function ChartTooltip({
   plot?: ReactNode
   ariaLabel?: string
   open?: boolean
+  disabled?: boolean
 }) {
+  if (disabled) return children
+
   return (
     <Tooltip disableHoverableContent open={open}>
       <TooltipTrigger asChild>
@@ -109,10 +117,12 @@ function ChartTooltip({
   )
 }
 
-function ShareRow({ archetype, maximum, isDimmed }: {
+function ShareRow({ archetype, label, maximum, isDimmed, tooltipsDisabled }: {
   archetype: MetagameArchetype
+  label: string
   maximum: number
   isDimmed: boolean
+  tooltipsDisabled: boolean
 }) {
   const width = clamp((archetype.percentage / maximum) * 100, 0, 100)
   const inline = width >= 36
@@ -121,9 +131,10 @@ function ShareRow({ archetype, maximum, isDimmed }: {
   return (
     <div className={`metagame-chart-row metagame-share-row${isDimmed ? ' is-matchup-dimmed' : ''}`}>
       <span className="metagame-archetype-name">
-        {archetype.archetype}
+        {label}
       </span>
       <ChartTooltip
+        disabled={tooltipsDisabled}
         heading={archetype.archetype}
         rows={[
           { label: 'Percentage', value: `${archetype.percentage.toFixed(1)}%` },
@@ -144,17 +155,20 @@ function ShareRow({ archetype, maximum, isDimmed }: {
   )
 }
 
-function WinrateRow({ archetype, minimum, maximum, heatMinimum, heatMaximum, isDimmed }: {
+function WinrateRow({ archetype, minimum, maximum, heatMinimum, heatMaximum, isDimmed, renderTarget, tooltipsDisabled }: {
   archetype: MetagameArchetype
   minimum: number
   maximum: number
   heatMinimum: number
   heatMaximum: number
   isDimmed: boolean
+  renderTarget: 'browser' | 'takumi'
+  tooltipsDisabled: boolean
 }) {
   return (
     <div className={`metagame-chart-row metagame-winrate-row${isDimmed ? ' is-matchup-dimmed' : ''}`}>
       <ChartTooltip
+        disabled={tooltipsDisabled}
         heading={archetype.archetype}
         plot={(
           <WinrateTooltipPlot
@@ -171,13 +185,14 @@ function WinrateRow({ archetype, minimum, maximum, heatMinimum, heatMaximum, isD
           maximum={maximum}
           heatMinimum={heatMinimum}
           heatMaximum={heatMaximum}
+          renderTarget={renderTarget}
         />
       </ChartTooltip>
     </div>
   )
 }
 
-function MatchupCell({ row, opponent, matchup, heatMinimum, heatMaximum, isDimmed, isActive, onActivate, onDeactivate }: {
+function MatchupCell({ row, opponent, matchup, heatMinimum, heatMaximum, isDimmed, isActive, onActivate, onDeactivate, tooltipsDisabled }: {
   row: string
   opponent: string
   matchup: MetagameMatchup | undefined
@@ -187,6 +202,7 @@ function MatchupCell({ row, opponent, matchup, heatMinimum, heatMaximum, isDimme
   isActive: boolean
   onActivate: (row: string, opponent: string) => void
   onDeactivate: () => void
+  tooltipsDisabled: boolean
 }) {
   const cellClassName = (className = '') => (
     `metagame-matchup-cell${className ? ` ${className}` : ''}${isDimmed ? ' is-matchup-dimmed' : ''}`
@@ -208,6 +224,7 @@ function MatchupCell({ row, opponent, matchup, heatMinimum, heatMaximum, isDimme
   if (!matchup) {
     return (
       <ChartTooltip
+        disabled={tooltipsDisabled}
         heading={(
           <span className="metagame-tooltip-matchup-heading">
             <span>{row}</span>
@@ -229,6 +246,7 @@ function MatchupCell({ row, opponent, matchup, heatMinimum, heatMaximum, isDimme
   const matchupColor = `rgb(${matchupRgb.join(' ')})`
   return (
     <ChartTooltip
+      disabled={tooltipsDisabled}
       heading={(
         <span className="metagame-tooltip-matchup-heading">
           <span>{row}</span>
@@ -258,6 +276,55 @@ function MatchupCell({ row, opponent, matchup, heatMinimum, heatMaximum, isDimme
   )
 }
 
+function MatrixScrollEffects({
+  data,
+  chartScrollRef,
+  matrixScrollRef,
+  matrixEdgeFrameRef,
+  scheduleMatrixScrollVisuals,
+  syncMatrixScrollVisuals,
+}: {
+  data: MetagameData
+  chartScrollRef: RefObject<HTMLDivElement>
+  matrixScrollRef: RefObject<HTMLDivElement>
+  matrixEdgeFrameRef: MutableRefObject<number | null>
+  scheduleMatrixScrollVisuals: () => void
+  syncMatrixScrollVisuals: () => void
+}) {
+  useLayoutEffect(() => {
+    const chartScroll = chartScrollRef.current
+    const matrixScroll = matrixScrollRef.current
+    if (!chartScroll || !matrixScroll) return
+
+    syncMatrixScrollVisuals()
+    const resizeObserver = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(scheduleMatrixScrollVisuals)
+    resizeObserver?.observe(chartScroll)
+    resizeObserver?.observe(matrixScroll)
+    if (matrixScroll.firstElementChild) resizeObserver?.observe(matrixScroll.firstElementChild)
+    window.addEventListener('resize', scheduleMatrixScrollVisuals)
+
+    return () => {
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', scheduleMatrixScrollVisuals)
+      if (matrixEdgeFrameRef.current !== null) {
+        cancelAnimationFrame(matrixEdgeFrameRef.current)
+        matrixEdgeFrameRef.current = null
+      }
+    }
+  }, [
+    chartScrollRef,
+    data,
+    matrixEdgeFrameRef,
+    matrixScrollRef,
+    scheduleMatrixScrollVisuals,
+    syncMatrixScrollVisuals,
+  ])
+
+  return null
+}
+
 export function MetagameChart({
   data,
   format,
@@ -267,6 +334,9 @@ export function MetagameChart({
   chartRef,
   controls,
   staticRender = false,
+  renderTarget = 'browser',
+  archetypeLabels,
+  matrixHeaderLabels,
 }: MetagameChartProps) {
   const chartScrollRef = useRef<HTMLDivElement>(null)
   const matrixScrollRef = useRef<HTMLDivElement>(null)
@@ -337,30 +407,6 @@ export function MetagameChart({
     })
   }, [syncMatrixScrollVisuals])
 
-  useLayoutEffect(() => {
-    const chartScroll = chartScrollRef.current
-    const matrixScroll = matrixScrollRef.current
-    if (!chartScroll || !matrixScroll) return
-
-    syncMatrixScrollVisuals()
-    const resizeObserver = typeof ResizeObserver === 'undefined'
-      ? null
-      : new ResizeObserver(scheduleMatrixScrollVisuals)
-    resizeObserver?.observe(chartScroll)
-    resizeObserver?.observe(matrixScroll)
-    if (matrixScroll.firstElementChild) resizeObserver?.observe(matrixScroll.firstElementChild)
-    window.addEventListener('resize', scheduleMatrixScrollVisuals)
-
-    return () => {
-      resizeObserver?.disconnect()
-      window.removeEventListener('resize', scheduleMatrixScrollVisuals)
-      if (matrixEdgeFrameRef.current !== null) {
-        cancelAnimationFrame(matrixEdgeFrameRef.current)
-        matrixEdgeFrameRef.current = null
-      }
-    }
-  }, [data, scheduleMatrixScrollVisuals, syncMatrixScrollVisuals])
-
   const {
     activeMatchup,
     activateMatchup,
@@ -399,7 +445,18 @@ export function MetagameChart({
   const isDimmed = (archetype: string) => Boolean(activeArchetypes && !activeArchetypes.has(archetype))
 
   return (
-    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+    <>
+      {!staticRender && (
+        <MatrixScrollEffects
+          data={data}
+          chartScrollRef={chartScrollRef}
+          matrixScrollRef={matrixScrollRef}
+          matrixEdgeFrameRef={matrixEdgeFrameRef}
+          scheduleMatrixScrollVisuals={scheduleMatrixScrollVisuals}
+          syncMatrixScrollVisuals={syncMatrixScrollVisuals}
+        />
+      )}
+      <TooltipProvider delayDuration={0} skipDelayDuration={0}>
       <section
         ref={chartRef}
         className={`metagame-chart-section${activeMatchup ? ' has-active-matchup' : ''}${staticRender ? ' is-static-render' : ''}`}
@@ -431,12 +488,14 @@ export function MetagameChart({
               <span><MetagameAxisArrow direction="up" /> Top {data.archetypes.length} Archetypes</span>
               <span>Metagame (%) <MetagameAxisArrow direction="right" /></span>
             </header>
-            {data.archetypes.map(archetype => (
+            {data.archetypes.map((archetype, index) => (
               <ShareRow
                 key={archetypeKey(archetype)}
                 archetype={archetype}
+                label={archetypeLabels?.[index] ?? archetype.archetype}
                 maximum={shareMaximum}
                 isDimmed={isDimmed(archetype.archetype)}
+                tooltipsDisabled={staticRender}
               />
             ))}
             <footer className="metagame-axis">
@@ -465,6 +524,8 @@ export function MetagameChart({
                 heatMinimum={heatMinimum}
                 heatMaximum={heatMaximum}
                 isDimmed={isDimmed(archetype.archetype)}
+                renderTarget={renderTarget}
+                tooltipsDisabled={staticRender}
               />
             ))}
             <footer className="metagame-axis">
@@ -488,7 +549,7 @@ export function MetagameChart({
                     <span
                       ref={element => { matrixHeaderLabelRefs.current[index] = element }}
                     >
-                      {archetype.archetype}
+                      {matrixHeaderLabels?.[index] ?? archetype.archetype}
                     </span>
                   </span>
                 ))}
@@ -514,6 +575,7 @@ export function MetagameChart({
                         isActive={activeMatchup?.row === archetype.archetype && activeMatchup.opponent === opponent.archetype}
                         onActivate={activateMatchup}
                         onDeactivate={deactivateMatchup}
+                        tooltipsDisabled={staticRender}
                       />
                     )))}
                   </div>
@@ -524,13 +586,14 @@ export function MetagameChart({
               <span>Dots indicate 95% CI:</span>
               <span>
                 ±5% (3 dots), ±10% (2 dots),{' '}
-                <span className="metagame-matrix-note-tail">±15% (1 dot), and ≥±20%.</span>
+                <span className="metagame-matrix-note-tail">±15% (1 dot), and more than ±20%.</span>
               </span>
             </footer>
           </section>
         </div>
       </div>
       </section>
-    </TooltipProvider>
+      </TooltipProvider>
+    </>
   )
 }

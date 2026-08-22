@@ -4,7 +4,7 @@
 **/
 
 import { useLayoutEffect, useRef, useState } from 'react'
-import { WinrateIntervalPlot } from '@videreproject/ui'
+import { WinrateIntervalPlot } from '@videreproject/ui/dashboard-visuals'
 
 interface WinrateDistribution {
   winrate: number

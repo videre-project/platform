@@ -1067,11 +1067,6 @@
   transform: none !important;
 }
 
-.metagame-chart-section.is-static-render .metagame-matrix-header > span:last-child > span {
-  width: 11ch;
-  max-width: 11ch;
-}
-
 .metagame-chart-section.is-static-render .metagame-matrix-header-scroll {
   clip-path: inset(-7rem -7rem 0 0);
 }

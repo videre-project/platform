@@ -25,6 +25,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./dashboard-visuals": {
+      "types": "./dist/components/dashboard/dashboard-visuals.d.ts",
+      "import": "./dist/components/dashboard/dashboard-visuals.js",
+      "default": "./dist/components/dashboard/dashboard-visuals.js"
+    },
     "./fixtures": {
       "types": "./dist/fixtures/index.d.ts",
       "import": "./dist/fixtures/index.js",
@@ -35,6 +40,11 @@
       "types": "./dist/tailwind-preset.d.ts",
       "import": "./dist/tailwind-preset.js",
       "default": "./dist/tailwind-preset.js"
+    },
+    "./tooltip": {
+      "types": "./dist/primitives/Tooltip.d.ts",
+      "import": "./dist/primitives/Tooltip.js",
+      "default": "./dist/primitives/Tooltip.js"
     }
   },
   "publishConfig": {
