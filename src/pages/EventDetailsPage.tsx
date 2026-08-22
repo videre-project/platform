@@ -9,7 +9,7 @@ import { Button, CardTooltipProvider, Skeleton, getDisplayCardColors, getManaSym
 
 import { Footer } from '@/components/Footer'
 import { Header, navigateTo } from '@/components/Header'
-import { useEventDetails, useEventMatches, type EventDeck, type EventStanding } from '@/hooks/useEvents'
+import { useEventDetails, useEventMatches, useSelectedDeckCardCatalog, type EventDeck, type EventStanding } from '@/hooks/useEvents'
 import { formatCalendarDate, getCalendarDate } from '@/utils/calendarDate'
 import { formatEventTitle } from '@/utils/eventFormatting'
 import './EventPages.css'
@@ -79,7 +79,7 @@ function parseDeckCards(entries: unknown[] | undefined, cardCatalog: Record<numb
       name,
       quantity: Number(match[4]),
       manaValue: card?.mana_value ?? card?.faces?.[0]?.mana_value ?? null,
-      manaCost: card?.mana_cost ?? card?.faces?.map(face => face.mana_cost).filter(Boolean).join(' // ') ?? null,
+      manaCost: card?.mana_cost || card?.faces?.map(face => face.mana_cost).filter(Boolean).join(' // ') || null,
       typeLine: card?.type_line ?? card?.faces?.[0]?.type_line ?? null,
       imageUrl: card?.image_url ?? null,
     }
@@ -282,6 +282,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
   const isLeagueEvent = data?.event?.kind.toLowerCase().includes('league') ?? false
   const matches = useEventMatches(isLeagueEvent ? null : eventId, isLeagueEvent ? null : selectedPlayer)
   const selectedDeck = data?.decks.find(deck => deck.player === selectedPlayer)
+  const selectedDeckCardCatalog = useSelectedDeckCardCatalog(selectedDeck, data?.cardCatalog)
   const selectStanding = (player: string) => {
     setSelectedPlayer(current => isMobileViewport && current === player ? null : player)
   }
@@ -574,7 +575,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
     if (!selectedPlayer || !data) return null
     return <div className="event-detail-inline-deck">
       <div className="event-detail-inline-tabs"><DetailTabs detailTab={detailTab} isLeagueEvent={isLeagueEvent} onChange={setDetailTab} /></div>
-      {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={data.cardCatalog} />}
+      {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={selectedDeckCardCatalog} />}
       {detailTab === 'matchups' && !isLeagueEvent && <MatchupsPanel matches={matches} eventRounds={data.event?.rounds ?? 0} deckColors={data.deckColors} />}
     </div>
   }
@@ -637,7 +638,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
                   <section ref={sidebarRef} className={`event-detail-section event-detail-sidebar${isLeagueEvent ? ' is-league' : ''}`}>
                     <div className="event-detail-section-heading"><div><DetailTabs detailTab={detailTab} isLeagueEvent={isLeagueEvent} onChange={setDetailTab} /></div></div>
                     {detailTab === 'matchups' && !isLeagueEvent && <MatchupsPanel matches={matches} eventRounds={data.event.rounds} deckColors={data.deckColors} />}
-                    {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={data.cardCatalog} />}
+                    {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={selectedDeckCardCatalog} />}
                     {showSidebarScrollFade && <div className="event-detail-sidebar-scroll-fade" aria-hidden="true" />}
                   </section>
                 </div>

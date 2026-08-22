@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { DatePickerWithRangeProps } from '@videreproject/ui'
 
 import { fetchSharedJSON } from './apiClient'
@@ -55,7 +55,7 @@ export interface EventDeck {
   archetype: string | null
 }
 
-interface EventCard {
+export interface EventCard {
   id: number
   oracle_id?: string
   name: string
@@ -65,6 +65,7 @@ interface EventCard {
   mana_value: number | null
   type_line: string | null
   colors: string[] | null
+  is_multiface?: boolean
   faces?: Array<{
     mana_cost: string | null
     mana_value: number | null
@@ -258,6 +259,48 @@ async function getDeckCardCatalog(decks: EventDeck[], signal: AbortSignal) {
     ])),
     cardCatalog: Object.fromEntries(cards.map(card => [card.id, card])),
   }
+}
+
+export function useSelectedDeckCardCatalog(
+  deck: EventDeck | undefined,
+  cardCatalog: Record<number, EventCard> | undefined,
+) {
+  const cardIds = useMemo(() => [...new Set([
+    ...getDeckCardIds(deck?.mainboard ?? []),
+    ...getDeckCardIds(deck?.sideboard ?? []),
+  ])].filter(id => {
+    const card = cardCatalog?.[id]
+    return card?.is_multiface === true && !card.mana_cost && !card.faces
+  }), [cardCatalog, deck])
+  const requestKey = cardIds.join(',')
+  const [details, setDetails] = useState<Record<number, EventCard>>({})
+
+  useEffect(() => {
+    if (cardIds.length === 0) {
+      setDetails({})
+      return
+    }
+
+    const controller = new AbortController()
+    void Promise.all(cardIds.map(async id => {
+      try {
+        const response = await fetchSharedJSON<APIResponse<EventCard[]>>(`${API_BASE_URL}/cards/${id}`, controller.signal)
+        return response.data[0] ?? null
+      } catch {
+        return null
+      }
+    })).then(cards => {
+      if (controller.signal.aborted) return
+      setDetails(Object.fromEntries(cards.filter((card): card is EventCard => card != null).map(card => [card.id, card])))
+    })
+
+    return () => controller.abort()
+  }, [cardIds, requestKey])
+
+  return useMemo(() => ({
+    ...cardCatalog,
+    ...Object.fromEntries(cardIds.flatMap(id => details[id] ? [[id, details[id]]] : [])),
+  }), [cardCatalog, cardIds, details])
 }
 
 export function useEventDetails(eventId: number | null) {
