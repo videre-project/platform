@@ -22,6 +22,7 @@ import { AlertCircle, ArrowRight, BookOpen, CalendarDays, Trophy, Users } from '
 import { Footer } from '@/components/Footer'
 import { Header, navigateTo } from '@/components/Header'
 import { useEvents, type EventSummary } from '@/hooks/useEvents'
+import { formatCalendarDate, getCalendarDate } from '@/utils/calendarDate'
 import { formatEventTitle } from '@/utils/eventFormatting'
 import './EventPages.css'
 
@@ -45,7 +46,7 @@ const datePresets = [7, 14, 21, 30, 90].map(days => ({
   },
 }))
 
-const formatDate = (date: string) => new Date(date).toLocaleDateString(undefined, {
+const formatDate = (date: string) => formatCalendarDate(date, {
   month: 'short',
   day: 'numeric',
   year: 'numeric',
@@ -62,7 +63,7 @@ function EventRow({ event }: { event: EventSummary }) {
         <span className="events-page-row-name">{formatEventTitle(event)}</span>
       </div>
       <div className="events-page-row-meta">
-        <time className="events-page-row-date" dateTime={event.date}>{formatDate(event.date)}</time>
+        <time className="events-page-row-date" dateTime={getCalendarDate(event.date)}>{formatDate(event.date)}</time>
         <span className="events-page-row-players"><Users size={15} />{event.players}<span className="events-page-row-meta-label"> players</span></span>
         <span className="events-page-row-rounds">{event.rounds} rounds</span>
       </div>

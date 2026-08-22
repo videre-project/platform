@@ -10,6 +10,7 @@ import { Button, CardTooltipProvider, Skeleton, getDisplayCardColors, getManaSym
 import { Footer } from '@/components/Footer'
 import { Header, navigateTo } from '@/components/Header'
 import { useEventDetails, useEventMatches, type EventDeck, type EventStanding } from '@/hooks/useEvents'
+import { formatCalendarDate, getCalendarDate } from '@/utils/calendarDate'
 import { formatEventTitle } from '@/utils/eventFormatting'
 import './EventPages.css'
 
@@ -28,7 +29,7 @@ interface DeckCard {
 const DECK_CARD_TUPLE = /^\((\d+),\s*(?:"([^"]*)"|([^,()]+)),\s*(\d+)\)$/
 
 function formatDate(date: string) {
-  return new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
+  return formatCalendarDate(date, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 function formatMatchRound(round: number, swissRounds: number) {
@@ -597,7 +598,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
                 <div>
                   <h1>{formatEventTitle(data.event)}</h1>
                   <p ref={eventMetaRef} className={isEventMetaWrapped ? 'is-wrapped' : undefined}>
-                    <span className="event-detail-meta-item event-detail-meta-date"><CalendarDays size={15} /><time dateTime={data.event.date}>{formatDate(data.event.date)}</time></span>
+                    <span className="event-detail-meta-item event-detail-meta-date"><CalendarDays size={15} /><time dateTime={getCalendarDate(data.event.date)}>{formatDate(data.event.date)}</time></span>
                     <span className="event-detail-meta-separator" aria-hidden="true">·</span>
                     <span className="event-detail-meta-item event-detail-meta-players"><Users size={15} />{data.event.players} players</span>
                     <span className="event-detail-meta-separator" aria-hidden="true">·</span>

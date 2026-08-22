@@ -3,6 +3,8 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
+import { getCalendarDate } from './calendarDate'
+
 interface EventTitleParts {
   id: number
   name: string
@@ -11,9 +13,7 @@ interface EventTitleParts {
 }
 
 function formatLeagueTitleDate(date: string) {
-  const value = new Date(date)
-  const pad = (part: number) => String(part).padStart(2, '0')
-  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`
+  return getCalendarDate(date)
 }
 
 export function formatEventTitle(event: EventTitleParts) {
