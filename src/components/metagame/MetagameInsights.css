@@ -710,43 +710,93 @@
     padding-top: 1.25rem;
     border-top: 1px solid hsl(var(--border) / 0.7);
   }
-}
 
-@media (max-width: 560px) {
-  .metagame-movers {
-    gap: 2.25rem;
-    margin-top: 2.25rem;
+  .metagame-card-mover-list {
+    position: relative;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-left: 9rem;
   }
 
-  .metagame-mover-row,
+  .metagame-card-mover-list.has-right-overflow {
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+  }
+
+  .metagame-card-mover-list h3,
+  .metagame-card-mover-row,
+  .metagame-card-mover-axes {
+    box-sizing: border-box;
+    width: max-content;
+    min-width: 100%;
+    grid-template-columns: 9rem 11rem 9rem;
+    gap: 0.75rem;
+    padding-right: 0.25rem;
+    padding-left: 0;
+  }
+
+  .metagame-card-mover-list h3 > .metagame-mover-list-title,
+  .metagame-card-mover-row > .metagame-mover-main,
+  .metagame-card-mover-axes > span:first-child {
+    position: sticky;
+    z-index: 4;
+    left: 0;
+    min-width: 0;
+    padding-left: 0.25rem;
+    background: hsl(var(--background));
+  }
+
+  .metagame-card-mover-list h3 > .metagame-mover-list-title::after,
+  .metagame-card-mover-row > .metagame-mover-main::after,
+  .metagame-card-mover-axes > span:first-child::after {
+    position: absolute;
+    top: 0;
+    right: -1.5rem;
+    bottom: 0;
+    width: 1.5rem;
+    background: linear-gradient(to right, hsl(var(--background)), transparent);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .metagame-card-mover-list.has-left-overflow h3 > .metagame-mover-list-title::after,
+  .metagame-card-mover-list.has-left-overflow .metagame-card-mover-row > .metagame-mover-main::after,
+  .metagame-card-mover-list.has-left-overflow .metagame-card-mover-axes > span:first-child::after {
+    opacity: 1;
+  }
+
+  .metagame-card-mover-list h3 > .metagame-mover-list-title {
+    grid-column: auto;
+    align-self: stretch;
+    align-items: center;
+  }
+
   .metagame-card-mover-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.65rem;
+    min-height: 2.6rem;
+  }
+
+  .metagame-card-mover-row > .metagame-mover-main {
+    align-self: stretch;
+    align-content: center;
   }
 
   .metagame-card-mover-bar {
-    grid-column: 1 / -1;
-  }
-
-  .metagame-card-mover-list h3 {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .metagame-mover-list-title {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .metagame-card-mover-bar .metagame-difference-track {
     width: 100%;
   }
 
-  .metagame-mover-meta {
-    grid-column: 1 / -1;
-    display: block;
-    text-align: left;
+  .metagame-card-mover-axes > span:first-child {
+    align-self: stretch;
   }
+}
 
-  .metagame-mover-meta span {
-    margin-left: 0.5rem;
+@media (max-width: 560px) {
+  .metagame-movers {
+    gap: 2.25rem;
+    margin-top: 2.25rem;
   }
 }
