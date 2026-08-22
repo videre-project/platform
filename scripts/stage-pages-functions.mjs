@@ -19,7 +19,7 @@ await writeFile(
 )
 await writeFile(
   path.join(functionsRoot, 'og', 'metagame.png.ts'),
-  "export { onRequestGet, onRequestHead } from '../../src/functions/og/metagame.png'\n",
+  "export { onRequestGet } from '../../src/functions/og/metagame.png'\n",
 )
 
 console.log('Staged Pages Function entrypoints in /functions')

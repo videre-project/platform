@@ -12,7 +12,6 @@ import {
   readMetagameShareParameters,
 } from '../src/utils/metagameShareParameters.ts'
 import { getSecondsUntilNextMetagameRefresh } from '../src/utils/metagameCacheSchedule.ts'
-import { onRequestHead } from '../src/functions/og/metagame.png.ts'
 
 const date = (year, month, day) => new Date(year, month - 1, day)
 
@@ -63,17 +62,4 @@ test('aligns metagame image expiry with the MTGOBot reset schedule', () => {
 
   assert.equal(getSecondsUntilNextMetagameRefresh(beforeReset), 30)
   assert.equal(getSecondsUntilNextMetagameRefresh(afterReset), 7_170)
-})
-
-test('serves metagame image metadata for HEAD without a response body', async () => {
-  const response = onRequestHead()
-
-  assert.equal(response.status, 200)
-  assert.equal(response.headers.get('content-type'), 'image/png')
-  assert.equal(response.headers.get('content-disposition'), 'inline; filename="metagame.png"')
-  assert.match(
-    response.headers.get('cache-control'),
-    /^public, max-age=\d+, s-maxage=\d+$/,
-  )
-  assert.equal(await response.text(), '')
 })

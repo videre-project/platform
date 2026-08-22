@@ -26,23 +26,6 @@ interface MetagameImageContext {
   waitUntil(promise: Promise<unknown>): void
 }
 
-function metagameImageHeaders(cacheSeconds: number) {
-  return {
-    'Cache-Control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
-    'Content-Disposition': 'inline; filename="metagame.png"',
-    'Content-Type': 'image/png',
-  }
-}
-
-export function onRequestHead(): Response {
-  const cacheSeconds = getSecondsUntilNextMetagameRefresh()
-
-  return new Response(null, {
-    status: 200,
-    headers: metagameImageHeaders(cacheSeconds),
-  })
-}
-
 async function fallbackImage(
   requestUrl: URL,
   env: MetagameImageContext['env'],
@@ -106,9 +89,9 @@ export async function onRequestGet({
       status: 200,
       headers: screenshot.headers,
     })
-    for (const [name, value] of Object.entries(metagameImageHeaders(cacheSeconds))) {
-      response.headers.set(name, value)
-    }
+    response.headers.set('Content-Type', 'image/png')
+    response.headers.set('Cache-Control', `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`)
+    response.headers.set('Content-Disposition', 'inline; filename="metagame.png"')
     waitUntil(caches.default.put(cacheKey, response.clone()))
     return response
   } catch {
