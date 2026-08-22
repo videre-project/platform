@@ -15,7 +15,6 @@ import {
 } from '@/db/validators';
 import {
   buildListResponse,
-  Error,
   getListLimit,
   getListOffset,
   getProbePagination
@@ -56,10 +55,6 @@ export default Router({ base: '/events' })
         OFFSET ${offset}
       `;
       const data = rows.slice(0, limit);
-
-      if (!data.length) {
-        return Error(400, 'No results found.', buildListResponse(params, data, null, start));
-      }
 
       return buildListResponse(
         params,
