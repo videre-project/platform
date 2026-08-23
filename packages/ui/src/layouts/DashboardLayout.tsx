@@ -172,6 +172,7 @@ export function DashboardLayout({
   artUrls,
   renderDeckLink,
   onDeckClick,
+  onMetagameDeckClick,
   renderViewMoreDecks,
   onViewMoreDecks,
   renderSearchMoreMetagameDecks,
@@ -887,6 +888,7 @@ export function DashboardLayout({
         decks={metagameDecks}
         loading={metagameDecksLoading}
         error={metagameDecksError}
+        onDeckClick={onMetagameDeckClick}
         renderSearchMore={renderSearchMoreMetagameDecks}
       />
     </div>

@@ -202,7 +202,7 @@ export function DeckGalleryTile({
     <button
       type="button"
       onClick={() => onDeckClick?.(deck.revisionId, deck)}
-      className="group/editor block min-w-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+      className="group/editor block w-full min-w-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       aria-label={`Open ${deck.name} in deck editor`}
     >
       {content}

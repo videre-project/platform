@@ -17,6 +17,7 @@ export interface MetagameDeckCarouselProps {
   decks: DeckGalleryItem[]
   loading?: boolean
   error?: string | null
+  onDeckClick?: (deckRevisionId: number, deck: DeckGalleryItem) => void
   renderSearchMore?: (props: { children: ReactNode }) => ReactNode
 }
 
@@ -37,6 +38,7 @@ export function MetagameDeckCarousel({
   decks,
   loading = false,
   error = null,
+  onDeckClick,
   renderSearchMore,
 }: MetagameDeckCarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -139,7 +141,7 @@ export function MetagameDeckCarousel({
         <div className="relative">
           <div
             ref={scrollerRef}
-            className="grid snap-x snap-mandatory auto-cols-[max(15rem,calc(20%_-_0.8rem))] grid-flow-col gap-4 overflow-x-auto overscroll-x-contain pb-3"
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-3"
             role="list"
             aria-label="Top metagame decks"
             tabIndex={0}
@@ -148,7 +150,7 @@ export function MetagameDeckCarousel({
           >
             {loading
               ? Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="snap-start" role="listitem">
+                  <div key={index} className="min-w-0 flex-[1_0_max(15rem,calc(20%_-_0.8rem))] snap-start" role="listitem">
                     <MetagameDeckSkeleton />
                   </div>
                 ))
@@ -157,14 +159,14 @@ export function MetagameDeckCarousel({
                     {decks.map(deck => (
                       <div
                         key={`${deck.format}-${deck.name}-${deck.revisionId}`}
-                        className="min-w-0 snap-start"
+                        className="min-w-0 flex-[1_0_max(15rem,calc(20%_-_0.8rem))] snap-start"
                         role="listitem"
                       >
-                        <DeckGalleryTile deck={deck} />
+                        <DeckGalleryTile deck={deck} onDeckClick={onDeckClick} />
                       </div>
                     ))}
                     {renderSearchMore && decks.length > 0 ? (
-                      <div className="min-w-0 snap-start" role="listitem">
+                      <div className="min-w-0 flex-[1_0_max(15rem,calc(20%_-_0.8rem))] snap-start" role="listitem">
                         {renderSearchMore({
                           children: (
                             <div className="flex h-full min-h-[15rem] flex-col items-center justify-center rounded-lg border border-dashed border-sidebar-border/80 bg-card/45 px-6 text-center transition-colors hover:border-primary/50 hover:bg-card">

@@ -86,6 +86,9 @@ export type DashboardLayoutProps = {
   renderDeckLink?: (props: { deckName: string; children: ReactNode }) => ReactNode
   onDeckClick?: (deckName: string) => void
 
+  /** Host callback for opening a metagame deck preview from the dashboard carousel. */
+  onMetagameDeckClick?: (deckRevisionId: number, deck: DeckGalleryItem) => void
+
   /**
    * Host navigation for "View More Decks" (e.g. `<Link to="/decks">{children}</Link>`).
    * Falls back to onViewMoreDecks as a button click, or a non-navigating Button.
