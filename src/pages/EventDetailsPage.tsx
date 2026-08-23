@@ -494,6 +494,10 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
         const width = right - left
         const isVisible = rect.bottom > 0 && rect.top < window.innerHeight && width > 0
         const hasOverflow = wrapper.scrollWidth > wrapper.clientWidth + 1
+        setDesktopTableEdgeFade({
+          left: wrapper.scrollLeft > 1,
+          right: wrapper.scrollLeft + wrapper.clientWidth < wrapper.scrollWidth - 1,
+        })
 
         scrollbar.style.display = isVisible && hasOverflow ? 'block' : 'none'
         if (!isVisible || !hasOverflow) return
@@ -515,6 +519,23 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
       window.removeEventListener('resize', updateTableScrollbar)
     }
   }, [data?.event?.id, data?.standings.length, isMobileViewport])
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setMobileTableEdgeFade({ left: false, right: false })
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const source = mobileTableScrollRefs.current[0]
+      if (!source) return
+      setMobileTableEdgeFade({
+        left: source.scrollLeft > 1,
+        right: source.scrollLeft + source.clientWidth < source.scrollWidth - 1,
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [data?.event?.id, data?.standings.length, isMobileViewport, selectedPlayer])
 
   useEffect(() => {
     const pageMain = pageMainRef.current
@@ -608,14 +629,23 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
   const syncMobileTableScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const source = event.currentTarget
     const left = source.scrollLeft
+    setMobileTableEdgeFade({
+      left: left > 1,
+      right: left + source.clientWidth < source.scrollWidth - 1,
+    })
     mobileTableScrollRefs.current.forEach(target => {
       if (target && target !== source && target.scrollLeft !== left) target.scrollLeft = left
     })
   }
 
   const syncDesktopTableScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    desktopTableScrollRef.current?.style.setProperty('--event-detail-table-scroll-left', `${event.currentTarget.scrollLeft}px`)
-    if (desktopTableWheelFrameRef.current == null) desktopTableWheelTargetRef.current = event.currentTarget.scrollLeft
+    const source = event.currentTarget
+    desktopTableScrollRef.current?.style.setProperty('--event-detail-table-scroll-left', `${source.scrollLeft}px`)
+    setDesktopTableEdgeFade({
+      left: source.scrollLeft > 1,
+      right: source.scrollLeft + source.clientWidth < source.scrollWidth - 1,
+    })
+    if (desktopTableWheelFrameRef.current == null) desktopTableWheelTargetRef.current = source.scrollLeft
   }
 
   const beginDesktopTableScrollbarDrag = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -694,7 +724,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
 
   const renderMobileStandingTable = (rows: EventStanding[], includeHeader: boolean, scrollIndex: number) =>
     <div
-      className="event-detail-mobile-table-scroll"
+      className={`event-detail-mobile-table-scroll${mobileTableEdgeFade.left ? ' has-left-overflow' : ''}${mobileTableEdgeFade.right ? ' has-right-overflow' : ''}`}
       ref={element => {
         if (element) mobileTableScrollRefs.current[scrollIndex] = element
       }}
@@ -763,7 +793,12 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
                     >
                       <div className="event-detail-table-scrollbar-content" />
                     </div>}
-                    <div className="event-detail-table-wrap" ref={desktopTableScrollRef} onWheel={scrollDesktopTableWithWheel}>
+                    <div
+                      className={`event-detail-table-wrap${desktopTableEdgeFade.left ? ' has-left-overflow' : ''}${desktopTableEdgeFade.right ? ' has-right-overflow' : ''}`}
+                      ref={desktopTableScrollRef}
+                      onScroll={syncDesktopTableScroll}
+                      onWheel={scrollDesktopTableWithWheel}
+                    >
                       <table className={`event-detail-table${isLeagueEvent ? ' is-decklists' : ''}`}><thead><tr>{!isLeagueEvent && <th>#</th>}<th>Player</th><th>Archetype</th><th>Record</th>{!isLeagueEvent && <><th>Points</th><th>OMW%</th><th>GW%</th></>}</tr></thead><tbody>{data.standings.map(renderStandingRow)}</tbody></table>
                     </div>
                   </>}

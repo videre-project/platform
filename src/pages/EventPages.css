@@ -173,7 +173,37 @@
 .event-detail-section-heading > div > svg { flex: none; align-self: center; }
 .event-detail-section-heading h2 { margin: 0; color: hsl(var(--foreground)); font-size: 1.05rem; font-weight: 650; letter-spacing: -0.01em; }
 .event-detail-section-heading > span { color: hsl(var(--muted-foreground)); font-size: 0.78rem; }
+.event-detail-table-wrap,
+.event-detail-mobile-table-scroll { position: relative; }
 .event-detail-table-wrap { overflow: visible; border-bottom: 1px solid hsl(var(--sidebar-border) / 0.65); }
+.event-detail-table-wrap::before,
+.event-detail-table-wrap::after,
+.event-detail-mobile-table-scroll::before,
+.event-detail-mobile-table-scroll::after {
+  pointer-events: none;
+  position: absolute;
+  z-index: 11;
+  top: 0;
+  bottom: 0.45rem;
+  width: 1.5rem;
+  content: '';
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.event-detail-table-wrap::before,
+.event-detail-mobile-table-scroll::before {
+  left: 0;
+  background: linear-gradient(to right, hsl(var(--background)), transparent);
+}
+.event-detail-table-wrap::after,
+.event-detail-mobile-table-scroll::after {
+  right: 0;
+  background: linear-gradient(to left, hsl(var(--background)), transparent);
+}
+.event-detail-table-wrap.has-left-overflow::before,
+.event-detail-table-wrap.has-right-overflow::after,
+.event-detail-mobile-table-scroll.has-left-overflow::before,
+.event-detail-mobile-table-scroll.has-right-overflow::after { opacity: 1; }
 .event-detail-table-wrap {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
