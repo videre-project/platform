@@ -28,6 +28,7 @@ import {
 import { Clock, Dices, Trophy } from 'lucide-react'
 
 import { DashboardFilters } from '../components/dashboard/DashboardFilters'
+import { MetagameDeckCarousel } from '../components/dashboard/MetagameDeckCarousel'
 import {
   DensityLayer,
   NoDataState,
@@ -164,12 +165,16 @@ export function DashboardLayout({
   trend = [],
   archetypes = [],
   archetypesLoading = false,
+  metagameDecks = [],
+  metagameDecksLoading = false,
+  metagameDecksError = null,
   getArtUrl,
   artUrls,
   renderDeckLink,
   onDeckClick,
   renderViewMoreDecks,
   onViewMoreDecks,
+  renderSearchMoreMetagameDecks,
   className,
 }: DashboardLayoutProps) {
   const [chartTimeRange, setChartTimeRange] = useState('14D')
@@ -878,6 +883,12 @@ export function DashboardLayout({
           </CardContent>
         </Card>
       </div>
+      <MetagameDeckCarousel
+        decks={metagameDecks}
+        loading={metagameDecksLoading}
+        error={metagameDecksError}
+        renderSearchMore={renderSearchMoreMetagameDecks}
+      />
     </div>
   )
 }

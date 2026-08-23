@@ -10,6 +10,7 @@ import type { DateRange } from 'react-day-picker'
 
 import {
   DASHBOARD_SHOWCASE_ARCHETYPES,
+  DASHBOARD_SHOWCASE_METAGAME_DECKS,
   DASHBOARD_SHOWCASE_STATS,
   DASHBOARD_SHOWCASE_TREND,
   SHOWCASE_FORMATS,
@@ -56,6 +57,11 @@ function DashboardHarness() {
       trend={DASHBOARD_SHOWCASE_TREND}
       archetypes={DASHBOARD_SHOWCASE_ARCHETYPES}
       archetypesLoading={false}
+      metagameDecks={DASHBOARD_SHOWCASE_METAGAME_DECKS}
+      metagameDecksLoading={false}
+      renderSearchMoreMetagameDecks={({ children }) => (
+        <a href="/metagame" onClick={event => event.preventDefault()}>{children}</a>
+      )}
       getArtUrl={() => backfaceUrl}
       onViewMoreDecks={fn()}
     />
@@ -65,6 +71,12 @@ function DashboardHarness() {
 export const Default: Story = {
   render: () => <DashboardHarness />,
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Overall Winrate')).toBeVisible()
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Overall Winrate')).toBeVisible()
+    await expect(canvas.getByText('Top Metagame Decks')).toBeVisible()
+    await expect(canvas.getByText('Search more decks')).toBeInTheDocument()
+    await expect(canvas.getByRole('list', { name: 'Top metagame decks' })).toBeVisible()
+    await expect(canvasElement.querySelector('[data-metagame-edge="left"]')).toHaveAttribute('data-visible', 'false')
+    await expect(canvasElement.querySelector('[data-metagame-edge="right"]')).toHaveAttribute('data-visible', 'true')
   },
 }

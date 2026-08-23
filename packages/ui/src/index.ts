@@ -183,6 +183,7 @@ export { getProductImageUrl } from './utils/videre-cdn'
 export {
   WinrateIntervalPlot,
 } from './components/dashboard/dashboard-visuals'
+export { DashboardFilters } from './components/dashboard/DashboardFilters'
 export type {
   WinrateConfidenceInterval,
   WinrateIntervalPlotProps,

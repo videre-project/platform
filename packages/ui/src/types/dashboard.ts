@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import type { DateRange } from 'react-day-picker'
 
 import type { GameType } from '../components/filters/GameTypeFormatFilter'
+import type { DeckGalleryItem } from './decks'
 
 export type DashboardGameType = GameType
 
@@ -65,6 +66,11 @@ export type DashboardLayoutProps = {
   archetypes?: DashboardArchetype[]
   archetypesLoading?: boolean
 
+  // Public metagame deck previews (host-fetched using the active filters)
+  metagameDecks?: DeckGalleryItem[]
+  metagameDecksLoading?: boolean
+  metagameDecksError?: string | null
+
   /**
    * Resolve a card art URL for scatter points and list thumbnails.
    * Prefer this over artUrls when URLs are loaded asynchronously.
@@ -86,6 +92,9 @@ export type DashboardLayoutProps = {
    */
   renderViewMoreDecks?: (props: { children: ReactNode }) => ReactNode
   onViewMoreDecks?: () => void
+
+  /** Optional host link for the full metagame deck search surface. */
+  renderSearchMoreMetagameDecks?: (props: { children: ReactNode }) => ReactNode
 
   className?: string
 }

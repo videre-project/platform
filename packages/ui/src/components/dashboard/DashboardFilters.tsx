@@ -3,6 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
+import type { ReactNode } from 'react'
 import type { DateRange } from 'react-day-picker'
 
 import { DatePickerWithRange } from '../date/DatePickerWithRange'
@@ -47,6 +48,8 @@ export type DashboardFiltersProps = {
   onFormatChange: (value: string) => void
   dateRange?: DateRange
   onDateRangeChange: (range: DateRange | undefined) => void
+  /** Optional content rendered between the format filters and date picker. */
+  middleContent?: ReactNode
 }
 
 export function DashboardFilters({
@@ -57,9 +60,10 @@ export function DashboardFilters({
   onFormatChange,
   dateRange,
   onDateRangeChange,
+  middleContent,
 }: DashboardFiltersProps) {
   return (
-    <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-center">
       <GameTypeFormatFilter
         gameType={gameType}
         onGameTypeChange={onGameTypeChange}
@@ -68,11 +72,13 @@ export function DashboardFilters({
         onFormatChange={onFormatChange}
       />
 
+      {middleContent ? <div className="min-w-0 flex-1">{middleContent}</div> : null}
+
       <DatePickerWithRange
         date={dateRange}
         setDate={onDateRangeChange}
         size="sm"
-        className="justify-start border-dashed border-sidebar-border/60 text-left font-normal"
+        className="ml-auto justify-start border-dashed border-sidebar-border/60 text-left font-normal"
         presets={datePresets}
       />
     </div>
