@@ -251,6 +251,7 @@ export function DeckBuildSidePane({
   onSearchQueryChange,
   cardFilters: controlledFilters,
   onCardFiltersChange,
+  lockedContent,
   className,
 }: DeckBuildSidePaneProps) {
   const [cardSearch, setCardSearch] = useState('')
@@ -610,6 +611,12 @@ export function DeckBuildSidePane({
           ) : null}
         </div>
       </aside>
+
+      {lockedContent ? (
+        <div className="absolute inset-0 z-40 flex items-center justify-center rounded-lg border border-sidebar-border/60 bg-background/80 p-5 text-center backdrop-blur-sm">
+          {lockedContent}
+        </div>
+      ) : null}
 
       <div
         ref={filterPanelRef}

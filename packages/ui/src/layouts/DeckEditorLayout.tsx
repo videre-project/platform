@@ -23,6 +23,7 @@ import {
   Settings2,
   Tags,
   Upload,
+  X,
 } from 'lucide-react'
 
 import { DeckBoard } from '../components/decks/DeckBoard'
@@ -201,6 +202,7 @@ export function DeckEditorLayout({
   cardFilters,
   onCardFiltersChange,
   onBack,
+  onClose,
   onCopyList,
   onExportList,
   canExport = false,
@@ -210,6 +212,7 @@ export function DeckEditorLayout({
   onArchetypeChange,
   archetypeSaving,
   archetypeError,
+  sidePanelLockedContent,
   headerContext,
   className,
 }: DeckEditorLayoutProps) {
@@ -347,21 +350,34 @@ export function DeckEditorLayout({
         <Upload className="h-4 w-4" />
         Import
       </Button>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => handleToolsCollapsedChange(!isDeckToolsCollapsed)}
-        className={cn(
-          'h-8 w-8 shrink-0 border-sidebar-border/70 bg-background/70',
-          !isDeckToolsCollapsed &&
-            'bg-secondary/70 text-secondary-foreground hover:bg-secondary/80',
-        )}
-        aria-label={isDeckToolsCollapsed ? 'Show deck tools' : 'Hide deck tools'}
-        title={isDeckToolsCollapsed ? 'Show deck tools' : 'Hide deck tools'}
-        aria-pressed={!isDeckToolsCollapsed}
-      >
-        <Settings2 className="h-4 w-4" />
-      </Button>
+      {onClose ? (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onClose}
+          className="h-8 w-8 shrink-0 border-sidebar-border/70 bg-background/70"
+          aria-label="Close deck preview"
+          title="Close deck preview"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handleToolsCollapsedChange(!isDeckToolsCollapsed)}
+          className={cn(
+            'h-8 w-8 shrink-0 border-sidebar-border/70 bg-background/70',
+            !isDeckToolsCollapsed &&
+              'bg-secondary/70 text-secondary-foreground hover:bg-secondary/80',
+          )}
+          aria-label={isDeckToolsCollapsed ? 'Show deck tools' : 'Hide deck tools'}
+          title={isDeckToolsCollapsed ? 'Show deck tools' : 'Hide deck tools'}
+          aria-pressed={!isDeckToolsCollapsed}
+        >
+          <Settings2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   )
 
@@ -507,6 +523,7 @@ export function DeckEditorLayout({
           onSearchQueryChange={onSearchQueryChange}
           cardFilters={cardFilters}
           onCardFiltersChange={onCardFiltersChange}
+          lockedContent={sidePanelLockedContent}
         />
       </div>
     </div>

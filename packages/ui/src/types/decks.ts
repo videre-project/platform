@@ -225,6 +225,8 @@ export interface DeckBuildSidePaneProps {
   /** Optional controlled filter state; when omitted the pane owns filters. */
   cardFilters?: CardFilterState
   onCardFiltersChange?: (filters: CardFilterState) => void
+  /** Optional overlay that blocks the tools pane while preserving its preview chrome. */
+  lockedContent?: ReactNode
   className?: string
 }
 
@@ -275,6 +277,8 @@ export interface DeckEditorLayoutProps {
 
   // Header actions (host owns clipboard / download / mutations)
   onBack?: () => void
+  /** Replaces the tools toggle with a close action for modal editor previews. */
+  onClose?: () => void
   onCopyList?: () => void
   onExportList?: () => void
   canExport?: boolean
@@ -284,6 +288,8 @@ export interface DeckEditorLayoutProps {
   onArchetypeChange?: (archetype: string) => void | Promise<void>
   archetypeSaving?: boolean
   archetypeError?: string | null
+  /** Optional overlay that blocks the editor tools pane until the host unlocks it. */
+  sidePanelLockedContent?: ReactNode
 
   /** Optional slot for breadcrumb / header context (host owns portals). */
   headerContext?: ReactNode
