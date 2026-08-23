@@ -1,6 +1,6 @@
 {
   "name": "@videreproject/ui",
-  "version": "0.0.0-development",
+  "version": "0.5.1",
   "type": "module",
   "description": "Reusable Videre interface components, layouts, themes, and card-media contracts.",
   "license": "Apache-2.0",

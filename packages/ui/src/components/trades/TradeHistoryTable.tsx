@@ -125,21 +125,21 @@ export function TradeHistoryTable({
   onLoadMore,
 }: TradeHistoryTableProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md bg-muted/10">
-      <div className="min-h-0 flex-1 overflow-hidden">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md bg-muted/10">
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         {loading && trades.length === 0 ? <HistoryListSkeleton /> : trades.length === 0 ? (
           <div className="flex h-full min-h-40 items-center justify-center px-4 text-sm text-muted-foreground">
             No trade escrows have been recorded yet.
           </div>
         ) : (
-          <Table wrapperClassName="overflow-x-hidden">
+          <Table className="table-fixed min-w-0" wrapperClassName="min-w-0 overflow-x-hidden">
             <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead>Trade</TableHead>
-                <TableHead>Started</TableHead>
-                <TableHead>Given</TableHead>
-                <TableHead>Received</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="w-[9.5rem]">Started</TableHead>
+                <TableHead className="w-[4rem]">Given</TableHead>
+                <TableHead className="w-[5rem]">Received</TableHead>
+                <TableHead className="w-[5rem]">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
