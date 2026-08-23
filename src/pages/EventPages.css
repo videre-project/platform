@@ -294,6 +294,9 @@
 .event-detail-decklist { overflow: visible; overflow-anchor: none; border-top: 1px solid hsl(var(--sidebar-border) / 0.65); border-bottom: 1px solid hsl(var(--sidebar-border) / 0.65); }
 .event-detail-sidebar:not(.is-decklist-stuck) .event-detail-decklist { min-height: 0; }
 .event-detail-sidebar.is-decklist-stuck .event-detail-decklist { min-height: 0; overflow-y: auto; }
+.event-detail-decklist-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.35rem 0; }
+.event-detail-decklist-heading .event-detail-deck-board-heading { min-width: 0; padding: 0; }
+.event-detail-view-deck { flex: 0 0 auto; height: 1.75rem; gap: 0.35rem; padding: 0 0.55rem; font-size: 0.72rem; }
 .event-detail-deck-board + .event-detail-deck-board { border-top: 1px solid hsl(var(--sidebar-border) / 0.65); }
 .event-detail-deck-board-heading { padding: 0.75rem 0 0.45rem; color: hsl(var(--foreground)); font-size: 0.8rem; font-weight: 650; }
 .event-detail-deck-group h3.event-detail-deck-board-heading { padding: 0.75rem 0 0.45rem; font-size: 0.8rem; }

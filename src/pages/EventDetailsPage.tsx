@@ -3,15 +3,16 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ArrowLeft, ReplaceAll, BookOpen, CalendarDays, Check, ListOrdered, Minus, Swords, Trophy, Users, X } from 'lucide-react'
-import { Button, CardTooltipProvider, Skeleton, getDisplayCardColors, getManaSymbolSvgPath, useCardTooltipHover } from '@videreproject/ui'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, ReplaceAll, BookOpen, CalendarDays, Check, Eye, ListOrdered, LockKeyhole, Minus, Swords, Trophy, Users, X } from 'lucide-react'
+import { Button, CardTooltipProvider, DeckEditorVignette, Skeleton, getDisplayCardColors, getManaSymbolSvgPath, useCardTooltipHover, type DeckEditorCard } from '@videreproject/ui'
 
 import { Footer } from '@/components/Footer'
 import { Header, navigateTo } from '@/components/Header'
-import { useEventDetails, useEventMatches, useSelectedDeckCardCatalog, type EventDeck, type EventStanding } from '@/hooks/useEvents'
+import { useEventDetails, useEventMatches, useSelectedDeckCardCatalog, type EventCard, type EventDeck, type EventStanding } from '@/hooks/useEvents'
 import { formatCalendarDate, getCalendarDate } from '@/utils/calendarDate'
 import { formatEventTitle } from '@/utils/eventFormatting'
+import { openTrackerDeckImport } from '@/utils/trackerImport'
 import './EventPages.css'
 
 type DetailTab = 'matchups' | 'decklist' | 'sideboarding'
@@ -91,6 +92,51 @@ function parseDeckCards(entries: unknown[] | undefined, cardCatalog: Record<numb
   }
 
   return [...cards.values()]
+}
+
+function toEditorCards(deck: EventDeck | undefined, cardCatalog: Record<number, EventCard>): DeckEditorCard[] {
+  if (!deck) return []
+
+  const mainboard = parseDeckCards(deck.mainboard, cardCatalog)
+  const sideboard = parseDeckCards(deck.sideboard, cardCatalog)
+  return [
+    ...mainboard.map(card => ({ card, zone: 'Mainboard' as const })),
+    ...sideboard.map(card => ({ card, zone: 'Sideboard' as const })),
+  ].map(({ card, zone }, index) => {
+    const metadata = cardCatalog[card.id]
+    const typeLine = card.typeLine ?? ''
+    return {
+      index,
+      originalIndex: index,
+      catalogId: card.id,
+      name: card.name,
+      quantity: card.quantity,
+      cmc: card.manaValue ?? 0,
+      colors: metadata?.colors ?? [],
+      types: typeLine.split('—', 1)[0].trim().split(/\s+/).filter(Boolean),
+      rarity: 'common',
+      zone,
+      imageUrl: card.imageUrl,
+    }
+  })
+}
+
+function buildDeckListText(cards: DeckEditorCard[]) {
+  const buildSection = (zone: DeckEditorCard['zone']) => cards
+    .filter(card => card.zone === zone)
+    .map(card => `${card.quantity} ${card.name}`)
+  const mainboard = buildSection('Mainboard')
+  const sideboard = buildSection('Sideboard')
+  return sideboard.length > 0 ? [...mainboard, '', ...sideboard].join('\n') : mainboard.join('\n')
+}
+
+function getDeckFileName(deckName: string) {
+  const stem = deckName
+    .trim()
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+  return `${stem || 'deck'}.txt`
 }
 
 const DECK_CARD_GROUPS: Array<{ label: string; icon: string; type: string }> = [
@@ -266,6 +312,10 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
   const { data, loading, error } = useEventDetails(eventId)
   const [isMobileViewport, setIsMobileViewport] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 879px)').matches)
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
+  const [showDeckPreview, setShowDeckPreview] = useState(false)
+  const [copiedDeckList, setCopiedDeckList] = useState(false)
+  const [desktopTableEdgeFade, setDesktopTableEdgeFade] = useState({ left: false, right: false })
+  const [mobileTableEdgeFade, setMobileTableEdgeFade] = useState({ left: false, right: false })
   const [detailTab, setDetailTab] = useState<DetailTab>('decklist')
   const [showSidebarScrollFade, setShowSidebarScrollFade] = useState(false)
   const [isEventMetaWrapped, setIsEventMetaWrapped] = useState(false)
@@ -283,6 +333,14 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
   const matches = useEventMatches(isLeagueEvent ? null : eventId, isLeagueEvent ? null : selectedPlayer)
   const selectedDeck = data?.decks.find(deck => deck.player === selectedPlayer)
   const selectedDeckCardCatalog = useSelectedDeckCardCatalog(selectedDeck, data?.cardCatalog)
+  const selectedEditorCards = useMemo(
+    () => toEditorCards(selectedDeck, selectedDeckCardCatalog),
+    [selectedDeck, selectedDeckCardCatalog],
+  )
+  const selectedStanding = data?.standings.find(standing => standing.player === selectedPlayer)
+  const deckListText = useMemo(() => buildDeckListText(selectedEditorCards), [selectedEditorCards])
+  const canExportDeckList = selectedEditorCards.length > 0
+  const selectedDeckName = selectedDeck?.deck_name || selectedDeck?.player || 'Event deck'
   const selectStanding = (player: string) => {
     setSelectedPlayer(current => isMobileViewport && current === player ? null : player)
   }
@@ -312,6 +370,83 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
   useEffect(() => {
     setDetailTab('decklist')
   }, [isLeagueEvent])
+
+  useEffect(() => {
+    setShowDeckPreview(false)
+    setCopiedDeckList(false)
+  }, [selectedPlayer])
+
+  const copyDeckList = useCallback(async () => {
+    if (!canExportDeckList) return
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(deckListText)
+      } else {
+        throw new Error('Clipboard API unavailable')
+      }
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = deckListText
+      textarea.setAttribute('readonly', '')
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.append(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      textarea.remove()
+    }
+
+    setCopiedDeckList(true)
+    window.setTimeout(() => setCopiedDeckList(false), 1600)
+  }, [canExportDeckList, deckListText])
+
+  const downloadDeckList = useCallback(() => {
+    if (!canExportDeckList) return
+
+    const blob = new Blob([deckListText], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = getDeckFileName(selectedDeckName)
+    document.body.append(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }, [canExportDeckList, deckListText, selectedDeckName])
+
+  const importDeckToTracker = useCallback(() => {
+    if (!data?.event || selectedEditorCards.length === 0) return
+
+    openTrackerDeckImport({
+      name: selectedDeckName,
+      format: data.event.format,
+      archetype: selectedStanding?.archetype || selectedDeck?.archetype || undefined,
+      mainboard: selectedEditorCards
+        .filter(card => card.zone === 'Mainboard')
+        .map(({ catalogId, name, quantity, cmc, colors, types, rarity }) => ({
+          catalogId,
+          name,
+          quantity,
+          cmc,
+          colors: [...colors],
+          types: [...types],
+          rarity,
+        })),
+      sideboard: selectedEditorCards
+        .filter(card => card.zone === 'Sideboard')
+        .map(({ catalogId, name, quantity, cmc, colors, types, rarity }) => ({
+          catalogId,
+          name,
+          quantity,
+          cmc,
+          colors: [...colors],
+          types: [...types],
+          rarity,
+        })),
+    })
+    setShowDeckPreview(false)
+  }, [data?.event, selectedDeck?.archetype, selectedDeckName, selectedEditorCards, selectedStanding?.archetype])
 
   useLayoutEffect(() => {
     const metadata = eventMetaRef.current
@@ -575,7 +710,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
     if (!selectedPlayer || !data) return null
     return <div className="event-detail-inline-deck">
       <div className="event-detail-inline-tabs"><DetailTabs detailTab={detailTab} isLeagueEvent={isLeagueEvent} onChange={setDetailTab} /></div>
-      {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={selectedDeckCardCatalog} />}
+      {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={selectedDeckCardCatalog} onViewDeck={() => setShowDeckPreview(true)} />}
       {detailTab === 'matchups' && !isLeagueEvent && <MatchupsPanel matches={matches} eventRounds={data.event?.rounds ?? 0} deckColors={data.deckColors} />}
     </div>
   }
@@ -638,7 +773,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
                   <section ref={sidebarRef} className={`event-detail-section event-detail-sidebar${isLeagueEvent ? ' is-league' : ''}`}>
                     <div className="event-detail-section-heading"><div><DetailTabs detailTab={detailTab} isLeagueEvent={isLeagueEvent} onChange={setDetailTab} /></div></div>
                     {detailTab === 'matchups' && !isLeagueEvent && <MatchupsPanel matches={matches} eventRounds={data.event.rounds} deckColors={data.deckColors} />}
-                    {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={selectedDeckCardCatalog} />}
+                    {detailTab === 'decklist' && <DecklistPanel deck={selectedDeck} cardCatalog={selectedDeckCardCatalog} onViewDeck={() => setShowDeckPreview(true)} />}
                     {showSidebarScrollFade && <div className="event-detail-sidebar-scroll-fade" aria-hidden="true" />}
                   </section>
                 </div>
@@ -647,13 +782,44 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
           )}
           </div>
         </main>
+        <DeckEditorVignette
+          open={showDeckPreview && selectedDeck != null}
+          onOpenChange={open => setShowDeckPreview(open)}
+          deckName={selectedDeckName}
+          archetype={selectedStanding?.archetype || selectedDeck?.archetype || undefined}
+          colors={selectedDeck ? data?.deckColors[selectedDeck.id] : undefined}
+          timestamp={data?.event?.date}
+          mainCount={selectedEditorCards.filter(card => card.zone === 'Mainboard').reduce((total, card) => total + card.quantity, 0)}
+          sideCount={selectedEditorCards.filter(card => card.zone === 'Sideboard').reduce((total, card) => total + card.quantity, 0)}
+          cards={selectedEditorCards}
+          onCopyList={copyDeckList}
+          onExportList={downloadDeckList}
+          canExport={canExportDeckList}
+          copiedList={copiedDeckList}
+          showImport
+          onImport={importDeckToTracker}
+          onClose={() => setShowDeckPreview(false)}
+          sidePanelLockedContent={(
+            <div className="flex max-w-56 flex-col items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <LockKeyhole className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-foreground">Import to build with this deck</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Card search, history, and editing unlock after this deck is saved to Tracker.
+                </p>
+              </div>
+            </div>
+          )}
+        />
         <Footer />
       </div>
     </CardTooltipProvider>
   )
 }
 
-function DecklistPanel({ deck, cardCatalog }: {
+function DecklistPanel({ deck, cardCatalog, onViewDeck }: {
   deck: EventDeck | undefined
   cardCatalog: Record<number, {
     display_name?: string
@@ -664,6 +830,7 @@ function DecklistPanel({ deck, cardCatalog }: {
     type_line: string | null
     faces?: Array<{ mana_cost: string | null; mana_value: number | null; type_line: string | null }>
   }>
+  onViewDeck?: () => void
 }) {
   if (!deck) return <div className="event-detail-empty">No decklist recorded for this player.</div>
 
@@ -679,7 +846,10 @@ function DecklistPanel({ deck, cardCatalog }: {
   groupedMainboard.forEach((cards, group) => groupedMainboard.set(group, sortDeckCards(cards)))
 
   return <div className="event-detail-decklist">
-    <h3 className="event-detail-deck-board-heading">Mainboard ({mainboardCount})</h3>
+    <div className="event-detail-decklist-heading">
+      <h3 className="event-detail-deck-board-heading">Mainboard ({mainboardCount})</h3>
+      {onViewDeck ? <Button type="button" variant="outline" size="sm" className="event-detail-view-deck" onClick={onViewDeck}><Eye size={14} />Preview</Button> : null}
+    </div>
     {DECK_CARD_GROUPS.map(group => <DeckCardGroup key={group.label} label={group.label} icon={group.icon} cards={groupedMainboard.get(group.label) ?? []} />)}
     <DeckCardGroup label="Other" cards={groupedMainboard.get('Other') ?? []} />
     <DeckCardGroup label="Sideboard" cards={sideboard} boardHeading />
