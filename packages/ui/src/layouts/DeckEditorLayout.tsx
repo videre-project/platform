@@ -208,6 +208,7 @@ export function DeckEditorLayout({
   canExport = false,
   copiedList = false,
   onImportList,
+  showImport = true,
   importDisabled = true,
   onArchetypeChange,
   archetypeSaving,
@@ -224,13 +225,17 @@ export function DeckEditorLayout({
   const [internalSidePanelView, setInternalSidePanelView] =
     useState<DeckSidePanelView>(defaultSidePanelView)
   const [splitEditorHeaderControls, setSplitEditorHeaderControls] = useState(false)
+  const [splitEditorStats, setSplitEditorStats] = useState(false)
   const editorHeaderRef = useRef<HTMLDivElement>(null)
+  const editorStatsRef = useRef<HTMLDivElement>(null)
   const editorHeaderSingleRowProbeRef = useRef<HTMLDivElement>(null)
+  const editorStatsSingleRowProbeRef = useRef<HTMLDivElement>(null)
 
   const sortMode = controlledSortMode ?? internalSortMode
   const isSideboardCollapsed = controlledSideboardCollapsed ?? internalSideboardCollapsed
   const isDeckToolsCollapsed = controlledToolsCollapsed ?? internalToolsCollapsed
   const sidePanelView = controlledSidePanelView ?? internalSidePanelView
+  const splitHeaderLayout = splitEditorHeaderControls || splitEditorStats
 
   const handleSortModeChange = (mode: DeckSortMode) => {
     if (controlledSortMode === undefined) setInternalSortMode(mode)
@@ -254,12 +259,16 @@ export function DeckEditorLayout({
 
   useLayoutEffect(() => {
     const header = editorHeaderRef.current
+    const stats = editorStatsRef.current
     const probe = editorHeaderSingleRowProbeRef.current
-    if (!header || !probe) return
+    const statsProbe = editorStatsSingleRowProbeRef.current
+    if (!header || !stats || !probe || !statsProbe) return
 
     const measureHeaderFit = () => {
       const nextSplit = probe.offsetWidth > header.clientWidth
+      const nextStatsSplit = !loadingHeader && statsProbe.offsetWidth > stats.clientWidth
       setSplitEditorHeaderControls(current => (current === nextSplit ? current : nextSplit))
+      setSplitEditorStats(current => (current === nextStatsSplit ? current : nextStatsSplit))
     }
 
     measureHeaderFit()
@@ -267,9 +276,11 @@ export function DeckEditorLayout({
 
     const observer = new ResizeObserver(measureHeaderFit)
     observer.observe(header)
+    observer.observe(stats)
     observer.observe(probe)
+    observer.observe(statsProbe)
     return () => observer.disconnect()
-  }, [archetype, copiedList, mainCount, sideCount, loadingHeader, timestamp])
+  }, [archetype, copiedList, loadingHeader, mainCount, sideCount, timestamp])
 
   const renderEditorControls = (controlClassName?: string) => (
     <div className={cn('flex shrink-0 flex-wrap items-center justify-end gap-2', controlClassName)}>
@@ -339,17 +350,19 @@ export function DeckEditorLayout({
         <Download className="h-4 w-4" />
         Export
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onImportList}
-        disabled={importDisabled || !onImportList}
-        title={importDisabled ? 'Deck import is not available yet' : 'Import deck list'}
-        className="h-8 w-full justify-center border-sidebar-border/70 bg-background/70 px-2"
-      >
-        <Upload className="h-4 w-4" />
-        Import
-      </Button>
+      {showImport ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onImportList}
+          disabled={importDisabled || !onImportList}
+          title={importDisabled ? 'Deck import is not available yet' : 'Import deck list'}
+          className="h-8 w-full justify-center border-sidebar-border/70 bg-background/70 px-2"
+        >
+          <Upload className="h-4 w-4" />
+          Import
+        </Button>
+      ) : null}
       {onClose ? (
         <Button
           variant="outline"
@@ -398,7 +411,7 @@ export function DeckEditorLayout({
           ref={editorHeaderRef}
           className={cn(
             'relative grid min-w-0 items-start gap-x-4 gap-y-2',
-            splitEditorHeaderControls
+            splitHeaderLayout
               ? 'grid-cols-[minmax(0,1fr)_20rem]'
               : 'grid-cols-[minmax(0,1fr)_auto]',
           )}
@@ -412,8 +425,8 @@ export function DeckEditorLayout({
             <div className="flex min-w-max items-start gap-3">
               <div className="mt-0.5 h-8 w-8 shrink-0" />
               {!loadingHeader ? (
-                <div className="flex min-w-max flex-nowrap items-center gap-x-5 pt-1.5">
-                  <HeaderMeta icon={Tags} label="Archetype" className="max-w-[20rem]">
+                <div ref={editorStatsSingleRowProbeRef} className="flex min-w-max flex-nowrap items-center gap-x-5 pt-1.5">
+                  <HeaderMeta icon={Tags} label="Archetype" className="max-w-none">
                     {archetype}
                   </HeaderMeta>
                   <HeaderMeta icon={CalendarClock} label="Updated">
@@ -458,8 +471,20 @@ export function DeckEditorLayout({
                   <Skeleton className="h-8 w-64" />
                 </div>
               ) : (
-                <div className="flex min-w-0 flex-nowrap items-center gap-x-5 gap-y-2 overflow-hidden pt-1.5">
-                  <HeaderMeta icon={Tags} label="Archetype" className="max-w-[20rem]">
+                <div
+                  ref={editorStatsRef}
+                  className={cn(
+                    'min-w-0 overflow-hidden',
+                    splitEditorStats
+                      ? 'grid grid-cols-[minmax(0,max-content)_minmax(0,max-content)] grid-rows-[2rem_2rem] items-center gap-x-5 gap-y-2 pt-0'
+                      : 'flex flex-nowrap items-center gap-x-5 gap-y-2 pt-1.5',
+                  )}
+                >
+                  <HeaderMeta
+                    icon={Tags}
+                    label="Archetype"
+                    className={cn('max-w-[20rem]', splitEditorStats && 'col-span-2 max-w-full')}
+                  >
                     <ArchetypeEditor
                       archetype={archetype}
                       onArchetypeChange={onArchetypeChange}
@@ -481,15 +506,15 @@ export function DeckEditorLayout({
           <div
             className={cn(
               'flex max-w-full shrink-0 items-end gap-2',
-              splitEditorHeaderControls ? 'flex-col' : 'flex-row items-center gap-4',
+              splitHeaderLayout ? 'flex-col' : 'flex-row items-center gap-4',
             )}
           >
             {loadingHeader
               ? null
               : renderEditorControls(
-                  splitEditorHeaderControls ? 'order-2 w-auto' : 'order-1 w-auto',
+                  splitHeaderLayout ? 'order-2 w-auto' : 'order-1 w-auto',
                 )}
-            {renderDeckActions(splitEditorHeaderControls ? 'order-1 w-80' : 'order-2 w-80')}
+            {renderDeckActions(splitHeaderLayout ? 'order-1 w-80' : 'order-2 w-80')}
           </div>
         </div>
       </div>

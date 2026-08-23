@@ -138,6 +138,7 @@ export type {
 
 // Reusable deck preview
 export { DeckGalleryTile } from './components/decks/DeckGalleryTile'
+export { DeckEditorVignette } from './components/decks/DeckEditorVignette'
 
 // Composed layouts
 export { CollectionLayout } from './layouts/CollectionLayout'

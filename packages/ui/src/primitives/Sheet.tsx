@@ -40,16 +40,26 @@ const sheetVariants = cva(
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-        bottom:
-          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        top: "inset-x-0 top-0 border-b",
+        bottom: "inset-x-0 bottom-0 border-t",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
         right:
-          "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+          "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+      },
+      motion: {
+        slide: "",
+        fade: "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       },
     },
+    compoundVariants: [
+      { side: "top", motion: "slide", class: "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top" },
+      { side: "bottom", motion: "slide", class: "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom" },
+      { side: "left", motion: "slide", class: "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left" },
+      { side: "right", motion: "slide", class: "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right" },
+    ],
     defaultVariants: {
       side: "right",
+      motion: "slide",
     },
   }
 )
@@ -61,12 +71,12 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", motion = "slide", className, children, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
-      className={cn(sheetVariants({ side }), className)}
+      className={cn(sheetVariants({ side, motion }), className)}
       {...props}
     >
       <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
