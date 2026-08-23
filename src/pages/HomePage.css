@@ -93,7 +93,7 @@
   gap: 0;
 }
 
-.product-feature-section {
+.container.product-feature-section {
   padding-top: var(--space-2xl);
   padding-bottom: var(--space-2xl);
 }
@@ -1014,7 +1014,7 @@ a.pathway-step:hover {
   }
 
   .ecosystem-section,
-  .product-feature-section,
+  .container.product-feature-section,
   .replay-preview-section,
   .faq-section,
   .metagame-fan-section,
