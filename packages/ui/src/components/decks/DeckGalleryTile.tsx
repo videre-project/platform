@@ -62,10 +62,13 @@ function DeckHeroPreview({
   )
   const visibleCards = cards.slice(0, 5)
   const backgroundCard = visibleCards[Math.floor(visibleCards.length / 2)]
-  const backgroundArtUrl = deck.imageUrl ?? backgroundCard?.imageUrl ?? null
+  const backgroundArtUrl = deck.imageUrl ?? null
+  const backgroundCardUrl = backgroundCard?.imageUrl ?? null
   const [backgroundArtFailed, setBackgroundArtFailed] = useState(false)
+  const [backgroundCardFailed, setBackgroundCardFailed] = useState(false)
 
   useEffect(() => setBackgroundArtFailed(false), [backgroundArtUrl])
+  useEffect(() => setBackgroundCardFailed(false), [backgroundCardUrl])
 
   return (
     <div className="relative z-0 h-36 overflow-visible rounded-t-lg border-b border-sidebar-border/60">
@@ -75,8 +78,16 @@ function DeckHeroPreview({
             src={backgroundArtUrl}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full scale-110 object-cover object-top opacity-55 blur-sm saturate-125 transition-opacity duration-300 group-hover/editor:opacity-65"
+            className="absolute inset-0 h-full w-full scale-110 object-cover object-center opacity-55 blur-sm saturate-125 transition-opacity duration-300 group-hover/editor:opacity-65"
             onError={() => setBackgroundArtFailed(true)}
+          />
+        ) : backgroundCardUrl && !backgroundCardFailed ? (
+          <img
+            src={backgroundCardUrl}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full scale-[1.2] object-cover object-[center_22%] opacity-55 blur-sm saturate-125 transition-opacity duration-300 group-hover/editor:opacity-65"
+            onError={() => setBackgroundCardFailed(true)}
           />
         ) : backgroundCard ? (
           <CatalogCardImage
