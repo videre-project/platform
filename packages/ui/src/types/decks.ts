@@ -284,6 +284,7 @@ export interface DeckEditorLayoutProps {
   canExport?: boolean
   copiedList?: boolean
   onImportList?: () => void
+  showImport?: boolean
   importDisabled?: boolean
   onArchetypeChange?: (archetype: string) => void | Promise<void>
   archetypeSaving?: boolean

@@ -9,6 +9,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -70,6 +71,7 @@ interface GridSlot {
 function SheetCard({
   index,
   catalogId,
+  imageUrl,
   cardWidth,
   cardHeight,
   position,
@@ -83,6 +85,7 @@ function SheetCard({
 }: {
   index: number
   catalogId: number
+  imageUrl?: string | null
   cardWidth: number
   cardHeight: number
   position: Position
@@ -99,6 +102,7 @@ function SheetCard({
 
   const tooltipHandlers = useCardTooltipHover({
     catalogId,
+    imageUrl,
     enabled: !isDragging && !isAnyDragging,
   })
 
@@ -127,6 +131,7 @@ function SheetCard({
       <div className="group relative h-full w-full">
         <CardImage
           catalogId={catalogId}
+          imageUrl={imageUrl}
           alt=""
           width={cardWidth}
           height={cardHeight}
@@ -765,6 +770,7 @@ function DeckGrid({
                   key={instanceKey}
                   index={cardIndex}
                   catalogId={card.catalogId}
+                  imageUrl={card.imageUrl}
                   cardWidth={scaledCardWidth}
                   cardHeight={scaledCardHeight}
                   position={pos}
@@ -823,15 +829,18 @@ export function DeckBoard({
   const [containerWidth, setContainerWidth] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!containerRef.current) return
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        if (!containerRef.current) return
-        setContainerWidth(containerRef.current.clientWidth)
-      })
-    })
-    observer.observe(containerRef.current)
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const updateContainerWidth = () => {
+      const nextWidth = container.clientWidth
+      setContainerWidth(current => current === nextWidth ? current : nextWidth)
+    }
+
+    updateContainerWidth()
+    const observer = new ResizeObserver(updateContainerWidth)
+    observer.observe(container)
     return () => observer.disconnect()
   }, [])
 

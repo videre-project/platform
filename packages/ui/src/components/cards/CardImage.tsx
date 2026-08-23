@@ -11,6 +11,7 @@ export interface CardImageProps
   extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   catalogId: number | null
   textureId?: number | null
+  imageUrl?: string | null
   name?: string
   fallback?: React.ReactNode
   /** Resolve a transformed card's alternate face when replay explicitly opts in. */
@@ -26,6 +27,7 @@ interface CommittedImage {
 export function CardImage({
   catalogId,
   textureId,
+  imageUrl,
   name,
   fallback,
   resolveFace = false,
@@ -65,11 +67,16 @@ export function CardImage({
       && name.trim().toLowerCase() === backFaceInfo.name.trim().toLowerCase(),
   )
   const activeCatalogId = matchingBackFace ? backFaceInfo!.catalogId : catalogId
-  const candidates = useMemo(() => getCardImageCandidates({
-    catalogId: activeCatalogId,
-    textureId,
-    name,
-  }), [activeCatalogId, getCardImageCandidates, name, textureId])
+  const candidates = useMemo(() => [
+    ...new Set([
+      imageUrl,
+      ...getCardImageCandidates({
+        catalogId: activeCatalogId,
+        textureId,
+        name,
+      }),
+    ].filter((url): url is string => Boolean(url))),
+  ], [activeCatalogId, getCardImageCandidates, imageUrl, name, textureId])
   const requestKey = `${activeCatalogId ?? ''}|${textureId ?? ''}|${name ?? ''}|${candidates.join('|')}`
 
   const [committed, setCommitted] = useState<CommittedImage | null>(() => {
