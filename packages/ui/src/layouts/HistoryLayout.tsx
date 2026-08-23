@@ -203,7 +203,10 @@ export function HistoryLayout({
 
   return (
     <div
-      className={cn('videre-ui container mx-auto space-y-4 px-4 pb-4 pt-1 font-sans', className)}
+      className={cn(
+        'videre-ui w-full space-y-4 px-4 pb-4 pt-1 font-sans',
+        className,
+      )}
       data-ui-layout="history"
     >
       <div className="flex flex-wrap items-center justify-start gap-2">
