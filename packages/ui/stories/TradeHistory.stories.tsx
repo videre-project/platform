@@ -134,6 +134,10 @@ export const PlayerSelected: Story = {
         `https://r2.videreproject.com/products/${catalogId}-300px.png`,
       )
     }
+
+    const selectedRow = within(canvasElement).getByRole('row', { name: /FblthpTradeBot/ })
+    const title = within(selectedRow).getByText('FblthpTradeBot')
+    await expect(title.getBoundingClientRect().width).toBeGreaterThan(160)
   },
 }
 

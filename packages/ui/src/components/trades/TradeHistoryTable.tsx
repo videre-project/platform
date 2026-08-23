@@ -166,8 +166,8 @@ export function TradeHistoryTable({
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-2">
                         <TradePartyAvatar trade={trade} />
-                        <div className="min-w-0">
-                          <div className="max-w-40 truncate font-medium" title={title}>{title}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium" title={title}>{title}</div>
                           <div className="text-xs text-muted-foreground">
                             {trade.escrowId ? `Escrow ${trade.escrowId}` : ''}
                           </div>

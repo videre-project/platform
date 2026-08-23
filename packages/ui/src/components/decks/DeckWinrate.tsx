@@ -17,6 +17,7 @@ export function DeckWinrateMetric({ stats }: { stats: DeckMatchStats }) {
   return (
     <div
       className="shrink-0 text-right tabular-nums"
+      role="group"
       aria-label={label}
       title={label}
     >
@@ -46,6 +47,7 @@ export function DeckWinrateBar({ stats }: { stats: DeckMatchStats }) {
     return (
       <div
         className="h-2 w-full rounded-full bg-muted"
+        role="img"
         aria-label="No recorded matches"
         title="No recorded matches"
       />
@@ -59,6 +61,7 @@ export function DeckWinrateBar({ stats }: { stats: DeckMatchStats }) {
   return (
     <div
       className="relative flex h-2 w-full overflow-hidden rounded-full bg-muted"
+      role="img"
       aria-label={`${stats.winrate}% win rate over ${stats.matches} matches`}
       title={`${stats.wins} wins, ${stats.losses} losses${stats.ties > 0 ? `, ${stats.ties} ties` : ''}`}
     >
