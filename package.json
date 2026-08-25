@@ -27,7 +27,8 @@
     "db:check-types": "node scripts/generate-db-types.mjs --check",
     "dev:all": "pnpm --parallel -r run dev",
     "deploy:all": "pnpm --parallel -r run deploy",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test && pnpm run test:site",
+    "test:site": "node --test --experimental-strip-types test/*.test.*"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.1.8",

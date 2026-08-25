@@ -21,16 +21,47 @@
 .metagame-page-heading {
   display: grid;
   max-width: none;
-  grid-template-columns: minmax(0, 680px) auto;
+  grid-template-columns: minmax(0, 680px) 1fr;
   align-items: end;
   column-gap: 1rem;
   margin-bottom: 2rem;
   padding-right: max(0px, calc(100% - var(--metagame-matrix-content-end, 1088px)));
 }
 
-.metagame-page-share-button {
+.metagame-page-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  height: 2rem;
   justify-self: end;
   margin-bottom: 0.15rem;
+}
+
+.metagame-page-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2rem;
+  padding: 0.05rem 0.75rem 0.15rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.metagame-page-tabs button:hover,
+.metagame-page-tabs button.is-active {
+  border-bottom-color: hsl(var(--foreground));
+  color: hsl(var(--foreground));
+}
+
+.metagame-page-tabs button:hover {
+  background: hsl(var(--muted) / 0.3);
 }
 
 .metagame-page-heading h1 {
@@ -88,6 +119,7 @@
 
 .metagame-chart-controls .metagame-filter-field > span {
   font-size: 0.63rem;
+  line-height: 1;
 }
 
 .metagame-chart-controls .metagame-filter-field > button,
@@ -337,12 +369,26 @@
   top: 0;
   left: 0;
   width: 100%;
+  padding-right: max(0px, calc(100% - var(--metagame-matrix-content-end, 1088px)));
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   pointer-events: none;
 }
 
 .metagame-chart-controls .metagame-filter-content {
   margin-bottom: 0;
   pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.metagame-chart-controls .metagame-health-kpis {
+  margin-top: -9px;
+  margin-bottom: 0;
+  pointer-events: auto;
+  flex-shrink: 0;
 }
 
 .metagame-chart-titlebar h2 {
@@ -769,6 +815,12 @@
   transform: translate(8px, -50%);
 }
 
+.metagame-winrate-label.is-inside {
+  padding: 0 0.2rem;
+  color: hsl(var(--foreground));
+  transform: translate(-50%, -50%);
+}
+
 .metagame-winrate-label.has-dark-text {
   color: hsl(222 84% 5%);
 }
@@ -1126,7 +1178,7 @@
     padding-right: 0;
   }
 
-  .metagame-page-share-button {
+  .metagame-page-tabs {
     justify-self: start;
   }
 
@@ -1142,12 +1194,21 @@
   .metagame-chart-controls {
     position: static;
     width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
     margin-bottom: 1rem;
   }
 
   .metagame-chart-controls .metagame-filter-content {
     width: 100%;
     grid-template-columns: minmax(0, 190px) minmax(0, 1fr);
+  }
+
+  .metagame-chart-controls .metagame-health-kpis {
+    margin-top: 1.25rem;
+    width: 100%;
   }
 
   .metagame-chart-scroll {
@@ -1164,9 +1225,41 @@
     scroll-padding-left: 142px;
   }
 
+  .polarity-chart-scroll,
+  .polarity-chart-scroll > .polarity-metagame-chart {
+    --metagame-header-height: 24px !important;
+  }
+
   .metagame-chart-scroll.has-right-overflow {
     -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
     mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+  }
+
+  .polarity-chart-scroll.has-left-overflow {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 1.5rem);
+    mask-image: linear-gradient(to right, transparent 0, black 1.5rem);
+  }
+
+  .polarity-chart-scroll.has-right-overflow {
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 1.5rem), transparent 100%);
+  }
+
+  .polarity-chart-scroll.has-left-overflow.has-right-overflow {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 1.5rem,
+      black calc(100% - 1.5rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 1.5rem,
+      black calc(100% - 1.5rem),
+      transparent 100%
+    );
   }
 
   .metagame-chart-scroll > .metagame-chart,
@@ -1174,7 +1267,7 @@
     grid-area: 1 / 1;
   }
 
-  .metagame-chart-scroll > .metagame-chart {
+  .metagame-chart-scroll:not(.polarity-chart-scroll) > .metagame-chart {
     --metagame-header-height: 108px;
 
     width: max-content;
@@ -1194,7 +1287,7 @@
 
   .metagame-mobile-label-rail {
     position: sticky;
-    z-index: 8;
+    z-index: 20;
     left: 0;
     display: block;
     width: 142px;
@@ -1216,6 +1309,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 120ms ease;
+    z-index: 21;
   }
 
   .metagame-chart-scroll.has-left-overflow .metagame-mobile-label-rail::after {
@@ -1233,6 +1327,7 @@
     font-weight: 550;
     line-height: 1.2;
     text-align: right;
+    background: hsl(var(--background));
   }
 
   .metagame-mobile-label-row {
@@ -1299,10 +1394,6 @@
 }
 
 @media (max-width: 1200px) {
-  .metagame-page-heading {
-    padding-right: 4rem;
-  }
-
   .metagame-matrix-panel {
     padding-right: 4rem;
   }

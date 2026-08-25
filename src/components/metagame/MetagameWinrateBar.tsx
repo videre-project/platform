@@ -85,6 +85,8 @@ interface WinrateBarVisualProps extends HTMLAttributes<HTMLDivElement> {
   heatMaximum: number
   mean?: number
   compact?: boolean
+  reverseHeat?: boolean
+  keepLabelInside?: boolean
   renderTarget?: 'browser' | 'takumi'
 }
 
@@ -97,6 +99,8 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
   heatMaximum,
   mean,
   compact = false,
+  reverseHeat = false,
+  keepLabelInside = false,
   renderTarget = 'browser',
   className,
   ...props
@@ -106,15 +110,28 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
   const confidenceStart = scale(winrate - confidenceInterval)
   const confidenceEnd = scale(winrate + confidenceInterval)
   const hasRightOverhang = confidenceEnd > position
-  const winrateRgb = getHeatColorRgb(winrate, heatMinimum, heatMaximum)
+  const heatValue = reverseHeat ? heatMaximum + heatMinimum - winrate : winrate
+  const winrateRgb = getHeatColorRgb(heatValue, heatMinimum, heatMaximum)
   const winrateColor = `rgb(${winrateRgb.join(' ')})`
   const unpaddedSpread = (maximum - minimum) / 2 / 1.2
-  const useRightLabel = (compact && winrate < 50) || (
+  const preferredRightLabel = (compact && winrate < 50) || (
     (winrate - confidenceInterval - (50 - unpaddedSpread)) /
     (unpaddedSpread * 2)
   ) <= 0.2
-  const labelPosition = useRightLabel ? confidenceEnd : confidenceStart
-  const labelBackground = useRightLabel ? MUTED_TRACK_RGB : winrateRgb
+  // Reserve a small edge buffer for the label itself. When the preferred
+  // side would overflow, use the opposite side before falling back to an
+  // in-track label.
+  const labelEdgeBuffer = 16
+  const rightLabelFits = confidenceEnd <= 100 - labelEdgeBuffer
+  const leftLabelFits = confidenceStart >= labelEdgeBuffer
+  const useRightLabel = keepLabelInside
+    ? rightLabelFits && (preferredRightLabel || !leftLabelFits)
+    : preferredRightLabel
+  const useInsideLabel = keepLabelInside && !rightLabelFits && !leftLabelFits
+  const labelPosition = useInsideLabel
+    ? clamp(position, labelEdgeBuffer, 100 - labelEdgeBuffer)
+    : useRightLabel ? confidenceEnd : confidenceStart
+  const labelBackground = useRightLabel || useInsideLabel ? MUTED_TRACK_RGB : winrateRgb
 
   return (
     <div
@@ -207,7 +224,7 @@ export const WinrateBarVisual = forwardRef<HTMLDivElement, WinrateBarVisualProps
         </g>
       </svg>
       <strong
-        className={`metagame-winrate-label ${useRightLabel ? 'is-right' : 'is-left'} ${getTextToneClass(labelBackground)}`}
+        className={`metagame-winrate-label ${useInsideLabel ? 'is-inside' : useRightLabel ? 'is-right' : 'is-left'} ${getTextToneClass(labelBackground)}`}
         style={{ left: `${labelPosition}%` } as CSSProperties}
       >
         {winrate.toFixed(1)}%

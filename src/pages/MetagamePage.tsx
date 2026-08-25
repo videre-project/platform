@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { ACTIVE_FORMATS } from '@videreproject/constants'
 import {
   Button,
@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   type DatePickerWithRangeProps,
 } from '@videreproject/ui'
-import { AlertCircle, Check, RotateCcw, Share2 } from 'lucide-react'
+import { Activity, AlertCircle, BarChart3, RotateCcw } from 'lucide-react'
 
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
@@ -27,11 +27,10 @@ import { useMetagame } from '@/hooks/useMetagame'
 import { CardTrends, MetagameMovers } from '@/components/metagame/MetagameMovers'
 import { useMetagameMovers } from '@/hooks/useMetagameMovers'
 import { SideboardingPerformance } from '@/components/metagame/SideboardingPerformance'
+import { MetagamePolarity } from '@/components/metagame/MetagamePolarity'
 import { useSideboarding } from '@/hooks/useSideboarding'
 import {
   createMetagameSearchParameters,
-  createMetagameShareUrl,
-  formatMetagameShareDateRange,
   getDefaultMetagameDateRange,
   readMetagameShareParameters,
 } from '@/utils/metagameShareParameters'
@@ -59,34 +58,11 @@ const datePresets = [
   },
 }))
 
-async function copyText(value: string): Promise<void> {
-  if (navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(value)
-      return
-    } catch {
-      // Fall through for browsers that expose the API but deny permission.
-    }
-  }
-
-  const input = document.createElement('textarea')
-  input.value = value
-  input.setAttribute('readonly', '')
-  input.style.position = 'fixed'
-  input.style.opacity = '0'
-  document.body.append(input)
-  input.select()
-  const copied = document.execCommand('copy')
-  input.remove()
-  if (!copied) throw new Error('Could not copy the metagame link')
-}
-
 export default function MetagamePage() {
   const [initialFilters] = useState(() => readMetagameShareParameters(window.location.search))
   const [format, setFormat] = useState(initialFilters.format)
   const [dateRange, setDateRange] = useState<DateRange | undefined>(initialFilters.dateRange)
-  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle')
-  const shareResetTimerRef = useRef<number>()
+  const [activeTab, setActiveTab] = useState<'breakdown' | 'health'>('breakdown')
   const { data, loading, error } = useMetagame(format, dateRange)
   const movers = useMetagameMovers(format, dateRange)
   const sideboarding = useSideboarding(format, dateRange)
@@ -124,68 +100,47 @@ export default function MetagamePage() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  useEffect(() => () => {
-    if (shareResetTimerRef.current !== undefined) window.clearTimeout(shareResetTimerRef.current)
-  }, [])
-
-  const handleShare = async () => {
-    if (!dateRange?.from) return
-    const normalizedRange = {
-      from: dateRange.from,
-      to: dateRange.to ?? dateRange.from,
-    }
-    const shareUrl = createMetagameShareUrl(window.location.origin, {
-      format,
-      dateRange: normalizedRange,
-    }).toString()
-    const shareData = {
-      title: `${format} Metagame | Videre Project`,
-      text: `${format} MTGO metagame, ${formatMetagameShareDateRange(normalizedRange)}`,
-      url: shareUrl,
-    }
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData)
-        return
-      } catch (reason) {
-        if (reason instanceof DOMException && reason.name === 'AbortError') return
-      }
-    }
-
-    await copyText(shareUrl)
-    setShareStatus('copied')
-    if (shareResetTimerRef.current !== undefined) window.clearTimeout(shareResetTimerRef.current)
-    shareResetTimerRef.current = window.setTimeout(() => setShareStatus('idle'), 2000)
-  }
-
   return (
     <TooltipProvider delayDuration={120} skipDelayDuration={0}>
       <CardTooltipProvider>
       <div className="metagame-page-shell">
       <Header />
       <main className="metagame-page-main">
-        <div className="container-wide">
-          <div
-            className="metagame-page-heading"
-            style={{ '--metagame-matrix-content-end': `${metagameMatrixContentEnd}px` } as CSSProperties}
-          >
+        <div
+          className="container-wide"
+          style={{ '--metagame-matrix-content-end': `${metagameMatrixContentEnd}px` } as CSSProperties}
+        >
+          <div className="metagame-page-heading">
             <div>
               <h1>Magic: The Gathering Metagame</h1>
               <p>Explore the decks defining each format and their performance across the field.</p>
             </div>
-            <Button
-              className="metagame-page-share-button"
-              variant="outline"
-              size="sm"
-              onClick={() => void handleShare()}
-              disabled={!dateRange?.from}
-            >
-              {shareStatus === 'copied'
-                ? <Check className="mr-2 h-4 w-4" />
-                : <Share2 className="mr-2 h-4 w-4" />}
-              {shareStatus === 'copied' ? 'Link copied' : 'Share'}
-            </Button>
+            <div className="metagame-page-tabs" role="tablist" aria-label="Metagame view">
+              <button
+                type="button"
+                id="metagame-breakdown-tab"
+                role="tab"
+                aria-selected={activeTab === 'breakdown'}
+                aria-controls="metagame-breakdown-panel"
+                className={activeTab === 'breakdown' ? 'is-active' : undefined}
+                onClick={() => setActiveTab('breakdown')}
+              >
+                <BarChart3 size={16} />
+                Breakdown
+              </button>
+              <button
+                type="button"
+                id="metagame-health-tab"
+                role="tab"
+                aria-selected={activeTab === 'health'}
+                aria-controls="metagame-health-panel"
+                className={activeTab === 'health' ? 'is-active' : undefined}
+                onClick={() => setActiveTab('health')}
+              >
+                <Activity size={16} />
+                Health
+              </button>
+            </div>
           </div>
 
           {error ? (
@@ -209,21 +164,52 @@ export default function MetagamePage() {
             </>
           ) : (
             <>
-              <MetagameChart
-                data={data}
-                format={format}
-                from={from}
-                to={to}
-                loading={loading}
-                controls={(
-                  <MetagameFilters
-                    format={format}
-                    setFormat={setFormat}
-                    dateRange={dateRange}
-                    setDateRange={setDateRange}
-                  />
-                )}
-              />
+              <div
+                id="metagame-breakdown-panel"
+                role="tabpanel"
+                aria-labelledby="metagame-breakdown-tab"
+                tabIndex={0}
+                hidden={activeTab !== 'breakdown'}
+              >
+                <MetagameChart
+                  data={data}
+                  format={format}
+                  from={from}
+                  to={to}
+                  loading={loading}
+                  controls={(
+                    <MetagameFilters
+                      format={format}
+                      setFormat={setFormat}
+                      dateRange={dateRange}
+                      setDateRange={setDateRange}
+                    />
+                  )}
+                />
+              </div>
+              <div
+                id="metagame-health-panel"
+                role="tabpanel"
+                aria-labelledby="metagame-health-tab"
+                tabIndex={0}
+                hidden={activeTab !== 'health'}
+              >
+                <MetagamePolarity
+                  metagame={data}
+                  sideboarding={sideboarding.data}
+                  loading={loading || sideboarding.loading}
+                  sideboardingError={sideboarding.error}
+                  visible={activeTab === 'health'}
+                  controls={(
+                    <MetagameFilters
+                      format={format}
+                      setFormat={setFormat}
+                      dateRange={dateRange}
+                      setDateRange={setDateRange}
+                    />
+                  )}
+                />
+              </div>
               <MetagameMovers
                 data={movers.data}
                 loading={movers.loading}
