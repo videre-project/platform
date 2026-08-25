@@ -257,7 +257,7 @@ export function MetagamePolarity({
                 key={row.archetype}
                 row={row}
                 value={row.gameOnePolarity}
-                label="Game 1 polarity"
+                label="Game 1 Polarity"
                 minimum={polarityMinimum}
                 maximum={polarityMaximum}
               />
@@ -281,7 +281,7 @@ export function MetagamePolarity({
                 key={row.archetype}
                 row={row}
                 value={row.postboardPolarity}
-                label="Post-board polarity"
+                label="Post-board Polarity"
                 minimum={polarityMinimum}
                 maximum={polarityMaximum}
               />

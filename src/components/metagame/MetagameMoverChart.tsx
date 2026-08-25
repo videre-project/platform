@@ -110,13 +110,14 @@ function ComparisonTooltip({ heading, rows, plot, children, open }: {
   )
 }
 
-export function DifferenceBar({ value, previousValue, currentValue, minimum, maximum, label, current, previous, plot, comparisonLabel = 'Previous', formatDifference = formatDelta }: {
+export function DifferenceBar({ value, previousValue, currentValue, minimum, maximum, label, tooltipHeading, current, previous, plot, comparisonLabel = 'Previous', formatDifference = formatDelta }: {
   value: number | undefined
   previousValue: number | undefined
   currentValue: number | undefined
   minimum: number
   maximum: number
   label: string
+  tooltipHeading?: ReactNode
   current: string
   previous: string
   plot?: ReactNode
@@ -176,7 +177,7 @@ export function DifferenceBar({ value, previousValue, currentValue, minimum, max
   ]
   return (
     <ComparisonTooltip
-      heading={label}
+      heading={tooltipHeading ?? label}
       plot={plot}
       rows={rows}
     >
@@ -320,12 +321,14 @@ function MatchupDifferenceCell({ change, isDimmed, isActive, onActivate, onDeact
 
 function SideboardingPerformanceBar({
   label,
+  tooltipHeading,
   metric,
   minimum,
   maximum,
   mean,
 }: {
   label: string
+  tooltipHeading: string
   metric: SideboardingMetric | null
   minimum: number
   maximum: number
@@ -344,6 +347,7 @@ function SideboardingPerformanceBar({
         minimum={minimum}
         maximum={maximum}
         label={label}
+        tooltipHeading={tooltipHeading}
         current={`${metric.winrate.toFixed(1)}% ±${metric.confidenceInterval.toFixed(1)}% (${metric.games} games)`}
         previous={`${mean.winrate.toFixed(1)}% average`}
         comparisonLabel="Average"
@@ -636,6 +640,7 @@ export function MetagameMoverChart(props: ChartProps) {
                   <span className="metagame-archetype-name">{row.archetype}</span>
                   <SideboardingPerformanceBar
                     label={`${row.archetype} · Game 1`}
+                    tooltipHeading={row.archetype}
                     metric={row.gameOne}
                     minimum={sideboardingMinimum}
                     maximum={sideboardingMaximum}
@@ -674,6 +679,7 @@ export function MetagameMoverChart(props: ChartProps) {
                 <div key={row.archetype} className={`metagame-chart-row metagame-winrate-row${isDimmed(row.archetype) ? ' is-matchup-dimmed' : ''}`}>
                   <SideboardingPerformanceBar
                     label={`${row.archetype} · Games 2–3`}
+                    tooltipHeading={row.archetype}
                     metric={row.postboard}
                     minimum={sideboardingMinimum}
                     maximum={sideboardingMaximum}

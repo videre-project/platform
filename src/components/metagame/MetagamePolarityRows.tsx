@@ -50,7 +50,7 @@ export function PolarityConcentrationRow({
 
   const tooltipRows = [
     { label: 'Metagame Share', value: `${row.percentage.toFixed(1)}%` },
-    { label: 'Format Homogeneity', value: `${value.toFixed(1)}% of H` },
+    { label: 'Homogeneity', value: `${value.toFixed(1)}% of H` },
   ]
 
   return (
@@ -88,15 +88,15 @@ export function PolarityConcentrationRow({
           </div>
         </TooltipTrigger>
         <TooltipContent className="metagame-tooltip-content">
-          <strong className="metagame-tooltip-heading">{row.archetype} · Homogeneity</strong>
-          <div className="metagame-tooltip-rows">
+          <strong className="metagame-tooltip-heading">{row.archetype}</strong>
+          <dl>
             {tooltipRows.map(({ label, value: itemValue }) => (
-              <div key={label} className="metagame-tooltip-row">
-                <span>{label}</span>
-                <strong>{itemValue}</strong>
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{itemValue}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         </TooltipContent>
       </Tooltip>
     </div>
@@ -107,12 +107,14 @@ function PolarityDifferenceBar({
   value,
   base,
   label,
+  tooltipHeading,
   minimum,
   maximum,
 }: {
   value: number | null
   base: number
   label: string
+  tooltipHeading: string
   minimum: number
   maximum: number
 }) {
@@ -150,6 +152,7 @@ function PolarityDifferenceBar({
         minimum={minimum}
         maximum={maximum}
         label={label}
+        tooltipHeading={tooltipHeading}
         current={`${value.toFixed(1)}%`}
         previous={`${base.toFixed(1)}% overall`}
         comparisonLabel="Overall"
@@ -180,6 +183,7 @@ export function PolaritySegmentRow({
         minimum={minimum}
         maximum={maximum}
         label={`${row.archetype} · ${label}`}
+        tooltipHeading={row.archetype}
       />
     </div>
   )
@@ -196,18 +200,35 @@ export function PolarityValueRow({
 }) {
   return (
     <div className="metagame-chart-row metagame-winrate-row polarity-value-row">
-      <WinrateBarVisual
-        winrate={row.polarity}
-        confidenceInterval={row.polarityConfidenceInterval}
-        minimum={minimum}
-        maximum={maximum}
-        heatMinimum={0}
-        heatMaximum={POLARITY_HEAT_MAXIMUM}
-        reverseHeat
-        keepLabelInside
-        className="polarity-winrate-bar"
-        aria-label={`${row.archetype}: ${formatPolarity(row.polarity)} overall polarity ±${row.polarityConfidenceInterval.toFixed(1)}% bootstrap CI`}
-      />
+      <Tooltip disableHoverableContent>
+        <TooltipTrigger asChild>
+          <WinrateBarVisual
+            winrate={row.polarity}
+            confidenceInterval={row.polarityConfidenceInterval}
+            minimum={minimum}
+            maximum={maximum}
+            heatMinimum={0}
+            heatMaximum={POLARITY_HEAT_MAXIMUM}
+            reverseHeat
+            keepLabelInside
+            className="polarity-winrate-bar"
+            aria-label={`${row.archetype}: ${formatPolarity(row.polarity)} overall polarity ±${row.polarityConfidenceInterval.toFixed(1)}% bootstrap CI`}
+          />
+        </TooltipTrigger>
+        <TooltipContent className="metagame-tooltip-content">
+          <strong className="metagame-tooltip-heading">{row.archetype}</strong>
+          <dl>
+            <div>
+              <dt>Polarity</dt>
+              <dd>{formatPolarity(row.polarity)}</dd>
+            </div>
+            <div>
+              <dt>95% CI</dt>
+              <dd>±{row.polarityConfidenceInterval.toFixed(1)}%</dd>
+            </div>
+          </dl>
+        </TooltipContent>
+      </Tooltip>
     </div>
   )
 }

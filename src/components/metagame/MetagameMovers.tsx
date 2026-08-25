@@ -84,6 +84,7 @@ function CardMoverRow({ mover, shareMaximum, copiesMaximum }: {
           minimum={0}
           maximum={shareMaximum}
           label="Lists (%)"
+          tooltipHeading={mover.card}
           current={formatPercentage(mover.currentPercentage)}
           previous={formatPercentage(mover.previousPercentage)}
         />
@@ -96,6 +97,7 @@ function CardMoverRow({ mover, shareMaximum, copiesMaximum }: {
           minimum={0}
           maximum={copiesMaximum}
           label="Avg. copies"
+          tooltipHeading={mover.card}
           current={formatCopies(mover.currentAverage)}
           previous={formatCopies(mover.previousAverage)}
           formatDifference={formatCopiesDelta}
