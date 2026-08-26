@@ -19,6 +19,11 @@ export interface MetagameShareParameters {
   dateRange: MetagameDateRange
 }
 
+export interface MetagameSearchParameterOptions {
+  includeDefaults?: boolean
+  now?: Date
+}
+
 const toDateParameter = (date: Date): string => {
   const year = date.getFullYear().toString().padStart(4, '0')
   const month = (date.getMonth() + 1).toString().padStart(2, '0')
@@ -75,12 +80,27 @@ export function readMetagameShareParameters(
 export function createMetagameSearchParameters({
   format,
   dateRange,
-}: MetagameShareParameters): URLSearchParams {
-  return new URLSearchParams({
-    format: normalizeMetagameFormat(format).toLowerCase(),
-    min_date: toDateParameter(dateRange.from),
-    max_date: toDateParameter(dateRange.to),
-  })
+}: MetagameShareParameters, {
+  includeDefaults = true,
+  now = new Date(),
+}: MetagameSearchParameterOptions = {}): URLSearchParams {
+  const parameters = new URLSearchParams()
+  const normalizedFormat = normalizeMetagameFormat(format)
+  const defaults = getDefaultMetagameDateRange(now)
+  const minDate = toDateParameter(dateRange.from)
+  const maxDate = toDateParameter(dateRange.to)
+  const defaultMinDate = toDateParameter(defaults.from)
+  const defaultMaxDate = toDateParameter(defaults.to)
+
+  if (includeDefaults || normalizedFormat !== DEFAULT_FORMAT) {
+    parameters.set('format', normalizedFormat.toLowerCase())
+  }
+  if (includeDefaults || minDate !== defaultMinDate || maxDate !== defaultMaxDate) {
+    parameters.set('min_date', minDate)
+    parameters.set('max_date', maxDate)
+  }
+
+  return parameters
 }
 
 export function createMetagameShareUrl(

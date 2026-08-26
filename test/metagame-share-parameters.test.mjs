@@ -56,6 +56,27 @@ test('orders reversed date parameters and emits a canonical query', () => {
   )
 })
 
+test('omits default metagame parameters for page URLs', () => {
+  const now = new Date(2026, 7, 21, 12)
+  const defaults = readMetagameShareParameters('', now)
+
+  assert.equal(
+    createMetagameSearchParameters(defaults, { includeDefaults: false, now }).toString(),
+    '',
+  )
+  assert.equal(
+    createMetagameSearchParameters({ ...defaults, format: 'Modern' }, { includeDefaults: false, now }).toString(),
+    'format=modern',
+  )
+  assert.equal(
+    createMetagameSearchParameters({
+      ...defaults,
+      dateRange: { from: date(2026, 8, 1), to: date(2026, 8, 21) },
+    }, { includeDefaults: false, now }).toString(),
+    'min_date=2026-08-01&max_date=2026-08-21',
+  )
+})
+
 test('aligns metagame image expiry with the MTGOBot reset schedule', () => {
   const beforeReset = new Date('2026-08-21T03:29:30Z')
   const afterReset = new Date('2026-08-21T03:30:30Z')

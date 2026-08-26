@@ -84,9 +84,12 @@ export default function MetagamePage() {
         from: dateRange.from,
         to: dateRange.to ?? dateRange.from,
       },
-    }).toString()
+    }, { includeDefaults: false }).toString()
     if (window.location.search.slice(1) !== nextSearch) {
-      window.history.replaceState({}, '', `${window.location.pathname}?${nextSearch}`)
+      const nextUrl = nextSearch
+        ? `${window.location.pathname}?${nextSearch}`
+        : window.location.pathname
+      window.history.replaceState({}, '', nextUrl)
     }
   }, [dateRange, format])
 
