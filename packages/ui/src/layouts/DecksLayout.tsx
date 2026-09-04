@@ -173,7 +173,7 @@ export function DecksLayout({
                     value={query}
                     onChange={event => handleQueryChange(event.target.value)}
                     placeholder="Search decks"
-                    className="h-9 pl-8"
+                    className="h-8 pl-8 text-xs md:text-xs"
                   />
                 </div>
                 <Button
@@ -182,12 +182,11 @@ export function DecksLayout({
                   size="sm"
                   onClick={() => handleQueryChange('')}
                   disabled={!query}
-                  className="h-9"
                 >
                   Clear
                 </Button>
                 {onCreateDeck ? (
-                  <Button type="button" size="sm" onClick={onCreateDeck} className="h-9">
+                  <Button type="button" size="sm" onClick={onCreateDeck}>
                     Create deck
                   </Button>
                 ) : null}

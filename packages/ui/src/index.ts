@@ -297,10 +297,15 @@ export type {
   TournamentState,
 } from './types/events'
 export type {
+  DeckBoardHighlight,
+  DeckBoardSelection,
   DeckCardDragEndPayload,
+  DeckCardDragMove,
   DeckCardEntry,
   DeckCardSearchResult,
+  DeckContextMenuPosition,
   DeckDiffEntry,
+  DeckDiffMap,
   DeckEditorCard,
   DeckEditorLayoutProps,
   DeckFeaturedCard,

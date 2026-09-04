@@ -47,10 +47,14 @@ function SearchResultCardRow({
   card,
   selected,
   onSelect,
+  onContextMenu,
+  highlighted = false,
 }: {
   card: DeckCardSearchResult
   selected: boolean
   onSelect: () => void
+  onContextMenu?: DeckBuildSidePaneProps['onCardContextMenu']
+  highlighted?: boolean
 }) {
   const tooltipHandlers = useCardTooltipHover({
     catalogId: card.mtgoId,
@@ -67,12 +71,18 @@ function SearchResultCardRow({
       {...tooltipHandlers}
       type="button"
       onClick={onSelect}
+      onContextMenu={event => {
+        event.preventDefault()
+        onContextMenu?.(card, { x: event.clientX, y: event.clientY })
+      }}
       aria-expanded={selected}
       className={cn(
         'relative block w-full rounded-md border border-transparent px-2.5 py-2 text-left ring-1 ring-inset transition-colors',
-        selected
-          ? 'bg-secondary/70 ring-primary/70'
-          : 'bg-background/50 ring-sidebar-border/60 hover:bg-background/80 hover:ring-sidebar-border',
+        highlighted
+          ? 'bg-secondary/70 ring-2 ring-primary'
+          : selected
+            ? 'bg-secondary/70 ring-primary/70'
+            : 'bg-background/50 ring-sidebar-border/60 hover:bg-background/80 hover:ring-sidebar-border',
       )}
     >
       <div className="absolute right-2.5 top-2 flex shrink-0 items-center gap-0.5">
@@ -249,6 +259,8 @@ export function DeckBuildSidePane({
   searchLoading = false,
   searchError,
   onSearchQueryChange,
+  onCardContextMenu,
+  highlightedSearchCardId,
   cardFilters: controlledFilters,
   onCardFiltersChange,
   lockedContent,
@@ -588,6 +600,11 @@ export function DeckBuildSidePane({
                             card={card}
                             selected={selectedCardName === card.name}
                             onSelect={() => toggleCardSelection(card.name)}
+                            onContextMenu={onCardContextMenu}
+                            highlighted={
+                              highlightedSearchCardId != null &&
+                              card.mtgoId === highlightedSearchCardId
+                            }
                           />
                         ))}
                       </div>

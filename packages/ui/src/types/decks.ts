@@ -33,6 +33,11 @@ export interface DeckCardEntry {
 
 export type DeckZone = 'Mainboard' | 'Sideboard'
 
+export interface DeckContextMenuPosition {
+  x: number
+  y: number
+}
+
 /** Fully-hydrated card used by the editor board grid. */
 export interface DeckEditorCard {
   index: number
@@ -112,9 +117,10 @@ export interface DecksLayoutProps {
 
 // -- Diff / history --
 
+export type DeckDiffMap = ReadonlyMap<DeckZone, ReadonlyMap<number, DeckDiffEntry>>
+
 export interface DeckDiffEntry {
   delta: number
-  zone: string
   name: string
   cmc?: number
   colors?: string[]
@@ -163,6 +169,7 @@ export interface DeckCardSearchResult {
   setCode?: string
   name: string
   type: string
+  types?: string[]
   text?: string
   colors?: string[]
   imageUrl?: string
@@ -176,12 +183,39 @@ export type DeckSidePanelView = 'cards' | 'stats' | 'history' | 'rental'
 
 // -- Board --
 
-export interface DeckCardDragEndPayload {
-  zone: DeckZone
+/** A single card's move within a drag operation (the primary card or a group member). */
+export interface DeckCardDragMove {
   cardIndex: number
   catalogId: number
   from: { col: number; row: number }
   to: { col: number; row: number }
+}
+
+export interface DeckCardDragEndPayload {
+  zone: DeckZone
+  /** Zone under the pointer when the drag ended. Defaults to `zone`. */
+  toZone?: DeckZone
+  /** The card the pointer grabbed; for multi-card drags this is the group's primary. */
+  cardIndex: number
+  catalogId: number
+  from: { col: number; row: number }
+  to: { col: number; row: number }
+  /** Every card moved by this drag; a single-card drag has exactly one entry. */
+  movedCards: DeckCardDragMove[]
+}
+
+/** The board's marquee selection for a single zone. */
+export interface DeckBoardSelection {
+  zone: DeckZone
+  /** Unrolled card indices (one per copy) currently selected in the zone. */
+  cardIndices: number[]
+  /** Unique catalog ids contained in the selection. */
+  catalogIds: number[]
+}
+
+/** Identifies a card on the board by catalog ID; all copies in both zones are highlighted. */
+export interface DeckBoardHighlight {
+  catalogId: number
 }
 
 export interface DeckBoardProps {
@@ -191,8 +225,23 @@ export interface DeckBoardProps {
   onSortModeChange?: (mode: DeckSortMode) => void
   sideboardCollapsed?: boolean
   onSideboardCollapsedChange?: (collapsed: boolean) => void
-  diffMap?: Map<number, DeckDiffEntry>
-  onDragEnd?: (payload: DeckCardDragEndPayload) => void
+  diffMap?: DeckDiffMap
+  onDragEnd?: (payload: DeckCardDragEndPayload) => void | Promise<void>
+  /**
+   * Fired when the board's marquee / card selection in a zone changes.
+   * Receives `null` when the selection is cleared (empty click, Escape, or a
+   * data change that invalidates the selected indices).
+   */
+  onSelectionChange?: (selection: DeckBoardSelection | null) => void
+  onCardContextMenu?: (
+    card: DeckEditorCard,
+    position: DeckContextMenuPosition,
+  ) => void
+  /**
+   * When set, the matching card pile (catalogId + zone) is outlined so the host
+   * can show which card a transient action (e.g. a context menu) targets.
+   */
+  highlightedCard?: DeckBoardHighlight | null
   /** Show the small stats strip above the board. Default false for editor chrome. */
   showDeckStats?: boolean
   /** Show internal header with sort / sideboard controls. Default false when host chrome owns controls. */
@@ -222,6 +271,15 @@ export interface DeckBuildSidePaneProps {
    * Host should fetch and pass `searchResults`.
    */
   onSearchQueryChange?: (query: string) => void
+  onCardContextMenu?: (
+    card: DeckCardSearchResult,
+    position: DeckContextMenuPosition,
+  ) => void
+  /**
+   * When set, the search result row with this MTGO id is outlined so the host
+   * can show which card a transient action (e.g. a context menu) targets.
+   */
+  highlightedSearchCardId?: number | null
   /** Optional controlled filter state; when omitted the pane owns filters. */
   cardFilters?: CardFilterState
   onCardFiltersChange?: (filters: CardFilterState) => void
@@ -245,8 +303,20 @@ export interface DeckEditorLayoutProps {
   // Board data
   cards: DeckEditorCard[]
   cardsLoading?: boolean
-  diffMap?: Map<number, DeckDiffEntry>
-  onDragEnd?: (payload: DeckCardDragEndPayload) => void
+  diffMap?: DeckDiffMap
+  onDragEnd?: (payload: DeckCardDragEndPayload) => void | Promise<void>
+  /**
+   * Fired when the board's marquee / card selection in a zone changes.
+   * Receives `null` when the selection is cleared (empty click, Escape, or a
+   * data change that invalidates the selected indices).
+   */
+  onSelectionChange?: (selection: DeckBoardSelection | null) => void
+  onDeckCardContextMenu?: (
+    card: DeckEditorCard,
+    position: DeckContextMenuPosition,
+  ) => void
+  /** Outlines the matching board card pile while a host context menu targets it. */
+  highlightedDeckCard?: DeckBoardHighlight | null
 
   // View controls
   sortMode?: DeckSortMode
@@ -272,6 +342,12 @@ export interface DeckEditorLayoutProps {
   searchLoading?: boolean
   searchError?: string | null
   onSearchQueryChange?: (query: string) => void
+  onSearchCardContextMenu?: (
+    card: DeckCardSearchResult,
+    position: DeckContextMenuPosition,
+  ) => void
+  /** Outlines the matching search result row while a host context menu targets it. */
+  highlightedSearchCardId?: number | null
   cardFilters?: CardFilterState
   onCardFiltersChange?: (filters: CardFilterState) => void
 

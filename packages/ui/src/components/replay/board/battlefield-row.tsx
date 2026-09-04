@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import type { CardState, BoardTransition } from "../../../types/replay-types"
 import { CARD_LEFT_PCT, CARD_TRANSITION, CARD_W_PCT, STACK_MAX, CardImage } from "./card-visuals"

@@ -3,7 +3,6 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { BoardState, CardState, BoardTransition } from "../../../types/replay-types"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../primitives/Tooltip"

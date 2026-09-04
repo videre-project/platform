@@ -178,6 +178,9 @@ export function DeckEditorLayout({
   cardsLoading = false,
   diffMap,
   onDragEnd,
+  onSelectionChange,
+  onDeckCardContextMenu,
+  highlightedDeckCard,
   sortMode: controlledSortMode,
   defaultSortMode = 'cmc',
   onSortModeChange,
@@ -199,6 +202,8 @@ export function DeckEditorLayout({
   searchLoading,
   searchError,
   onSearchQueryChange,
+  onSearchCardContextMenu,
+  highlightedSearchCardId,
   cardFilters,
   onCardFiltersChange,
   onBack,
@@ -519,7 +524,7 @@ export function DeckEditorLayout({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 items-stretch gap-4">
+      <div className="-mx-4 flex min-h-0 flex-1 items-stretch">
         <DeckBoard
           cards={cards}
           loading={cardsLoading}
@@ -529,11 +534,15 @@ export function DeckEditorLayout({
           onSideboardCollapsedChange={handleSideboardCollapsedChange}
           diffMap={activeDiffMap}
           onDragEnd={onDragEnd}
+          onSelectionChange={onSelectionChange}
+          onCardContextMenu={onDeckCardContextMenu}
+          highlightedCard={highlightedDeckCard}
           showDeckStats={false}
           showHeader={false}
-          className="h-full flex-1 gap-0 p-0"
+          className="h-full flex-1 gap-0 px-4 py-0"
         />
         <DeckBuildSidePane
+          className="pr-4"
           view={sidePanelView}
           onViewChange={handleSidePanelViewChange}
           isCollapsed={isDeckToolsCollapsed}
@@ -546,6 +555,8 @@ export function DeckEditorLayout({
           searchLoading={searchLoading}
           searchError={searchError}
           onSearchQueryChange={onSearchQueryChange}
+          onCardContextMenu={onSearchCardContextMenu}
+          highlightedSearchCardId={highlightedSearchCardId}
           cardFilters={cardFilters}
           onCardFiltersChange={onCardFiltersChange}
           lockedContent={sidePanelLockedContent}
