@@ -17,11 +17,15 @@ import type { ICardStatistics, IDeckStatistics } from './types.ts';
 
 type DeckBoard = 'mainboard' | 'sideboard';
 
+// Card statistics are aggregated over the matched-deck population (see
+// buildBoardEntries), the same population that archetype.count counts. A card
+// therefore never appears in more lists than its archetype has, so the share
+// is a true fraction bounded by 100% with no explicit cap required.
 const cardStatisticsJsonFields = {
   card: raw('e.card'),
-  count: raw('LEAST(e.count, p.count)'),
+  count: raw('e.count'),
   percentage: raw(
-    "TO_CHAR(LEAST(e.count, p.count) * (100.0 / p.count), 'FM990.00%')"
+    "TO_CHAR(e.count * (100.0 / p.count), 'FM990.00%')"
   ),
   total: raw('e.total'),
   average: raw('e.average'),
@@ -94,8 +98,11 @@ export const getDeckStatistics = (
       m.mainboard,
       s.sideboard
     FROM presence p
-    INNER JOIN mainboard_entries m ON m.archetype_id = p.id
-    INNER JOIN sideboard_entries s ON s.archetype_id = p.id
+    -- Join on the full (archetype_id, archetype) group key: an archetype_id can
+    -- map to several archetype names, so joining on id alone would compare a
+    -- card's count against a different name's deck count.
+    INNER JOIN mainboard_entries m ON m.archetype_id = p.id AND m.archetype = p.archetype
+    INNER JOIN sideboard_entries s ON s.archetype_id = p.id AND s.archetype = p.archetype
     ORDER BY
       p.count DESC
   `;
@@ -121,6 +128,7 @@ function buildBoardStats(
   return sql`
     SELECT
       p.id as archetype_id,
+      p.archetype,
       json_agg(
         ${sql.unsafe(cardStatisticsJsonObject.text, [...cardStatisticsJsonObject.values])}
         ORDER BY
@@ -130,11 +138,12 @@ function buildBoardStats(
           e.card ASC
       ) AS ${sql(board)}
     FROM (${boardEntries}) e
-    INNER JOIN presence p ON p.id = e.archetype_id
+    INNER JOIN presence p ON p.id = e.archetype_id AND p.archetype = e.archetype
     WHERE
       e.count * (100.0 / p.count) >= 1.0
     GROUP BY
-      p.id
+      p.id,
+      p.archetype
   `;
 }
 
@@ -146,19 +155,23 @@ function buildBoardEntries(
   return sql`
     SELECT
       e.archetype_id,
+      e.archetype,
       c.name as card,
       COUNT(DISTINCT e.id)::int as count,
       SUM(c.quantity)::int as total,
       ROUND(
         SUM(c.quantity) / (1.0 * COUNT(DISTINCT e.id)), 2
       )::float AS average
-    FROM deck_entries e, unnest(${sql(`e.${board}`)}) AS c (id, name, quantity)
+    -- Aggregate over the matched-deck population so card counts stay
+    -- consistent with archetype.count, which is also a matched-deck count.
+    FROM matched_deck_entries e, unnest(${sql(`e.${board}`)}) AS c (id, name, quantity)
     WHERE
       e.archetype_id is not null
       ${deckArchetypeFilter}
     GROUP BY
-      e.archetype_id, c.name,
-      e.archetype
+      e.archetype_id,
+      e.archetype,
+      c.name
   `;
 }
 
