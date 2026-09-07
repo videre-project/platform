@@ -16,14 +16,24 @@ const METAGAME_LIMIT = 100
 const ARCHETYPE_LIMIT = METAGAME_LIMIT
 const MAX_SHIFTS_PER_DIRECTION = 5
 export const MIN_COMPARABLE_GAMES = 10
+// A period must contain at least this many decklists before a field-share
+// comparison is meaningful. An empty or near-empty period reads as 0% for
+// every archetype and would otherwise show up as a spurious drop for the
+// whole field.
+const MIN_COMPARABLE_DECKS = 10
 const CARD_LOOKUP_CONCURRENCY = 4
+
+const periodDeckCount = (period: PeriodData): number =>
+  period.rows.reduce((sum, row) => sum + row.count, 0)
 
 interface APIResponse<T> {
   data: T
 }
 
 interface MetagameAPIRecord {
-  id: number
+  // archetype_id; null for decks that carry a free-text archetype name with
+  // no reference archetype_id.
+  id: number | null
   archetype: string
   count: number
   percentage: string
@@ -53,7 +63,9 @@ interface CardCatalogAPIRecord {
 }
 
 interface ArchetypeAPIRecord {
-  id: number
+  // archetype_id; null for decks that carry a free-text archetype name with
+  // no reference archetype_id.
+  id: number | null
   archetype: string
   count: number
   mainboard: CardAPIRecord[]
@@ -292,19 +304,49 @@ async function fetchPeriod(format: string, period: Period, signal: AbortSignal):
   }
 }
 
+// The API returns one row per (archetype_id, display name) group. The
+// archetype_id is the stable identity of an archetype, while the display name
+// is a mutable label that can be renamed across periods (e.g. id 28547 was
+// "Esper GenericBlink" until Aug 2026 and is "Esper Blink" since). Matching
+// movers by name would therefore split a renamed archetype into two. So rows
+// are keyed by archetype_id, falling back to the display name only for decks
+// that carry a free-text name with no reference id. Within a key, keep the
+// highest-count row so a small group cannot shadow the real field share.
+const archetypeKey = (row: { id: number | null, archetype: string }): string =>
+  row.id != null ? `id:${row.id}` : `name:${row.archetype}`
+
+const indexRowsByArchetypeKey = <T extends { id: number | null, archetype: string, count: number }>(rows: T[]): Map<string, T> => {
+  const byKey = new Map<string, T>()
+  for (const row of rows) {
+    const key = archetypeKey(row)
+    const existing = byKey.get(key)
+    if (!existing || row.count > existing.count) byKey.set(key, row)
+  }
+  return byKey
+}
+
 function getDeckMovers(current: PeriodData, previous: PeriodData): {
   rising: DeckMover[]
   falling: DeckMover[]
 } {
-  const currentByArchetype = new Map(current.rows.map(row => [row.archetype, row]))
-  const previousByArchetype = new Map(previous.rows.map(row => [row.archetype, row]))
-  const archetypes = new Set([...currentByArchetype.keys(), ...previousByArchetype.keys()])
-  const movers = [...archetypes].map(archetype => {
-    const currentRow = currentByArchetype.get(archetype)
-    const previousRow = previousByArchetype.get(archetype)
+  // A field-share comparison needs enough decklists in both periods. Without
+  // that, a missing period is treated as 0% and every archetype would appear
+  // to have collapsed, which is not a real shift.
+  if (periodDeckCount(current) < MIN_COMPARABLE_DECKS || periodDeckCount(previous) < MIN_COMPARABLE_DECKS) {
+    return { rising: [], falling: [] }
+  }
+
+  const currentByArchetype = indexRowsByArchetypeKey(current.rows)
+  const previousByArchetype = indexRowsByArchetypeKey(previous.rows)
+  const keys = new Set([...currentByArchetype.keys(), ...previousByArchetype.keys()])
+  const movers = [...keys].map(key => {
+    const currentRow = currentByArchetype.get(key)
+    const previousRow = previousByArchetype.get(key)
     return {
       id: currentRow?.id ?? previousRow?.id ?? 0,
-      archetype,
+      // Prefer the current period's display name so a renamed archetype shows
+      // its latest label (e.g. "Esper Blink", not the older "Esper GenericBlink").
+      archetype: (currentRow ?? previousRow)!.archetype,
       current: currentRow,
       previous: previousRow,
       currentRank: currentRow ? current.rows.indexOf(currentRow) + 1 : undefined,
@@ -323,9 +365,10 @@ function getCardMovers(current: PeriodData, previous: PeriodData): {
   rising: CardMover[]
   falling: CardMover[]
 } {
-  const previousByArchetype = new Map(previous.archetypes.map(row => [row.archetype, row]))
-  const comparableArchetypes = current.archetypes.flatMap(currentArchetype => {
-    const previousArchetype = previousByArchetype.get(currentArchetype.archetype)
+  const previousByArchetype = indexRowsByArchetypeKey(previous.archetypes)
+  const currentByArchetype = indexRowsByArchetypeKey(current.archetypes)
+  const comparableArchetypes = [...currentByArchetype.values()].flatMap(currentArchetype => {
+    const previousArchetype = previousByArchetype.get(archetypeKey(currentArchetype))
     if (!previousArchetype || currentArchetype.count <= 0 || previousArchetype.count <= 0) {
       return []
     }
