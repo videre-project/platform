@@ -1,0 +1,459 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+.modern-figure-caption {
+  margin-top: 0.85rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.modern-figure-caption strong {
+  color: #0f172a;
+  font-weight: 650;
+}
+
+.dark .modern-figure-caption {
+  color: hsl(var(--muted-foreground) / 0.85);
+}
+
+.dark .modern-figure-caption strong {
+  color: hsl(var(--foreground));
+}
+
+/* ===== Modern Metagame Taxonomy Figure (Unboxed / Outset Axis) ===== */
+.modern-taxonomy-figure {
+  margin: 2rem 0 2.25rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  width: 100%;
+  font-family: inherit;
+  color: #0f172a;
+}
+
+.dark .modern-taxonomy-figure {
+  color: hsl(var(--foreground));
+}
+
+/* Header */
+.modern-taxonomy-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0.35rem;
+  flex-wrap: nowrap;
+  min-height: 1.75rem;
+}
+
+.modern-taxonomy-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dark .modern-taxonomy-title {
+  color: hsl(var(--foreground));
+}
+
+.modern-taxonomy-hud {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  flex-shrink: 1;
+}
+
+.dark .modern-taxonomy-hud {
+  color: hsl(var(--muted-foreground));
+}
+
+.hud-metric {
+  color: #0f172a;
+  font-weight: 650;
+}
+
+.dark .hud-metric {
+  color: hsl(var(--foreground));
+}
+
+.hud-metric em {
+  font-style: italic;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dark .hud-metric em {
+  color: hsl(var(--muted-foreground));
+}
+
+.hud-metric sub {
+  font-size: 0.72em;
+  vertical-align: baseline;
+  position: relative;
+  top: 0.2em;
+}
+
+.hud-hint {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.dark .hud-hint {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+
+/* Chart Canvas Area (Outset Axis flush with content) */
+.modern-taxonomy-chart-wrap {
+  position: relative;
+  width: 100%;
+  margin: 0 0 0.5rem;
+  overflow: visible;
+}
+
+.modern-taxonomy-svg.outset-axis {
+  width: calc(100% * (762 / 720));
+  margin-left: calc(-100% * (42 / 720));
+  display: block;
+  overflow: visible;
+  cursor: crosshair;
+}
+
+/* Quadrant Backgrounds */
+.taxonomy-zone-rect.zone-green {
+  fill: #10b981;
+  fill-opacity: 0.04;
+}
+
+.taxonomy-zone-rect.zone-yellow {
+  fill: #f59e0b;
+  fill-opacity: 0.04;
+}
+
+.taxonomy-zone-rect.zone-purple {
+  fill: #8b5cf6;
+  fill-opacity: 0.035;
+}
+
+.taxonomy-zone-rect.zone-red {
+  fill: #f43f5e;
+  fill-opacity: 0.04;
+}
+
+.dark .taxonomy-zone-rect.zone-green {
+  fill-opacity: 0.08;
+}
+
+.dark .taxonomy-zone-rect.zone-yellow {
+  fill-opacity: 0.08;
+}
+
+.dark .taxonomy-zone-rect.zone-purple {
+  fill-opacity: 0.07;
+}
+
+.dark .taxonomy-zone-rect.zone-red {
+  fill-opacity: 0.08;
+}
+
+/* Zone Labels */
+.taxonomy-zone-label {
+  fill: #94a3b8;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  user-select: none;
+  font-family: inherit;
+}
+
+.dark .taxonomy-zone-label {
+  fill: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* Grid & Thresholds */
+.taxonomy-grid-line {
+  stroke: #f1f5f9;
+  stroke-width: 1.25px;
+}
+
+.dark .taxonomy-grid-line {
+  stroke: #1e293b;
+}
+
+.taxonomy-threshold-line-v,
+.taxonomy-threshold-line-h {
+  stroke: #cbd5e1;
+  stroke-width: 1.25px;
+  stroke-dasharray: 4 4;
+}
+
+.dark .taxonomy-threshold-line-v,
+.dark .taxonomy-threshold-line-h {
+  stroke: #334155;
+}
+
+.taxonomy-threshold-badge {
+  font-size: 10px;
+  font-weight: 650;
+  fill: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  user-select: none;
+}
+
+.dark .taxonomy-threshold-badge {
+  fill: #64748b;
+}
+
+/* Axes */
+.taxonomy-axis-line {
+  stroke: #cbd5e1;
+  stroke-width: 1.25px;
+}
+
+.dark .taxonomy-axis-line {
+  stroke: #334155;
+}
+
+.taxonomy-axis-tick {
+  stroke: #cbd5e1;
+  stroke-width: 1.25px;
+}
+
+.dark .taxonomy-axis-tick {
+  stroke: #334155;
+}
+
+.taxonomy-axis-num {
+  font-size: 11px;
+  fill: #64748b;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  user-select: none;
+}
+
+.dark .taxonomy-axis-num {
+  fill: #94a3b8;
+}
+
+/* Axis Header Titles (HTML overlay; arrows match the metagame tables) */
+.modern-taxonomy-axis-title {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 750;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dark .modern-taxonomy-axis-title {
+  color: #94a3b8;
+}
+
+/* Positioned to match the SVG coordinate space: viewBox 762x350 rendered at 762/720 of the wrapper width, offset -42/720 from the wrapper's left edge. */
+.modern-taxonomy-axis-title-y {
+  left: 0.556%;
+  top: 5.143%;
+  transform: translateY(-0.75em);
+}
+
+.modern-taxonomy-axis-title-x {
+  right: 2.222%;
+  top: 98.286%;
+  transform: translateY(-0.75em);
+}
+
+/* 2026 Trajectory Flow */
+.taxonomy-trajectory-group {
+  pointer-events: none;
+}
+
+.taxonomy-trajectory-glow {
+  stroke: #cbd5e1;
+  stroke-width: 4px;
+  stroke-opacity: 0.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dark .taxonomy-trajectory-glow {
+  stroke: #334155;
+  stroke-opacity: 0.55;
+}
+
+.taxonomy-trajectory-line {
+  stroke: #475569;
+  stroke-width: 1.75px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 3;
+}
+
+.dark .taxonomy-trajectory-line {
+  stroke: #94a3b8;
+}
+
+.taxonomy-trajectory-arrow {
+  fill: #475569;
+}
+
+.dark .taxonomy-trajectory-arrow {
+  fill: #94a3b8;
+}
+
+.taxonomy-trajectory-muted {
+  opacity: 0.45;
+}
+
+/* Points */
+.taxonomy-point {
+  cursor: pointer;
+  transition: transform 120ms ease;
+  outline: none;
+}
+
+.taxonomy-point-dot {
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.taxonomy-point:hover .taxonomy-point-dot,
+.taxonomy-point.is-active .taxonomy-point-dot,
+.taxonomy-point:focus-visible .taxonomy-point-dot {
+  r: 7px;
+  stroke: #0f172a;
+  stroke-width: 2px;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
+}
+
+.dark .taxonomy-point:hover .taxonomy-point-dot,
+.dark .taxonomy-point.is-active .taxonomy-point-dot,
+.dark .taxonomy-point:focus-visible .taxonomy-point-dot {
+  stroke: #ffffff;
+}
+
+.taxonomy-point-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: #334155;
+  font-family: inherit;
+  transition: fill 120ms ease, font-weight 120ms ease;
+  user-select: none;
+  paint-order: stroke fill;
+  stroke: #ffffff;
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+
+.dark .taxonomy-point-label {
+  fill: hsl(var(--foreground) / 0.85);
+  stroke: #090d16;
+}
+
+.taxonomy-point:hover .taxonomy-point-label,
+.taxonomy-point.is-active .taxonomy-point-label,
+.taxonomy-point:focus-visible .taxonomy-point-label {
+  fill: #0f172a;
+  font-weight: 750;
+}
+
+.dark .taxonomy-point:hover .taxonomy-point-label,
+.dark .taxonomy-point.is-active .taxonomy-point-label,
+.dark .taxonomy-point:focus-visible .taxonomy-point-label {
+  fill: hsl(var(--foreground));
+}
+
+/* Floating Tooltip */
+.article-prose .figure-tooltip,
+.figure-tooltip {
+  position: absolute;
+  z-index: 60;
+  pointer-events: none;
+  width: max-content;
+  max-width: 280px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.75rem;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.25);
+  animation: figureTooltipFade 120ms ease-out forwards;
+}
+
+@keyframes figureTooltipFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.figure-tooltip-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.figure-tooltip-title {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.figure-tooltip-subtitle {
+  color: #94a3b8;
+  font-size: 0.68rem;
+}
+
+.figure-tooltip-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.74rem;
+}
+
+.article-prose .figure-tooltip strong,
+.figure-tooltip .figure-tooltip-metrics strong,
+.figure-tooltip strong {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.article-prose .figure-tooltip em,
+.figure-tooltip .figure-tooltip-metrics em,
+.figure-tooltip em {
+  font-style: italic;
+  color: #cbd5e1 !important;
+}

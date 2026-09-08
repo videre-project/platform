@@ -97,6 +97,14 @@ export const Header: React.FC = () => {
           >
             Metagame
           </a>
+          <a
+            href="/articles"
+            onClick={navigateTo('/articles')}
+            className={window.location.pathname.startsWith('/articles') ? 'is-active' : undefined}
+            aria-current={window.location.pathname.startsWith('/articles') ? 'page' : undefined}
+          >
+            Articles
+          </a>
         </nav>
 
         {/* Right actions */}

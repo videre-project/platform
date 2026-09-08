@@ -1,0 +1,724 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Modern Format Health Timeline (Unboxed / Outset Axis) ===== */
+.modern-timeline-figure {
+  margin: 2rem 0 2.25rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  width: 100%;
+  font-family: inherit;
+  color: #0f172a;
+}
+
+/* Header */
+.modern-timeline-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0.25rem;
+}
+
+.modern-timeline-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.modern-timeline-date-display {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Chart Canvas Area (Outset Axis flush with content) */
+.modern-timeline-chart-wrap {
+  position: relative;
+  width: 100%;
+  margin: 0 0 0.25rem;
+  overflow: visible;
+}
+
+.modern-timeline-svg.stacked.outset-axis {
+  width: calc(100% * (762 / 720));
+  margin-left: calc(-100% * (42 / 720));
+  display: block;
+  overflow: visible;
+  cursor: crosshair;
+}
+
+/* Grid & Reference Lines */
+.timeline-grid-line {
+  stroke: #f1f5f9;
+  stroke-width: 1.25px;
+}
+
+.timeline-axis-line {
+  stroke: #cbd5e1;
+  stroke-width: 1.25px;
+}
+
+.timeline-year-group {
+  pointer-events: none;
+}
+
+.timeline-year-bar {
+  stroke: #0f172a;
+  stroke-width: 2px;
+  stroke-linecap: butt;
+}
+
+.timeline-axis-text.is-year {
+  font-size: 12px;
+  fill: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Row 3 Milestone Rail for Set Symbols */
+.timeline-rail-line {
+  stroke: #e2e8f0;
+  stroke-width: 1px;
+  stroke-dasharray: 3 3;
+}
+
+.timeline-set-glyph {
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.timeline-set-peg {
+  stroke: #cbd5e1;
+  stroke-width: 1px;
+  stroke-linecap: butt;
+}
+
+.timeline-set-circle {
+  fill: #ffffff;
+  stroke: #cbd5e1;
+  stroke-width: 0.85px;
+  transition: r 120ms ease, stroke 120ms ease, stroke-width 120ms ease;
+}
+
+.timeline-set-glyph:hover .timeline-set-circle,
+.timeline-set-glyph.is-active .timeline-set-circle {
+  stroke: #0f172a;
+  stroke-width: 1.25px;
+}
+
+.timeline-set-chart-img {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+  opacity: 0.95;
+}
+
+/* Track Titles & Dynamic HUD Values */
+.timeline-foreign-title {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.timeline-track-title-html {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #334155;
+}
+
+.timeline-track-title-left {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.timeline-track-title-text {
+  font-weight: 700;
+  color: #334155;
+}
+
+.timeline-track-title-math {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.timeline-track-title-math .katex {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.timeline-track-hud-val {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.timeline-hud-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.timeline-hud-label .katex {
+  font-size: 0.74rem;
+}
+
+.timeline-hud-num {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.timeline-y-tick {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  fill: #64748b;
+}
+
+/* Neutral Grey B&R Milestone Lines & 2-Week Shift Window */
+.timeline-bnr-group {
+  cursor: pointer;
+}
+
+.timeline-bnr-band {
+  fill: rgba(100, 116, 139, 0.08);
+  stroke: none;
+  transition: fill 120ms ease;
+}
+
+.timeline-bnr-group:hover .timeline-bnr-band {
+  fill: rgba(100, 116, 139, 0.16);
+}
+
+.timeline-bnr-line {
+  stroke: #64748b;
+  stroke-width: 1.25px;
+  stroke-dasharray: 3 3;
+  opacity: 0.75;
+}
+
+/* No-action B&R announcements (Modern was reviewed but unchanged):
+   the 2-week shaded band is suppressed in the component; the line
+   uses a separate class to dim further and signal "no metagame shift". */
+.timeline-bnr-line.no-action {
+  opacity: 0.35;
+  stroke-width: 1px;
+}
+
+/* Hover Crosshair */
+.timeline-crosshair {
+  stroke: #64748b;
+  stroke-width: 1px;
+  stroke-dasharray: 2 2;
+  pointer-events: none;
+}
+
+/* Metric Curves: Purple for Diversity (N_eff), Orange for Polarity (P_meta) */
+.timeline-line.neff {
+  fill: none;
+  stroke: #8b5cf6;
+  stroke-width: 2.25px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.timeline-line.pmeta {
+  fill: none;
+  stroke: #f97316;
+  stroke-width: 2.25px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Active Highlight Dots on Hover */
+.timeline-active-dot.neff {
+  fill: #8b5cf6;
+  stroke: #ffffff;
+  stroke-width: 2px;
+}
+
+.timeline-active-dot.pmeta {
+  fill: #f97316;
+  stroke: #ffffff;
+  stroke-width: 2px;
+}
+
+/* ================= Contextual Floating Tooltips (Set & B&R Pins Only) ================= */
+.timeline-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.12), 0 2px 5px -2px rgba(15, 23, 42, 0.06);
+  font-size: 0.76rem;
+  color: #0f172a;
+}
+
+/* 1. Set Milestone Tooltip (Anchored above Set Pin) */
+.timeline-tooltip.set-milestone {
+  width: max-content;
+  max-width: none;
+  padding: 6px 12px 7px 10px;
+  white-space: nowrap;
+}
+
+.set-tooltip-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-tooltip-img {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.set-tooltip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.set-tooltip-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.set-tooltip-date {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* 2. B&R Milestone Tooltip */
+.timeline-tooltip.bnr-milestone {
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 10px 7px;
+  white-space: nowrap;
+}
+
+.bnr-tooltip-header {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.bnr-tooltip-no-cards {
+  font-size: 0.7rem;
+  font-style: italic;
+  color: #94a3b8;
+  margin: 0;
+  padding: 0;
+}
+
+.bnr-tooltip-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+}
+
+.bnr-tooltip-card-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+
+.bnr-tooltip-sign {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  width: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.bnr-tooltip-card-item.ban .bnr-tooltip-sign {
+  color: #b91c1c;
+}
+
+.bnr-tooltip-card-item.unban .bnr-tooltip-sign {
+  color: #15803d;
+}
+
+.bnr-tooltip-card-item.ban .bnr-tooltip-card-name {
+  color: #991b1b;
+}
+
+.bnr-tooltip-card-item.unban .bnr-tooltip-card-name {
+  color: #166534;
+}
+
+.bnr-tooltip-card-name {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.25;
+}
+
+/* ================= Canonical 4-Panel Breakdown Table ================= */
+.modern-timeline-breakdown {
+  margin-top: 0.5rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.modern-timeline-metagame-chart {
+  display: grid;
+  grid-template-columns: minmax(0, 2.13fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.modern-timeline-breakdown .metagame-panel-header {
+  white-space: nowrap;
+  padding: 0 0.4rem 0.55rem;
+}
+
+.modern-timeline-breakdown .metagame-panel-header.is-right {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.modern-timeline-breakdown .polarity-concentration-panel > .metagame-panel-header {
+  width: 100%;
+  padding: 0 0.4rem 0.55rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.modern-timeline-breakdown .metagame-panel-header span {
+  white-space: nowrap;
+}
+
+.modern-timeline-breakdown .metagame-archetype-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 145px;
+  text-align: right;
+  padding-right: 0.55rem;
+}
+
+/* Base Track & Label Positioning */
+.modern-timeline-breakdown .timeline-bar-label {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.modern-timeline-breakdown .timeline-bar-label.is-inside {
+  transform: translate(calc(-100% - 5px), -50%);
+}
+
+.modern-timeline-breakdown .timeline-bar-label.is-outside {
+  transform: translate(5px, -50%);
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.modern-timeline-breakdown .timeline-bar-label.is-white-inside {
+  color: #ffffff !important;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.modern-timeline-breakdown .timeline-bar-label.is-dark-inside {
+  color: #020817 !important;
+  font-weight: 700;
+}
+
+/* Homogeneity (Concentration) Track - Flat Crisp Rectangular Bar */
+.modern-timeline-breakdown .polarity-concentration-row {
+  height: var(--metagame-row-height);
+  padding: 0 0.4rem;
+  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.25);
+  display: flex;
+  align-items: center;
+}
+
+.modern-timeline-breakdown .polarity-concentration-track {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: hsl(var(--muted) / 0.52);
+  border-radius: 0;
+  overflow: visible;
+}
+
+.modern-timeline-breakdown .polarity-concentration-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #8b5cf6;
+  border-radius: 0;
+}
+
+.modern-timeline-breakdown .polarity-concentration-overflow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #e11d48;
+  border-radius: 0;
+}
+
+.modern-timeline-breakdown .polarity-concentration-axis {
+  position: relative;
+  height: 30px;
+  margin: 0;
+  padding: 0.35rem 0 0;
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.modern-timeline-breakdown .polarity-concentration-axis > span {
+  position: absolute;
+  top: 0.35rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.modern-timeline-breakdown .polarity-concentration-axis > span::before {
+  position: absolute;
+  top: -0.35rem;
+  left: 50%;
+  width: 1px;
+  height: 0.4rem;
+  background: hsl(var(--muted-foreground) / 0.75);
+  content: '';
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .modern-timeline-metagame-chart {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-timeline-metagame-chart {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .modern-timeline-breakdown .metagame-archetype-name {
+    max-width: 120px;
+  }
+}
+
+/* ===== Dark Mode Overrides ===== */
+.dark .modern-timeline-figure {
+  color: hsl(var(--foreground));
+}
+
+.dark .modern-timeline-title {
+  color: hsl(var(--foreground));
+}
+
+.dark .modern-timeline-date-display {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .timeline-grid-line {
+  stroke: hsl(var(--border) / 0.4);
+}
+
+.dark .timeline-axis-line {
+  stroke: hsl(var(--border));
+}
+
+.dark .timeline-rail-line {
+  stroke: hsl(var(--border) / 0.6);
+}
+
+.dark .timeline-set-peg {
+  stroke: hsl(var(--border));
+}
+
+.dark .timeline-year-bar {
+  stroke: hsl(var(--foreground));
+}
+
+.dark .timeline-axis-text.is-year {
+  fill: hsl(var(--foreground));
+}
+
+.dark .timeline-track-title-html,
+.dark .timeline-track-title-text {
+  color: hsl(var(--foreground) / 0.85);
+}
+
+.dark .timeline-track-title-math,
+.dark .timeline-hud-label {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .timeline-hud-num {
+  color: hsl(var(--foreground));
+}
+
+.dark .timeline-y-tick {
+  fill: hsl(var(--muted-foreground) / 0.85);
+}
+
+.dark .timeline-set-circle {
+  fill: hsl(var(--card));
+  stroke: hsl(var(--border));
+}
+
+.dark .timeline-set-glyph:hover .timeline-set-circle,
+.dark .timeline-set-glyph.is-active .timeline-set-circle {
+  stroke: hsl(var(--foreground));
+}
+
+.dark .timeline-bnr-band {
+  fill: rgba(255, 255, 255, 0.05);
+}
+
+.dark .timeline-bnr-group:hover .timeline-bnr-band {
+  fill: rgba(255, 255, 255, 0.12);
+}
+
+.dark .timeline-bnr-line {
+  stroke: #94a3b8;
+  opacity: 0.6;
+}
+
+.dark .timeline-set-chart-img {
+  filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.dark .timeline-crosshair {
+  stroke: hsl(var(--muted-foreground));
+}
+
+.dark .timeline-line.neff {
+  stroke: #a78bfa;
+}
+
+.dark .timeline-line.pmeta {
+  stroke: #fb923c;
+}
+
+.dark .timeline-active-dot.neff {
+  fill: #a78bfa;
+  stroke: hsl(var(--card));
+}
+
+.dark .timeline-active-dot.pmeta {
+  fill: #fb923c;
+  stroke: hsl(var(--card));
+}
+
+.dark .timeline-tooltip {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+  box-shadow: 0 8px 20px -3px rgba(0, 0, 0, 0.5);
+}
+
+.dark .set-tooltip-img {
+  filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.dark .set-tooltip-name {
+  color: hsl(var(--foreground));
+}
+
+.dark .set-tooltip-date {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .bnr-tooltip-card-item.ban .bnr-tooltip-sign,
+.dark .bnr-tooltip-card-item.ban .bnr-tooltip-card-name {
+  color: #fca5a5;
+}
+
+.dark .bnr-tooltip-card-item.unban .bnr-tooltip-sign,
+.dark .bnr-tooltip-card-item.unban .bnr-tooltip-card-name {
+  color: #86efac;
+}
+
+.dark .modern-timeline-breakdown .timeline-bar-label.is-outside {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .modern-timeline-breakdown .polarity-concentration-track {
+  background: hsl(var(--muted) / 0.38);
+}
+
+.dark .modern-timeline-breakdown .polarity-concentration-fill {
+  background: #a78bfa;
+}
+
+.dark .modern-timeline-breakdown .polarity-concentration-axis {
+  color: hsl(var(--muted-foreground));
+}
+
+/* B&R Banned Deck Highlight Styling */
+.modern-timeline-breakdown .metagame-archetype-name.is-banned {
+  color: #475569 !important;
+  font-weight: 600;
+}
+
+.modern-timeline-breakdown .timeline-bar-fill-banned {
+  background: #64748b !important;
+  opacity: 0.88;
+}
+
+.dark .modern-timeline-breakdown .metagame-archetype-name.is-banned {
+  color: #94a3b8 !important;
+  font-weight: 600;
+}
+
+.dark .modern-timeline-breakdown .timeline-bar-fill-banned {
+  background: #475569 !important;
+  opacity: 0.85;
+}

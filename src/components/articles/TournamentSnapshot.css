@@ -1,0 +1,537 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Horizontal Tournament Snapshot Card ===== */
+.tournament-snapshot-card {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fafaf9;
+  padding: 11px 14px 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+/* Row 1: Header Row */
+.tournament-snapshot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.tournament-snapshot-archetype-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tournament-snapshot-mana-symbols {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.snapshot-mana-subgroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.snapshot-mana-group-slash {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0 1px;
+  user-select: none;
+}
+
+.dark .snapshot-mana-group-slash {
+  color: hsl(var(--muted-foreground) / 0.6);
+}
+
+.snapshot-mana-symbol-icon {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  display: block;
+}
+
+/* Scoped under the card so it wins over the article-prose h4 rule
+   (the deck title is a label, not an article section heading). */
+.tournament-snapshot-card .tournament-snapshot-deck-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 750;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.tournament-snapshot-multi-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.tournament-snapshot-event-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.tournament-snapshot-event-name {
+  font-weight: 600;
+  color: #475569;
+}
+
+.tournament-snapshot-event-date {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+/* Multi-Archetype Stacked Sections */
+.tournament-snapshot-multi-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tournament-snapshot-archetype-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tournament-snapshot-archetype-row-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tournament-snapshot-archetype-section .tournament-snapshot-deck-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tournament-snapshot-archetype-section .tournament-snapshot-card-bars {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.snapshot-card-without-metrics .tournament-snapshot-multi-sections,
+.snapshot-card-without-metrics > .tournament-snapshot-card-bars {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Row 2: Dedicated Full-Width Card Tray Grid */
+.tournament-snapshot-card-bars {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tournament-snapshot-card-bar {
+  width: 100%;
+  height: 46px;
+  overflow: hidden;
+  position: relative;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+.tournament-snapshot-card-bar:hover,
+.tournament-snapshot-card-bar:focus-visible {
+  filter: brightness(1.08) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  outline: none;
+}
+
+.snapshot-cropped-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  background: transparent;
+}
+
+/* Full Card Preview Tooltip */
+.snapshot-card-full-tooltip {
+  z-index: 1000;
+  width: 220px;
+  height: 308px;
+  border: none;
+  background: transparent;
+  animation-duration: 140ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.snapshot-card-full-tooltip[data-state='delayed-open'] {
+  animation-name: snapshot-card-tooltip-fade;
+}
+
+@keyframes snapshot-card-tooltip-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.snapshot-card-full-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
+}
+
+.snapshot-card-skeleton {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: snapshot-skeleton-pulse 1.5s infinite;
+  padding: 0 4px;
+}
+
+@keyframes snapshot-skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.snapshot-card-skeleton-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snapshot-card-tooltip-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #0f172a;
+  padding: 1rem;
+  text-align: center;
+}
+
+.snapshot-card-tooltip-arrow {
+  fill: #000000;
+}
+
+/* Row 3: 4 Metrics with Vertical Bar Separator */
+.tournament-snapshot-metrics-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.tournament-snapshot-metric-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 14px;
+  flex: 1;
+}
+
+.tournament-snapshot-metric-divider {
+  width: 1px;
+  height: 28px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.tournament-snapshot-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.snapshot-metric-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Formatted Math Typography (N_eff, P_meta) */
+.snapshot-math-sym {
+  font-family: 'KaTeX_Math', 'Times New Roman', Cambria, serif;
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+
+.snapshot-math-sym i {
+  font-style: italic;
+  font-weight: 600;
+}
+
+.snapshot-math-sym sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.72em;
+  font-style: normal;
+  font-weight: 600;
+  vertical-align: -0.2em;
+}
+
+.snapshot-metric-value {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: #0f172a;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.snapshot-metric-denominator {
+  font-size: 0.76rem;
+  font-weight: 550;
+  color: #94a3b8;
+  letter-spacing: normal;
+}
+
+/* Metagame Visual Progress Bar with 50% Baseline */
+.snapshot-meta-bar-track {
+  position: relative;
+  width: 100%;
+  max-width: 104px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  margin-top: 4px;
+}
+
+.snapshot-meta-bar-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 9999px 0 0 9999px;
+}
+
+.snapshot-meta-bar-midline {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: #fafaf9;
+}
+
+/* Winrate Visual Progress Bar with 50% Baseline */
+.snapshot-winrate-bar-track {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 104px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  margin-top: 4px;
+}
+
+.snapshot-winrate-bar-win {
+  height: 100%;
+  background: #10b981;
+}
+
+.snapshot-winrate-bar-loss {
+  height: 100%;
+  background: #f43f5e;
+}
+
+.snapshot-winrate-bar-midline {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: #fafaf9;
+}
+
+/* Field Diversity Visual Bar (10.0 Benchmark Notch) */
+.snapshot-neff-bar-track {
+  position: relative;
+  width: 100%;
+  max-width: 104px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  margin-top: 4px;
+}
+
+.snapshot-neff-bar-fill {
+  height: 100%;
+  background: #9333ea;
+  border-radius: 9999px 0 0 9999px;
+}
+
+.snapshot-neff-bar-notch {
+  position: absolute;
+  left: 62.5%; /* 10.0 / 16 */
+  top: 0;
+  height: 100%;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: #fafaf9;
+}
+
+/* Matchup Polarity Visual Bar (16.0% Threshold Notch) */
+.snapshot-pmeta-bar-track {
+  position: relative;
+  width: 100%;
+  max-width: 104px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  margin-top: 4px;
+}
+
+.snapshot-pmeta-bar-fill {
+  height: 100%;
+  background: #f59e0b;
+  border-radius: 9999px 0 0 9999px;
+}
+
+.snapshot-pmeta-bar-notch {
+  position: absolute;
+  left: 40%; /* 16% / 40% */
+  top: 0;
+  height: 100%;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: #fafaf9;
+}
+
+/* Dark Mode */
+.dark .tournament-snapshot-card {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dark .tournament-snapshot-header,
+.dark .tournament-snapshot-card-bars {
+  border-bottom-color: hsl(var(--border) / 0.7);
+}
+
+.dark .tournament-snapshot-metric-divider {
+  background: hsl(var(--border));
+}
+
+.dark .tournament-snapshot-deck-title {
+  color: hsl(var(--foreground));
+}
+
+.dark .tournament-snapshot-event-name {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .tournament-snapshot-event-date {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+
+.dark .snapshot-metric-label {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .snapshot-metric-denominator {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+
+.dark .snapshot-meta-bar-track,
+.dark .snapshot-winrate-bar-track,
+.dark .snapshot-neff-bar-track,
+.dark .snapshot-pmeta-bar-track {
+  background: hsl(var(--muted));
+}
+
+.dark .snapshot-meta-bar-midline,
+.dark .snapshot-winrate-bar-midline,
+.dark .snapshot-neff-bar-notch,
+.dark .snapshot-pmeta-bar-notch {
+  background: hsl(var(--card));
+}
+
+.dark .snapshot-neff-bar-fill {
+  background: #a855f7;
+}
+
+.dark .snapshot-metric-value {
+  color: hsl(var(--foreground));
+}
+
+.dark .tournament-snapshot-card-bar:hover,
+.dark .tournament-snapshot-card-bar:focus-visible {
+  filter: brightness(1.15) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+@media (max-width: 640px) {
+  .tournament-snapshot-card-bars {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .tournament-snapshot-metrics-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tournament-snapshot-metric-divider {
+    width: 100%;
+    height: 1px;
+  }
+}

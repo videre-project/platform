@@ -1,0 +1,1304 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ==========================================================================
+   1. Articles Catalog View (/articles)
+   ========================================================================== */
+
+.articles-page-main {
+  flex: 1;
+  padding-bottom: var(--space-3xl);
+  background: #ffffff;
+  color: #0f172a;
+  /* Light-theme tokens for the catalog (mirrors .article-body-wrapper) */
+  --foreground: 222.2 47.4% 11.2%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 210 40% 96.1%;
+  --card: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --sidebar-border: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+}
+
+/* Full-width band behind the page heading, echoes the article hero header */
+.articles-page-hero {
+  width: 100%;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 2.75rem 0 3rem;
+}
+
+.articles-page-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 680px) 1fr;
+  align-items: end;
+  gap: 2rem;
+}
+
+.articles-page-heading h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.articles-page-heading p {
+  max-width: 680px;
+  margin: 0.2rem 0 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.articles-page-results {
+  margin-top: 2.5rem;
+  border-top: 1px solid hsl(var(--sidebar-border) / 0.7);
+}
+
+.articles-page-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 0 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.articles-page-results-header h2 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 1.05rem;
+}
+
+.articles-page-results-header p {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+}
+
+.articles-page-results-header > span {
+  font-size: 0.78rem;
+}
+
+.article-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.article-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius);
+  background: #f8fafc;
+  color: #0f172a;
+  text-decoration: none;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.article-card:first-child:last-child {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.article-card:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+.article-card:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+
+.article-card-thumbnail {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 8;
+  object-fit: cover;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.article-card:first-child:last-child .article-card-thumbnail {
+  grid-column: 2;
+  grid-row: 1;
+  height: 100%;
+  min-height: 260px;
+  aspect-ratio: auto;
+  /* The column is much taller than the figure's 2:1 shape, so contain the
+     full image (cover would crop the chart's edges) and letterbox on
+     white to match the figure's background. */
+  object-fit: contain;
+  object-position: center;
+  background: #ffffff;
+  /* The column is much taller than the figure's 2:1 shape, so contain the
+     full image (cover would crop the chart's edges) and letterbox on
+     white to match the figure's background. */
+  object-fit: contain;
+  object-position: center;
+  background: #ffffff;
+  border-right: 0;
+  border-left: 1px solid #e2e8f0;
+  border-bottom: 0;
+}
+
+.article-card-body {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.article-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.article-card p {
+  margin-top: 0.55rem;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* Reuse the reading view's author/meta/tag styles on the catalog card */
+.article-card .article-author-card {
+  margin-top: 1.25rem;
+}
+
+/* The handle is a plain span on the card (the whole card is the link),
+   so keep it from looking like a hoverable link. */
+.article-card .article-author-handle:hover {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.article-card .article-tags-list {
+  margin-top: 0.9rem;
+  justify-content: flex-start;
+}
+
+.article-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1.5rem;
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.article-card-link svg {
+  color: #64748b;
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.article-card:hover .article-card-link svg {
+  color: #0f172a;
+  transform: translateX(3px);
+}
+
+.articles-coming-soon {
+  margin-top: 1rem;
+  color: hsl(var(--muted-foreground) / 0.72);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 700px) {
+  .articles-page-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .article-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .article-card:first-child:last-child {
+    display: flex;
+    grid-template-columns: none;
+  }
+
+  .article-card:first-child:last-child .article-card-thumbnail {
+    grid-column: auto;
+    grid-row: auto;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 8;
+    border-left: 0;
+    border-bottom: 1px solid hsl(var(--sidebar-border) / 0.65);
+  }
+}
+
+/* ==========================================================================
+   2. Single Article Reading View (/articles/:slug)
+   ========================================================================== */
+
+.article-page-main {
+  flex: 1;
+  width: 100%;
+  background: #ffffff;
+}
+
+/* ===== Article Hero Header Block ===== */
+.article-hero-header {
+  width: 100%;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 2.75rem 0 3rem;
+}
+
+.article-hero-container {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.article-hero-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.article-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #64748b;
+  font-size: 0.84rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.article-back-link svg {
+  transition: transform 150ms ease;
+}
+
+.article-back-link:hover {
+  color: #0f172a;
+}
+
+.article-back-link:hover svg {
+  transform: translateX(-3px);
+}
+
+.article-hero-badge {
+  display: inline-block;
+  padding: 0.22rem 0.6rem;
+  border-radius: 4px;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.article-hero-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 2.35rem;
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.article-hero-dek {
+  max-width: 760px;
+  margin: 1.15rem 0 0;
+  color: #475569;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+/* ===== Author & Dataset Meta Panel ===== */
+.article-hero-meta-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 2rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.article-author-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.article-author-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.article-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.article-author-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.article-author-name {
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.article-author-handle {
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.article-author-handle:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.article-publish-details {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.article-publish-details .meta-dot {
+  color: #cbd5e1;
+}
+
+.article-read-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  line-height: 1;
+}
+
+.article-read-time svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.article-read-time span {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* ===== Article Tags Panel ===== */
+.article-tags-panel {
+  display: flex;
+  align-items: center;
+}
+
+.article-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.article-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 26px;
+  line-height: 1;
+  padding: 0 0.65rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  box-sizing: border-box;
+}
+
+.article-tag-pill svg {
+  display: block;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.article-tag-pill span {
+  display: inline-block;
+  line-height: 1;
+  position: relative;
+  top: 0.5px;
+}
+
+.article-tag-pill:hover {
+  border-color: #94a3b8;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+/* ===== Article Body Section (Soft Paper) ===== */
+.article-body-wrapper {
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+  --card: 210 40% 98%;
+  --card-foreground: 222.2 47.4% 11.2%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --sidebar-border: 214.3 31.8% 91.4%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+
+  width: 100%;
+  background: #ffffff;
+  padding: 3.5rem 0 6rem;
+  color: #0f172a;
+}
+
+.article-layout-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 3.5rem;
+  position: relative;
+}
+
+.article-main-content {
+  width: 100%;
+  max-width: 740px;
+  min-width: 0;
+}
+
+/* ===== Appendix Section (full-width band, echoes the hero header) ===== */
+/* Hidden until the reading view populates it (articles without an appendix
+   leave the band absent entirely). */
+.article-appendix-band {
+  display: none;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 3.5rem;
+  padding: 2.5rem 0 3rem;
+}
+
+.article-appendix-band.is-populated {
+  display: block;
+}
+
+/* Mirror the article layout container so the appendix aligns with the
+   reading column (the spacer reserves the TOC sidebar's width). */
+.article-appendix-band .article-appendix {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 3.5rem;
+}
+
+.article-appendix-column {
+  width: 100%;
+  max-width: 740px;
+  min-width: 0;
+}
+
+.article-appendix-spacer {
+  width: 240px;
+  flex-shrink: 0;
+}
+
+/* Collapsed: clip the body to a short preview and fade it into the band. */
+.article-appendix-content {
+  position: relative;
+  max-height: 240px;
+  overflow: hidden;
+}
+
+/* The fade holds fully opaque for its last stretch so a line the clip cuts
+   is masked entirely (no faint half-line) rather than ghosted. */
+.article-appendix-content::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 90px;
+  background: linear-gradient(to bottom, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 0) 50%, #f8fafc 75%, #f8fafc 100%);
+  pointer-events: none;
+}
+
+/* Expanded: reveal the full body and drop the fade. */
+.article-appendix-band.is-expanded .article-appendix-content {
+  max-height: none;
+  overflow: visible;
+}
+
+.article-appendix-band.is-expanded .article-appendix-content::after {
+  display: none;
+}
+
+/* The appendix heading is the first thing in the preview, so drop its top
+   margin. */
+.article-appendix-content > h2:first-child {
+  margin-top: 0;
+}
+
+/* The appendix band is the last element on the page; drop the body wrapper's
+   bottom padding so there is no white gap below the tinted band. */
+.article-body-wrapper.has-appendix {
+  padding-bottom: 0;
+}
+
+/* ===== Appendix toggle (centered, no caret) =====
+   Sits flush against the fade so the chevron line reads as the boundary
+   where the clipped preview continues. */
+.article-appendix-toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+}
+
+/* A thin chevron line flanks the button, running flush against it on both
+   sides and spanning the full content width */
+.article-appendix-toggle-wrap::before,
+.article-appendix-toggle-wrap::after {
+  content: '';
+  flex: 1;
+  height: 14px;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%3E%3Cpath%20d='M0%209%20L7%205%20L14%209'%20fill='none'%20stroke='%23cbd5e1'%20stroke-width='1'/%3E%3C/svg%3E")
+    repeat-x center;
+  background-size: 14px 14px;
+}
+
+.article-appendix-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.article-appendix-toggle:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.article-appendix-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ===== Appendix TOC sidebar =====
+   Lives in the band's reserved spacer column (aligned under the main TOC)
+   and reuses the sidebar's classes, so it is the same sticky sidebar. It
+   stays visible while collapsed, clipped to a short preview with the same
+   fade the content uses; revealed in full when expanded. */
+.article-appendix-band:not(.is-expanded) .article-appendix-toc-sidebar {
+  max-height: 240px;
+  overflow: hidden;
+}
+
+.article-appendix-band:not(.is-expanded) .article-appendix-toc-sidebar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 90px;
+  background: linear-gradient(to bottom, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 0) 50%, #f8fafc 75%, #f8fafc 100%);
+  pointer-events: none;
+}
+
+/* ===== Article TOC Sidebar ===== */
+.article-toc-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 5.5rem;
+  align-self: flex-start;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+  padding-bottom: 2rem;
+}
+
+.article-toc-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.article-toc-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.article-toc-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.article-toc-header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.85rem;
+  padding-left: 0.85rem;
+}
+
+.article-toc-container {
+  position: relative;
+  border-left: 1px solid #e2e8f0;
+}
+
+.article-toc-active-bar {
+  position: absolute;
+  left: -1px;
+  width: 2px;
+  background: #2563eb;
+  border-radius: 1px;
+  transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1), height 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease;
+  pointer-events: none;
+}
+
+.article-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.article-toc-item {
+  transition: color 120ms ease;
+}
+
+.article-toc-item.article-toc-level-2 {
+  padding-left: 0.85rem;
+}
+
+.article-toc-item.article-toc-level-3 {
+  padding-left: 1.6rem;
+}
+
+.article-toc-link {
+  display: block;
+  padding: 0.32rem 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.article-toc-item.article-toc-level-3 .article-toc-link {
+  font-size: 0.75rem;
+}
+
+.article-toc-link:hover {
+  color: #0f172a;
+}
+
+.article-toc-item.is-active > .article-toc-link {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* ===== Mobile / Tablet Collapsible Table of Contents ===== */
+.article-mobile-toc {
+  display: none;
+  margin-bottom: 2.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.article-mobile-toc-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  cursor: pointer;
+  text-align: left;
+  gap: 0.75rem;
+}
+
+.article-mobile-toc-trigger:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.article-mobile-toc-trigger-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.article-mobile-toc-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.article-mobile-toc-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.article-mobile-toc-active-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-mobile-toc-chevron {
+  color: #64748b;
+  flex-shrink: 0;
+  transition: transform 180ms ease;
+}
+
+.article-mobile-toc-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.article-mobile-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 1rem 0.85rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.article-mobile-toc-item {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.article-mobile-toc-item.article-mobile-toc-level-2 {
+  padding-left: 0;
+  font-weight: 500;
+}
+
+.article-mobile-toc-item.article-mobile-toc-level-3 {
+  padding-left: 1rem;
+  font-size: 0.78rem;
+}
+
+.article-mobile-toc-link {
+  display: block;
+  padding: 0.25rem 0;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.article-mobile-toc-link:hover {
+  color: #0f172a;
+}
+
+.article-mobile-toc-item.is-active > .article-mobile-toc-link {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+@media (max-width: 1140px) {
+  .article-mobile-toc {
+    display: block;
+  }
+}
+
+.article-page-container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.article-prose {
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Small-text note callouts (methodology footnotes under figures) */
+.article-prose .article-note {
+  margin: 1.5rem 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #64748b;
+}
+
+.article-prose .article-note p {
+  margin: 0;
+  font-size: inherit;
+  line-height: 1.6;
+  color: inherit;
+}
+
+.article-prose h2 {
+  margin-top: 3.25rem;
+  margin-bottom: 1rem;
+  color: #0f172a;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.article-prose h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #0f172a;
+  font-size: 1.18rem;
+  font-weight: 650;
+}
+
+.article-prose h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+  font-size: 1.02rem;
+  font-weight: 650;
+}
+
+.article-prose p,
+.article-prose li {
+  color: #1e293b;
+  font-size: 0.96rem;
+  line-height: 1.8;
+}
+
+.article-prose p + p {
+  margin-top: 1.15rem;
+}
+
+.article-prose strong {
+  color: #0f172a;
+  font-weight: 650;
+}
+
+.article-prose a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-decoration-color: #93c5fd;
+  text-underline-offset: 3px;
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+.article-prose a:hover {
+  color: #1d4ed8;
+  text-decoration-color: #2563eb;
+}
+
+.article-prose ul {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.15rem 0 1.4rem;
+  padding-left: 1.4rem;
+}
+
+.article-prose ul > li::marker {
+  color: #94a3b8;
+}
+
+.article-prose ol {
+  list-style: none;
+  counter-reset: prose-ordered-counter;
+  padding-left: 0;
+  display: grid;
+  gap: 1.15rem;
+  margin: 1.35rem 0 1.65rem;
+}
+
+.article-prose ol > li {
+  position: relative;
+  counter-increment: prose-ordered-counter;
+  padding-left: 2.35rem;
+  display: block;
+}
+
+.article-prose ol > li::before {
+  content: counter(prose-ordered-counter);
+  position: absolute;
+  left: 0;
+  top: 0.18rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-feature-settings: 'tnum';
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.article-prose blockquote {
+  position: relative;
+  margin: 2rem 0;
+  padding: 0.35rem 0 0.35rem 4rem;
+  border-left: 3px solid #cbd5e1;
+  color: #334155;
+}
+
+/* Large drop-cap-style quote mark sitting in the left strip, just outside the text. */
+.article-prose blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0.5rem;
+  top: 0.1rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 4rem;
+  line-height: 1;
+  color: #94a3b8;
+  pointer-events: none;
+  user-select: none;
+}
+
+.article-prose blockquote p {
+  color: inherit;
+  font-size: 1.05rem;
+}
+
+.article-prose code {
+  padding: 0.14rem 0.35rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.article-prose pre {
+  margin: 1.75rem 0;
+  padding: 1.15rem 1.25rem;
+  overflow-x: auto;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius);
+  background: #0f172a;
+}
+
+.article-prose pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f1f5f9;
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+.article-table-wrap {
+  margin: 1.75rem 0;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.article-prose table {
+  width: 100%;
+  min-width: 550px;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+/* Keep comparison tables on the same three-column grid even when their
+   labels have different lengths. */
+.article-prose table:has(> thead > tr > th:nth-child(3)) {
+  table-layout: fixed;
+}
+
+.article-prose table:has(> thead > tr > th:nth-child(3)) th:first-child,
+.article-prose table:has(> thead > tr > th:nth-child(3)) td:first-child {
+  width: 50%;
+}
+
+.article-prose table:has(> thead > tr > th:nth-child(3)) th:nth-child(2),
+.article-prose table:has(> thead > tr > th:nth-child(3)) td:nth-child(2),
+.article-prose table:has(> thead > tr > th:nth-child(3)) th:nth-child(3),
+.article-prose table:has(> thead > tr > th:nth-child(3)) td:nth-child(3) {
+  width: 25%;
+}
+
+.article-prose th,
+.article-prose td {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+
+.article-prose th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.article-prose td {
+  color: #1e293b;
+}
+
+.article-prose tr:last-child td {
+  border-bottom: 0;
+}
+
+.article-prose tr:hover td {
+  background: #fafaf9;
+}
+
+.article-prose hr {
+  margin: 3rem 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ===== MathJax SVG Math Styling ===== */
+.article-prose .math-inline,
+.article-prose mjx-container:not([display="true"]):not([data-math-display="true"]),
+.article-prose span.math:not(.math-display) {
+  display: inline-block !important;
+  margin: 0 0.15em !important;
+  outline: none;
+  font-size: 1.05em;
+  color: inherit;
+}
+
+.article-prose .math-inline svg,
+.article-prose mjx-container:not([display="true"]):not([data-math-display="true"]) svg,
+.article-prose span.math:not(.math-display) svg {
+  display: inline-block !important;
+  margin: 0 !important;
+  color: inherit;
+  fill: currentColor;
+}
+
+.article-prose p:has(> .math-display),
+.article-prose p:has(> .katex-display),
+.article-prose p:has(> mjx-container[data-math-display="true"]),
+.article-prose p:has(> mjx-container[display="true"]),
+.article-prose p[data-math-display="true"] {
+  display: block !important;
+  width: auto !important;
+  text-align: center !important;
+  margin: 1.75rem 0 !important;
+}
+
+.article-prose .math-display,
+.article-prose .katex-display,
+.article-prose span.math-display,
+.article-prose div.math-display,
+.article-prose mjx-container[data-math-display="true"],
+.article-prose mjx-container[display="true"] {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  margin: 1.75rem 0 !important;
+}
+
+.article-prose .math-display svg,
+.article-prose .katex-display > .katex,
+.article-prose mjx-container[data-math-display="true"] svg,
+.article-prose mjx-container[display="true"] svg {
+  display: block !important;
+  margin: 0 auto !important;
+  color: inherit;
+  fill: currentColor;
+}
+
+
+
+/* ===== Playful "Human-Generated Em Dash" Tooltip ===== */
+.human-emdash {
+  position: relative;
+  display: inline;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.human-emdash:hover {
+  color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.human-emdash:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.human-emdash-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.06);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms cubic-bezier(0.16, 1, 0.3, 1), visibility 140ms;
+  z-index: 50;
+}
+
+.human-emdash-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: #ffffff transparent transparent transparent;
+}
+
+.human-emdash-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #e2e8f0 transparent transparent transparent;
+}
+
+.human-emdash-check-icon {
+  color: #0f172a;
+  flex-shrink: 0;
+}
+
+.human-emdash:hover .human-emdash-tooltip,
+.human-emdash:focus-visible .human-emdash-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 1140px) {
+  .article-toc-sidebar {
+    display: none;
+  }
+
+  .article-layout-container {
+    max-width: 760px;
+    padding: 0 1.5rem;
+  }
+
+  /* The sidebar is gone, so the appendix column centers on its own */
+  .article-appendix-spacer {
+    display: none;
+  }
+
+  .article-appendix-band .article-appendix {
+    max-width: 760px;
+  }
+}
+
+@media (max-width: 768px) {
+  .article-hero-header {
+    padding: 2rem 0 2.25rem;
+  }
+
+  .article-hero-title {
+    font-size: 1.85rem;
+  }
+
+  .article-hero-meta-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .article-tags-panel {
+    width: 100%;
+  }
+
+  .article-tags-list {
+    justify-content: flex-start;
+  }
+
+  .article-body-wrapper {
+    padding: 2.25rem 0 4rem;
+  }
+
+  .article-page-container {
+    padding: 0 1.25rem;
+  }
+}

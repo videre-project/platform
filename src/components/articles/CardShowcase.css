@@ -1,0 +1,138 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Card Showcase (centered card image(s)) ===== */
+.card-showcase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.75rem 0;
+}
+
+.card-showcase-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.card-showcase-item {
+  margin: 0;
+}
+
+/* Card images keep the MTG card aspect ratio (63:88); only the width is set
+   per size, so the height follows automatically. */
+.card-showcase-img {
+  display: block;
+  width: var(--card-showcase-width, 168px);
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+}
+
+.card-showcase-sm {
+  --card-showcase-width: 120px;
+}
+
+.card-showcase-md {
+  --card-showcase-width: 168px;
+}
+
+.card-showcase-lg {
+  --card-showcase-width: 216px;
+}
+
+/* Placeholder shown while the card image is still resolving (or if it cannot
+   be found). */
+.card-showcase-skeleton {
+  width: var(--card-showcase-width, 168px);
+  aspect-ratio: 63 / 88;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  border-radius: 8px;
+  background: #eef2f7;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.card-showcase-skeleton-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.card-showcase-caption {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Hover affordance on the card image (matches the TournamentSnapshot card bar) */
+.card-showcase-item:hover .card-showcase-img,
+.card-showcase-item:focus-visible .card-showcase-img {
+  filter: brightness(1.08) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.card-showcase-item:focus-visible {
+  outline: none;
+}
+
+/* Full Card Preview Tooltip (same behavior as the TournamentSnapshot card bar) */
+.card-showcase-full-tooltip {
+  z-index: 1000;
+  width: 220px;
+  height: 308px;
+  border: none;
+  background: transparent;
+  animation-duration: 140ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.card-showcase-full-tooltip[data-state='delayed-open'] {
+  animation-name: card-showcase-tooltip-fade;
+}
+
+@keyframes card-showcase-tooltip-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card-showcase-full-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
+}
+
+.card-showcase-tooltip-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #0f172a;
+  padding: 1rem;
+  text-align: center;
+}
+
+.card-showcase-tooltip-arrow {
+  fill: #000000;
+}

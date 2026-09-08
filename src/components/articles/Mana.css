@@ -1,0 +1,15 @@
+/* Inline mana cost symbols for article prose */
+.article-mana-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  vertical-align: middle;
+  margin: 0 1px;
+}
+
+.article-mana-cost-symbol {
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 50%;
+  display: block;
+}

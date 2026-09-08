@@ -13,6 +13,8 @@ const MetagamePage = lazy(() => import('./pages/MetagamePage'));
 const EventsPage = lazy(() => import('./pages/EventsPage'));
 const EventDetailsPage = lazy(() => import('./pages/EventDetailsPage'));
 const MetagameOgImagePage = lazy(() => import('./pages/MetagameOgImagePage'));
+const ArticleOgImagePage = lazy(() => import('./pages/ArticleOgImagePage'));
+const ArticlesPage = lazy(() => import('./pages/ArticlesPage'));
 
 const ApiReferenceLoading: React.FC = () => (
   <div
@@ -63,6 +65,23 @@ export const App: React.FC = () => {
     );
   }
 
+  if (pathname === '/articles' || pathname === '/articles/') {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <ArticlesPage />
+      </Suspense>
+    );
+  }
+
+  const articleMatch = pathname.match(/^\/articles\/([a-zA-Z0-9_-]+)\/?$/);
+  if (articleMatch) {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <ArticlesPage slug={articleMatch[1]} />
+      </Suspense>
+    );
+  }
+
   const eventMatch = pathname.match(/^\/events\/(-?\d+)\/?$/);
   if (eventMatch) {
     return (
@@ -80,6 +99,14 @@ export const App: React.FC = () => {
     return (
       <Suspense fallback={<ApiReferenceLoading />}>
         <MetagameOgImagePage />
+      </Suspense>
+    );
+  }
+
+  if (pathname === '/__og/article' || pathname === '/__og/article/') {
+    return (
+      <Suspense fallback={<ApiReferenceLoading />}>
+        <ArticleOgImagePage />
       </Suspense>
     );
   }

@@ -1,0 +1,62 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+  SPDX-License-Identifier: Apache-2.0
+**/
+
+/* ===== Card-name hover tooltips in article prose ===== */
+
+/* Italic card names: persistent dotted underline (matches the concept
+   tooltip trigger), turning blue on hover/focus to signal the preview. */
+.card-name-em {
+  border-bottom: 1.5px dotted #94a3b8;
+  padding-bottom: 1px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.card-name-em:hover,
+.card-name-em:focus-visible {
+  border-bottom-color: #2563eb;
+  color: #1d4ed8;
+  outline: none;
+}
+
+/* Full Card Preview Tooltip (same look as the CardShowcase preview) */
+.card-name-full-tooltip {
+  z-index: 1000;
+  width: 220px;
+  height: 308px;
+  border: none;
+  background: transparent;
+  animation-duration: 140ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.card-name-full-tooltip[data-state='delayed-open'] {
+  animation-name: card-name-tooltip-fade;
+}
+
+@keyframes card-name-tooltip-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card-name-full-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
+}
+
+.card-name-tooltip-arrow {
+  fill: #000000;
+}

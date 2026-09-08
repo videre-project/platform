@@ -1,0 +1,921 @@
+---
+title: "Measuring Format Health"
+dek: "Analyzing 5 million games of MTGO through field diversity and matchup polarity."
+author:
+  name: "Qonfused"
+  handle: "@TheQonfused"
+  url: "https://x.com/TheQonfused"
+  avatar: "https://github.com/Qonfused.png"
+published: "Sep 5, 2026"
+readTime: "29 min read"
+thumbnail: "/articles/format-health-atlas.png"
+tags:
+  - "Modern"
+  - "Metagame Analysis"
+  - "Polarity"
+  - "Homogeneity"
+  - "MTGO"
+  - "Sideboarding"
+---
+
+import { ConceptTooltip } from '@/components/articles/ConceptTooltip'
+import { CardShowcase } from '@/components/articles/CardShowcase'
+import { MetagameTaxonomyFigure } from '@/components/articles/MetagameFigures'
+import { MetagameBreakdown, ModernHealthTimeline } from '@/components/articles/ModernHealthTimeline'
+import { TournamentSnapshot } from '@/components/articles/TournamentSnapshot'
+
+One of the most common topics across competitive TCGs is that of format health. Often we can find a metagame stale or uninteractive, where the outcome of a match seems to escape a player's agency. Sometimes that can happen even when a metagame has many viable decks. But other times, a format can feel rich and skill-intensive even when one or two decks dominates the field. The difference often feels subjective and arbitrary without a clear reason why.
+
+The established standard for competitive MTG coverage is remarkably uniform. Whether browsing weekly metagame breakdowns on MTGGoldfish and MTGTop8, reviewing social media infographics for Regional Championships and SCG CONs, or looking back at historical SCG Classics and Super RCQs (such as Face to Face Games Tour Weekends), metagames are almost universally evaluated through **metagame share** (popularity) and **aggregate winrate** (performance).
+
+This convention persists as popularity and winrate are the most accessible numbers to extract from swiss tournaments and decklists. Only premier multi-day events, such as Pro Tours or World Championships, routinely incorporate a more longitudinal metric for **Day 2 conversion rate**. But whether looking at conversion rates or overall winrates, these two invariably collapse complex tournament dynamics into flat summary averages that tend to elude the true range of players' experiences in the event.
+
+In this article, we'll build on these ideas to separate format health into two dimensions: **how concentrated the field is** and **how lopsided its matchups are**. The goal being to understand these ideas using more objective measures. We then formalize this as Field Diversity and Matchup Polarity. Using more than 5 million MTGO games from the past three years, we compare recent Modern with some of the format's most familiar highs and lows to show how these metrics can help us understand the health of a format and how that affects our metagaming.
+
+## 1. Format health has two dimensions
+
+At the extremes, metagame share and aggregate winrate usually tell a clear story. Eldrazi Winter is the obvious example. At [Pro Tour Oath of the Gatewatch in 2016](https://magic.wizards.com/en/news/announcements/banned-and-restricted-announcement-2016-04-04), *Eye of Ugin* and *Eldrazi Temple* allowed Eldrazi Aggro to play multiple copies of *Eldrazi Mimic* on turn 1 and follow with *Thought-Knot Seer* or *Reality Smasher* on turn 2. An interactive deck often would face both 5 or more power and hand disruption before playing its second land. Eldrazi variants made up 47.5% of the Pro Tour, putting 6 decks into the Top 8, and won 63.2% of their non-mirror matches.
+
+<TournamentSnapshot
+  event="Pro Tour Oath of the Gatewatch"
+  date="Atlanta 2016"
+  deck="Eldrazi Aggro"
+  colors={[["C"], ["U", "R"], ["R", "G"]]}
+  cards={[
+    { name: 'Eye of Ugin',       set: 'WWK' },
+    { name: 'Eldrazi Temple',    set: 'ROE' },
+    { name: 'Eldrazi Mimic',     set: 'OGW' },
+    { name: 'Thought-Knot Seer', set: 'OGW' },
+    { name: 'Reality Smasher',   set: 'OGW' },
+  ]}
+  metaShare="47.5%"
+  winRate="63.2%"
+  nEff={4.1}
+  pMeta={31.2}
+/>
+
+Three years later, Hogaak Summer looked less extreme by those same numbers. At Mythic Championship IV, [Hogaak made up 21.5% of Day 1 and converted 71.4% of its pilots to Day 2](https://www.magic.gg/news/mythic-championship-iv-day-2-metagame-breakdown), with a 56.8% non-mirror winrate. Both figures fell well below Eldrazi's but were still far above what we'd consider a healthy metagame.
+
+<TournamentSnapshot
+  event="Mythic Championship IV"
+  date="Barcelona 2019"
+  deck="Hogaak"
+  colors={["B", "G"]}
+  cards={[
+    { name: 'Hogaak, Arisen Necropolis', set: 'MH1' },
+    { name: 'Faithless Looting',         set: 'UMA' },
+    { name: 'Vengevine',                 set: 'ROE' },
+    { name: 'Carrion Feeder',            set: 'MH1' },
+    { name: "Stitcher's Supplier",       set: 'M19' },
+  ]}
+  metaShare="21.5%"
+  winRate="56.8%"
+  nEff={5.2}
+  pMeta={28.4}
+/>
+
+Notably, tournament had already warped around Hogaak through extraordinary means. *Bridge from Below* had even been banned before Barcelona, and still [*Leyline of the Void* was the most-played card at the event and often appeared in maindecks](https://www.magic.gg/news/metagame-mentor-top-modern-decks-from-last-ten-pro-tours), and Hogaak could still fill its graveyard and put *Hogaak, Arisen Necropolis* and *Vengevine* into play as early as turn 2.
+
+At the opposite end of the extreme, Pro Tour Rivals of Ixalan in February of 2018 showed one of Modern's most diverse metagames where no archetype reached 10% of a 463-player field. Five-Color Humans led at 9.3%, and 7 different archetypes reached the Top 8. Players still had a most-played deck to prepare for, but there was nothing resembling the concentration of Eldrazi Winter or Hogaak Summer.
+
+<TournamentSnapshot
+  event="Pro Tour Rivals of Ixalan"
+  date="Bilbao 2018"
+  metaShare="9.3%"
+  winRate="52.8%"
+  nEff={15.6}
+  pMeta={12.4}
+  archetypes={[
+    {
+      deck: 'Five-Color Humans',
+      colors: ['W', 'U', 'B', 'R', 'G'],
+      cards: [
+        { name: 'Mantis Rider',           set: 'KTK' },
+        { name: "Thalia's Lieutenant",    set: 'SOI' },
+        { name: 'Meddling Mage',          set: 'ARB' },
+        { name: 'Champion of the Parish', set: 'ISD' },
+        { name: 'Reflector Mage',         set: 'OGW' },
+      ],
+    },
+    {
+      deck: 'Mardu Pyromancer',
+      colors: ['R', 'W', 'B'],
+      cards: [
+        { name: 'Young Pyromancer',   set: 'M14' },
+        { name: 'Bedlam Reveler',     set: 'EMN' },
+        { name: 'Lingering Souls',    set: 'DKA' },
+        { name: "Kolaghan's Command", set: 'DTK' },
+        { name: 'Blood Moon',         set: 'MMA' },
+      ],
+    },
+    {
+      deck: 'Affinity',
+      colors: ['C'],
+      cards: [
+        { name: 'Arcbound Ravager', set: 'MMA' },
+        { name: 'Cranial Plating',  set: '5DN' },
+        { name: 'Steel Overseer',   set: 'M11' },
+        { name: 'Signal Pest',      set: 'MBS' },
+        { name: 'Mox Opal',         set: 'SOM' },
+      ],
+    },
+    {
+      deck: "Grixis Death's Shadow",
+      colors: ['U', 'B', 'R'],
+      cards: [
+        { name: "Death's Shadow",  set: 'WWK' },
+        { name: 'Street Wraith',   set: 'FUT' },
+        { name: 'Thoughtseize',    set: 'THS' },
+        { name: 'Gurmag Angler',   set: 'FRF' },
+        { name: 'Stubborn Denial', set: 'KTK' },
+      ],
+    },
+  ]}
+/>
+
+In fact, shortly after Bilbao, Wizards in their [February 12 2018 B&R announcement](https://web.archive.org/web/20180212161922/https://magic.wizards.com/en/articles/archive/news/february-12-2018-banned-and-restricted-announcement-2018-02-12) unbanned *Jace, the Mind Sculptor* and *Bloodbraid Elf*, noting that the Pro Tour's metagame was "healthy and diverse," which fed their rationale for their decision to unban these cards. The idea being to provide more options for control decks to close out prolonged games and incentivize more interactive games at the top-end of the mana curve.
+
+<CardShowcase
+  cards={[
+    { name: "Jace, the Mind Sculptor", set: "2XM" },
+    { name: "Bloodbraid Elf",          set: "2XM" },
+  ]}
+  size="sm"
+/>
+
+However, a much more difficult metagame arose more recently in 2023 with the arrival of Rakdos Evoke following the release of *The Lord of the Rings: Tales of Middle-earth*. At [Pro Tour *The Lord of the Rings*](https://www.magic.gg/news/pro-tour-the-lord-of-the-rings-modern-metagame-breakdown), Rakdos Evoke had already solidified itself as the deck to beat at 19.3% of the field. [Jake Beardsley won the tournament](https://twitter.com/i/status/1685680997726351360) with the deck, where Rakdos finished the Modern rounds with a 54.2% non-mirror winrate.
+
+<TournamentSnapshot
+  event="Pro Tour The Lord of the Rings"
+  date="Barcelona 2023"
+  deck="Rakdos Evoke"
+  colors={["B", "R"]}
+  cards={[
+    { name: 'Grief',                       set: 'MH2' },
+    { name: 'Fury',                        set: 'MH2' },
+    { name: 'Orcish Bowmasters',           set: 'LTR' },
+    { name: 'Fable of the Mirror-Breaker', set: 'NEO' },
+    { name: 'Feign Death',                 set: 'AFR' },
+  ]}
+  metaShare="19.3%"
+  winRate="54.2%"
+  nEff={9.4}
+  pMeta={23.8}
+/>
+
+More importantly, Rakdos Evoke kept gaining ground after the Pro Tour. By mid-November, Rakdos Evoke sat at 27.5% of the metagame while its non-mirror winrate over the previous three weeks held at around 52%. But at the same time, Rakdos Evoke had several real predators in the metagame: Hardened Scales, Mono-Black Coffers, Hammer Time, and Temur Rhinos. And those matchups progressively pulled Rakdos's overall winrate down towards 50%, even while it maintained significant advantage over the rest of the field with a polarity of 23.8%.
+
+<TournamentSnapshot
+  archetypes={[
+    {
+      deck: 'Hardened Scales',
+      colors: ['G'],
+      cards: [
+        { name: 'Hardened Scales',        set: 'KTK' },
+        { name: 'Zabaz, the Glimmerwasp', set: 'MH2' },
+        { name: 'Arcbound Ravager',       set: 'MMA' },
+        { name: 'Walking Ballista',       set: 'AER' },
+        { name: "Urza's Saga",            set: 'MH2' },
+      ],
+    },
+    {
+      deck: 'Mono-Black Coffers',
+      colors: ['B'],
+      cards: [
+        { name: 'Cabal Coffers',             set: 'MH2' },
+        { name: 'Urborg, Tomb of Yawgmoth',  set: 'M15' },
+        { name: 'Karn, the Great Creator',   set: 'WAR' },
+        { name: 'The One Ring',              set: 'LTR' },
+        { name: 'Sheoldred, the Apocalypse', set: 'DMU' },
+      ],
+    },
+    {
+      deck: 'Hammer Time',
+      colors: ['W'],
+      cards: [
+        { name: 'Colossus Hammer',   set: 'M20' },
+        { name: "Sigarda's Aid",     set: 'EMN' },
+        { name: 'Puresteel Paladin', set: 'NPH' },
+        { name: 'Stoneforge Mystic', set: 'WWK' },
+        { name: "Urza's Saga",       set: 'MH2' },
+      ],
+    },
+    {
+      deck: 'Temur Rhinos',
+      colors: ['G', 'U', 'R'],
+      cards: [
+        { name: 'Crashing Footfalls', set: 'MH1' },
+        { name: 'Shardless Agent',    set: 'MH2' },
+        { name: 'Violent Outburst',   set: 'ARB' },
+        { name: 'Force of Negation',  set: 'MH1' },
+        { name: 'Lórien Revealed',    set: 'LTR' },
+      ],
+    },
+  ]}
+/>
+
+Though ultimately, after months of Rakdos Evoke's dominance in overall playrate, Wizards decided that the deck was too strong for Modern. [*Fury* was banned on December 4 2023](https://magic.wizards.com/en/news/announcements/december-4-2023-banned-and-restricted-announcement), with Wizards primarily pointing to Rakdos Evoke's continued rise after the Pro Tour and to *Fury*'s effect on creature decks across Modern:
+
+> Removing *Fury* will impact both the play rate and win rate of Rakdos Evoke. Players are currently using four or more copies of "undying" effects like *Not Dead After All* to rebuy *Grief* or *Fury*. [...] It is possible these decks begin to transform into white versions that utilize *Solitude* and/or *Ephemerate*, however, a rebought *Solitude* is not as threatening as a 4/4 with double strike and provides the deck less coverage against the metagame.
+> 
+> We believe the removal of *Fury* will widen the format, allowing players to explore additional strategies, especially with low-toughness creatures. Finally, fewer overall Rakdos Evoke decks in the metagame will also likely reduce the total number of *Grief* and *Orcish Bowmasters* players will encounter.
+
+So if it was so dominant on the play experience and had such a pronounced effect on creature decks in Modern, why did it take so long for Wizards to ban Rakdos Evoke? And at what point was the deck's dominance clear enough to indicate that the format at large could no longer support it?
+
+## 2. Measuring the field and its matchups
+
+Across these events, we found that the same metagame statistics describe different problems. Eldrazi and Hogaak were heavily concentrated fields with heavily lopsided matchups. Pro Tour Rivals of Ixalan in 2018 had a much broader field and closer matchups. Rakdos Evoke later in 2023 became the clear deck to beat while its aggregate winrate stayed comparatively modest, as favorable and unfavorable matchups pulled its overall record in opposite directions.
+
+That gives us two separate questions: **How do we know a metagame is contentrated?** And **how lopsided are the matchups within it?** As we've found across these metagames, while metagame share and aggregate winrate can broadly describe a format they cannot answer either question on their own.
+
+### 2.1 Field diversity
+
+An intuitive way to measure the diversity of a metagame is to measure it's power over the matches played in it. Suppose we have two events, say event 1 and event 2, each with four distinct archetypes. In event 1, each archetype is equally represented, while in event 2, one archetype dominates the field at 70% of the field, with the remaining three archetypes taking up the remaining 30%:
+
+<br/>
+| Archetype | Event 1 | Event 2 |
+| :--- | :---: | :---: |
+| Archetype 1 | 25% | **70%** |
+| Archetype 2 | 25% | 10% |
+| Archetype 3 | 25% | 10% |
+| Archetype 4 | 25% | 10% |
+<br/>
+
+Though both events have 4 distinct archetypes, the player experience is very different. In event 1, a player can expect to face any of the four archetypes with equal probability. In event 2, however, a player is significantly more likely to face Archetype 1 than any other archetype.
+
+Here we measure **field diversity** with the effective deck count ($N_{\text{eff}}$): the number of equally represented decks that would produce the same concentration in playrate. We calculate $N_{\text{eff}}$ using the inverse of the <ConceptTooltip page="Herfindahl-Hirschman index">Herfindahl-Hirschman Index (HHI)</ConceptTooltip>, summing the squares of each archetype's metagame share and taking the inverse. For event 1, we have:
+
+$$
+\begin{aligned}
+N_{\text{eff},1}
+  &= \frac{1}{0.25^2 + 0.25^2 + 0.25^2 + 0.25^2} \\
+  &= \frac{1}{0.0625 + 0.0625 + 0.0625 + 0.0625}
+  = \frac{1}{0.25}
+  = \boxed{4}
+\end{aligned}
+$$
+
+As expected, event 1 has a field-diversity score of 4 of 4 decks. When we calculate $N_{\text{eff}}$ for event 2, the score is much lower:
+
+$$
+\begin{aligned}
+N_{\text{eff},2}
+  &= \frac{1}{0.70^2 + 0.10^2 + 0.10^2 + 0.10^2} \\
+  &= \frac{1}{0.49 + 0.01 + 0.01 + 0.01}
+  = \frac{1}{0.52}
+  \approx \boxed{1.923}
+\end{aligned}
+$$
+
+The 1.9 score means Event 2 is about as concentrated as a field split evenly between only 2 decks out of 4, despite the 4 archetypes played in the event. This means Archetype 1 is so dominant that it effectively crowds out the other three archetypes, and players are much more likely to face it than any other deck by a significant margin. This point is obvious, but now we can measure the disparity between these examples and see one holds over a factor of 2 in it's impact on field diversity, and we can use this metric to compare metagames across events and formats.
+
+<br/>
+| Metric | Event 1 | Event 2 |
+| :--- | :---: | :---: |
+| Field diversity ($N_{\text{eff}}$) | 4.0 | **1.9** |
+| Reported archetypes | 4 | 4 |
+<br/>
+
+For each comparison in this article, we calculate $N_{\text{eff}}$ for the whole field. Because archetype shares follow a power law, the most-played decks account for most of the metagame, so we sum over the top 16 archetypes, rescaling their shares to total 100%, which captures the field's concentration with a small standard error. This belongs to the [same family of diversity measures Frank Karsten has used to compare Modern Pro Tours](https://magic.gg/news/metagame-mentor-top-modern-decks-from-last-ten-pro-tours). On this scale, a score near the maximum (16) describes a nearly even spread of archetypes, while a score of 5 means the field is as concentrated as five decks at 20% each.
+
+### 2.2 Homogeneity
+
+We can extend this idea further to ask how much of the field's diversity is suppressed by a given archetype. Here we'll introduce **homogeneity** ($C_i$), which measures the share of expected mirror-matches for a given archetype. In other words, we find that squaring the metagame share of a deck gives us the probability for the archetype's mirror matches, and dividing this by the sum of all squares tells us how that deck compares with every other mirror in the field.
+
+For our event 2 example, Archetype 1 produces $0.70 \times 0.70 = 49\%$ Archetype 1--Archetype 1 pairs. The three 10% decks add another $1\%$ each, so any same-archetype pair occurs $52\%$ of the time. Intuitively, this is the same denominator we used to calculate $N_{\text{eff}}$ in the previous section. Dividing by the total 52% of all mirror pairs in the metagame gives us the share of same-archetype matches that involve Archetype 1:
+
+$$
+\begin{aligned}
+C_1
+  &= \frac{0.49}{0.52} \approx \boxed{94.2\%}
+\end{aligned}
+$$
+
+Archetype 1 therefore accounts for 94.2% of the field's expected mirror matches, more than the other three archetypes combined. This scales quadratically with $f_i$ as all pairings between decks scale quadratically with their metagame share. The more concentrated the field is on a single archetype, the more that deck dominates the rest of the metagame and the more players are forced to dedicate their sideboard slots to it.
+
+<br/>
+| Archetype | Event 1 ($C_i$) | Event 2 ($C_i$) |
+| :--- | :---: | :---: |
+| Archetype 1 | 25% | **94.2%** |
+| Archetype 2 | 25% | 1.9% |
+| Archetype 3 | 25% | 1.9% |
+| Archetype 4 | 25% | 1.9% |
+<br/>
+
+Because every mirror match produces exactly one win and one loss ($50\text{--}50$), high homogeneity tends to create a self-reinforcing feedback loop where that deck's popularity drives an increase in mirror-matches regardless of its performance In Event 2, where Archetype 1 generates $94.2\%$ of all same-deck pairings, half of those pilots are guaranteed to win and advance in every round.
+
+Naturally, this gives us an intuitive benchmark for diagnosing an unhealthy concentration of archetypes. When $C_i$ for an archetype exceeds $50\%$, that archetype generates more homogeneity (and thus more mirror matches) than every other deck in the metagame combined. And so to see whether these games are actually competitive across the field, we also need to look at the disparity of non-mirror matchups.
+
+### 2.3 Matchup polarity
+
+The idea of polarity is to quantify the spread of matchups across the field. A format with a few dominant archetypes may have a high overall average winrate, but that average can hide large differences between individual matchups. We borrow the term from [Vicious Syndicate's work on Hearthstone metagames](https://www.vicioussyndicate.com/meta-polarity-and-its-impact-on-hearthstone/), where they define polarity as the absolute distance from a 50% winrate.
+
+To calculate format polarity ($P_{\text{meta}}$), we weigh the difference in winrates for each matchup by the two decks' metagame shares. This approximates a randomly drawn non-mirror pairing, so matchups between popular decks affect the score more than rarely played ones.
+
+<br/>
+| Archetype 1 vs 2 | Component | Value |
+| :--- | :--- | :---: |
+| Weighted matchup disparity | $0.70 \times 0.10 \times \lvert 0.80-0.20 \rvert$ | $0.042$ |
+| Non-mirror pairing weight | $0.70 \times 0.10$ | $0.07$ |
+<br/>
+
+In our event 2 example, Archetype 1 has a 70% share of the field, while Archetypes 2, 3, and 4 each have a 10% share. If Archetype 1 has an estimated winrate of 80% against Archetype 2, then the matchup contributes $0.70 \times 0.10 \times |0.8 - 0.2| = 0.042$ to the numerator of $P_{\text{meta}}$. We repeat this for all non-mirror matchups and divide by the sum of all pairwise weights to get the final polarity score:
+
+$$
+P_{\text{meta}} =
+\frac{0.042 + \color{#64748b}{\text{[ ... ]}}}{0.07 + \color{#64748b}{\text{[ ... ]}}}
+$$
+
+For each archetype's polarity ($P_i$), we weight its matchup disparities by the metagame shares of its opponents. This gives us a sense of how lopsided that deck's matchups are across the field. A deck with a high $P_i$ has more extreme matchups, while a deck with a low $P_i$ has more balanced matchups. So if Archetype 1 is 80-20 against Archetype 2 and 50-50 against Archetypes 3 and 4:
+
+$$
+\begin{aligned}
+P_1
+  &= \frac{(0.10 \times |0.80 - 0.20|) + \color{#64748b}{\text{[ ... ]}}}{1-0.70}\\
+  &= \frac{(0.10 \times 0.60) + \color{#64748b}{(0.10 \times 0)} + \color{#64748b}{(0.10 \times 0)}}{1 - 0.70}
+  = \frac{0.06}{0.30}
+  = \boxed{20\%}
+\end{aligned}
+$$
+
+Even though all other decks are weighted in the denominator, the even matchups against Archetypes 3 and 4 only contribute to reducing the numerator (and thus it's polarity), while the 80-20 matchup against Archetype 2 contributes to increase the numerator for $P_1$. The final score of 20% means that Archetype 1's matchups are roughly a 60-40 equivalent across the field.
+
+Under the same assumption that every other non-mirror matchup is 50-50, the field polarity is:
+
+$$
+\begin{aligned}
+P_{\text{meta}}
+  &= \frac{2(0.042) + \color{#64748b}{10(0)}}{3(0.07) + 3\left(0.10(1 - 0.10)\right)}
+  = \frac{0.084}{0.48}
+  = \boxed{17.5\%}
+\end{aligned}
+$$
+
+Note that like the $P_1$ calculation for Archetype 1, the other three archetypes contribute to increasing the denominator but not the numerator. In this case, the polarity score of 17.5% means that the average non-mirror matchup is roughly a 58-42 equivalent across the field, in this case created entirely by Archetype 1's dominance in both its winrate and metagame share.
+
+## 3. What the metrics reveal about Modern
+
+The timeline below applies both measurements to Modern from June 2023 through August 2026. Its purple line tracks field diversity, and its orange line tracks matchup polarity. Select a date, set release, or banned-and-restricted announcement to see the leading decks and their metagame shares, winrates, and homogeneity.
+
+<ModernHealthTimeline />
+
+<div className="article-note">
+Note that the week-by-week archetype polarity $P_{\text{i}}$ is much more volative than any other value as it is weighted by each matchup a deck has. This carries a higher standard-error, and thus more noise on a strictly week-by-week basis. However, the metagame's matchup polarity $P_{\text{meta}}$ sums over the whole fields' matchups and is very stable.
+</div>
+
+### 3.1 Rakdos Evoke took over months before *Fury* was banned
+
+At the start of June 2023, Indomitable Creativity led the MTGO metagame at 13.7%, followed by Rakdos Evoke at 10.0%. Their metagame shares were still head-to-head on July 13, when Creativity led Rakdos 13.6% to 12.5%. One week later, on July 20, Rakdos had jumped to 20.9%. Field diversity fell from 12.3 to 10.3 that week, while polarity barely moved from 19.2% to 20.0%.
+
+By July 27, the day before Pro Tour *The Lord of the Rings*, Rakdos represented 21.7% of the field. Its 48.5% homogeneity meant that nearly half of the field's expected mirrors involved Rakdos. Rakdos was already the clear deck to beat by metagame share alone, even though its 54.8% non-mirror winrate was far below Eldrazi's 63.2%.
+
+<TournamentSnapshot
+  deck="Rakdos Evoke"
+  colors={["B", "R"]}
+  cards={[
+    { name: 'Grief',                       set: 'MH2' },
+    { name: 'Fury',                        set: 'MH2' },
+    { name: 'Orcish Bowmasters',           set: 'LTR' },
+    { name: 'Fable of the Mirror-Breaker', set: 'NEO' },
+    { name: 'Feign Death',                 set: 'AFR' },
+  ]}
+  metaShare="21.7%"
+  winRate="54.8%"
+  nEff={10.3}
+  pMeta={20.0}
+/>
+
+In its [August 7 B&R announcement](https://magic.wizards.com/en/news/announcements/august-7-2023-banned-and-restricted-announcement), Wizards described the Pro Tour field as relatively diverse and its games as healthy and interactive, then unbanned *Preordain* and made no other changes to Modern. The MTGO metagame before the announcement, on August 3, put Rakdos Evoke at 22.2% of the field and 49.8% of the field's expected mirrors, while its non-mirror winrate was 52.8%. Through September, Rakdos stayed between 20% and 23% of the field while Creativity fell to 5.0% and no other deck approached Rakdos's metagame share.
+
+Rakdos Evoke pulled away again in the fall. It had first crossed the 50% homogeneity threshold in early August, and quickly grew to 60% to 70% homogeneity after October 26, roughly a month before its [eventual ban on Dec 4](https://magic.wizards.com/en/news/announcements/december-4-2023-banned-and-restricted-announcement): 
+
+> When [we last spoke about Modern in August](https://magic.wizards.com/en/news/announcements/august-7-2023-banned-and-restricted-announcement?_gl=1*1sizwit*_up*MQ..*_ga*MTM5ODQwMDEwMC4xNzg4NjEzMzgz*_ga_X145Z177LS*czE3ODg2MTMzODIkbzEkZzAkdDE3ODg2MTMzODIkajYwJGwwJGg1MzQ5MzY4Nzc.), we were most concerned about new cards from The Lord of the Rings: Tales of Middle-earth™, namely *Orcish Bowmasters* and *The One Ring*. While these cards are powerful players in the metagame, another card has continued to suppress what's possible in the format even more. *Fury*, most often played as a 4/4 double striker that clears the opponent's board, makes playing with creature decks nearly impossible. Rakdos Evoke has only risen in metagame share since the Modern Pro Tour this summer, and coming in right behind it is Four-Color Omnath, also featuring *Fury*. Played in a smattering of other decks as well, *Fury* is keeping several diverse and interesting strategies at bay, and for this reason *Fury* is banned in Modern.
+
+By October 26, its metagame share had reached 29.1%, Modern's field diversity had fallen to 8.0 out of 16, and Rakdos accounted for 67.7% of the field's expected mirrors. Two weeks later, it made up 31.4% of the field and 73.0% of expected mirrors, while its bad matchups kept its aggregate winrate near 50%. The week immediately following the B&R in early-December, field diversity had quickly recovered to 13.9 of 16 and Rakdos had fallen outside the metagame.
+
+### 3.2 Nadu and Grief dominated Modern after MH3
+
+For nearly six months after *Fury* left Modern, from December 23, 2023, through June 4, 2024, no deck reached 12% of the field. Field diversity stayed between 13.2 and 14.1 of 16, while polarity remained between 15.4% and 16.8%.
+
+*Modern Horizons 3* arrived on MTGO on June 11 and introduced several new archetypes to Modern. By August 26, Grief Reanimator and Nadu Combo made up 52.2% of the field combined, with non-mirror winrates of 59.0% and 59.8% each. Field diversity had sharply fallen to 4.8 of 16 and polarity had risen to 29.5%, close to Eldrazi Winter's 4.1 field diversity and 31.2% polarity. Overall, the average non-mirror matchup was equivalent to 65-35.
+
+<TournamentSnapshot
+  metaShare="52.2%"
+  winRate="59.4%"
+  nEff={4.8}
+  pMeta={29.5}
+  archetypes={[
+    {
+      deck: 'Grief Reanimator',
+      colors: ['B'],
+      cards: [
+        { name: 'Grief',             set: 'MH2' },
+        { name: 'Necrodominance',    set: 'MH3' },
+        { name: 'Soul Spike',        set: 'CSP' },
+        { name: 'Orcish Bowmasters', set: 'LTR' },
+        { name: 'The One Ring',      set: 'LTR' },
+      ],
+    },
+    {
+      deck: 'Nadu Combo',
+      colors: ['W', 'U', 'G'],
+      cards: [
+        { name: 'Nadu, Winged Wisdom', set: 'MH3' },
+        { name: 'Shuko',               set: 'BOK' },
+        { name: 'Springheart Nantuko', set: 'MH3' },
+        { name: 'Chord of Calling',    set: 'M15' },
+        { name: "Urza's Saga",         set: 'MH2' },
+      ],
+    },
+  ]}
+/>
+
+[Wizards banned *Nadu, Winged Wisdom* and *Grief* 2.5 months after MH3 released](https://magic.wizards.com/en/news/announcements/august-26-2024-banned-and-restricted-announcement), and concluded that the previous month and a half of Modern grew too stagnant to continue. There they acknowledged that the [prior B&R announcement on June 24](https://magic.wizards.com/en/news/announcements/june-24-2024-banned-and-restricted-announcement) (which we ommitted from the chart) was poorly timed to anticipate the impact of *Modern Horizons 3* and the start of the RCQ season that summer.
+
+### 3.3 Energy concentrated the field while polarity stayed low
+
+By November 12, 2024, the field had reorganized around Energy introduced with MH3. Boros Energy had reached 22.8% of the metagame in Modern, with its Mardu variant close behind at 16.4%. By December, the two variants had settled at 20.5% and 15.5% respectively. Together they made up 36.0% of the field with a 54.6% non-mirror winrate, while field diversity had fallen sharply to 8.6. Polarity, however, stayed moderate at 13.8%, where the average non-mirror matchup was only a 57-43 equivalent.
+
+<TournamentSnapshot
+  archetypes={[
+    {
+      deck: 'Boros Energy',
+      colors: ['R', 'W'],
+      cards: [
+        { name: 'Guide of Souls',           set: 'MH3'             },
+        { name: 'Ocelot Pride',             set: 'MH3', id: 126093 },
+        { name: 'Amped Raptor',             set: 'MH3'             },
+        { name: 'The One Ring',             set: 'LTR'             },
+        { name: 'Jegantha, the Wellspring', set: 'IKO'             },
+      ],
+    },
+    {
+      deck: 'Mardu Energy',
+      colors: ['R', 'W', 'B'],
+      cards: [
+        { name: 'Guide of Souls',                set: 'MH3'             },
+        { name: 'Ocelot Pride',                  set: 'MH3', id: 126093 },
+        { name: 'Phlage, Titan of Fire\'s Fury', set: 'MH3'             },
+        { name: 'Thoughtseize',                  set: 'THS'             },
+        { name: 'Goblin Bombardment',            set: 'MH2'             },
+      ],
+    },
+  ]}
+  metaShare="36.0%"
+  winRate="54.6%"
+  nEff={8.6}
+  pMeta={13.8}
+/>
+
+Finally, the [December 2024 B&R announcement](https://magic.wizards.com/en/news/announcements/banned-and-restricted-december-16-2024) attempted to break up Boros Energy with the banning of *The One Ring*, *Amped Raptor*, and *Jegantha, the Wellspring*. Wizards described Boros as the format's most-played and most consistently dominant deck and said the changes were primarily intended to reduce its playrate and winrate. There they also unbanned several cards: *Mox Opal*, *Green Sun's Zenith*, *Faithless Looting*, and *Splinter Twin* with the hope of increasing the diversity of decks in Modern following the release of MH3.
+
+<CardShowcase
+  cards={[
+    { name: "Mox Opal",           set: "2XM" },
+    { name: "Green Sun's Zenith", set: "EMA" },
+    { name: "Faithless Looting",  set: "M3C" },
+    { name: "Splinter Twin",      set: "MM2" },
+  ]}
+  size="sm"
+/>
+
+
+Mardu Energy's metagame share fell quickly after the announcement, dropping from 15.5% to 5.2% by early March 2025, while Boros Energy stayed near 20% throughout the year. Mardu then climbed back through late 2025, reaching 8.1% on December 16, 2025, a year to the day after the ban, and 15.8% by January 20, 2026. At that point, the two Energy decks once again made up 36.0% of the field with a 54.4% non-mirror winrate. Field diversity had barely moved since the December 2024 announcement, 8.7 against 8.6 a year earlier, while polarity had actually eased to 12.4%.
+
+Four months later, Boros and Mardu Energy still made up 35.3% of the field and maintained a non-mirror winrate of 53.9%. Finally, on [May 18, 2026](https://magic.wizards.com/en/news/announcements/banned-and-restricted-may-18-2026), Wizards again acted on Energy by banning *Phlage, Titan of Fire's Fury*, as well as banning *Lotus Field* and unbanning *Violent Outburst* and *Umezawa's Jitte*. The May 2026 announcement was intended to finally break up Energy's dominance, and it finally succeeded.
+
+<TournamentSnapshot
+  archetypes={[
+    {
+      deck: 'Boros Energy',
+      colors: ['R', 'W'],
+      cards: [
+        { name: 'Guide of Souls',                set: 'MH3'             },
+        { name: 'Ocelot Pride',                  set: 'MH3', id: 126093 },
+        { name: 'Ajani, Nacatl Pariah',          set: 'MH3'             },
+        { name: 'Phlage, Titan of Fire\'s Fury', set: 'MH3'             },
+        { name: 'Galvanic Discharge',            set: 'MH3'             },
+      ],
+    },
+    {
+      deck: 'Mardu Energy',
+      colors: ['R', 'W', 'B'],
+      cards: [
+        { name: 'Guide of Souls',                set: 'MH3'             },
+        { name: 'Ocelot Pride',                  set: 'MH3', id: 126093 },
+        { name: 'Ajani, Nacatl Pariah',          set: 'MH3'             },
+        { name: 'Phlage, Titan of Fire\'s Fury', set: 'MH3'             },
+        { name: 'Orcish Bowmasters',             set: 'LTR'             },
+      ],
+    },
+  ]}
+  metaShare="35.3%"
+  winRate="53.9%"
+  nEff={8.8}
+  pMeta={11.6}
+/>
+
+So what went wrong? Unlike Rakdos Evoke earlier in 2024 which posted a 23.8% polarity and had clear predators in the field, Energy's low polarity (13.8%) meant no deck held a strong edge against it. In a diverse field, that would be harmless as a deck that is even against everything is not a threat to the format's health. But Energy also carried a high homogeneity over Modern with a field diversity of 8.6 of 16, which over time showed that the metagame was forced to prepare for a deck that was everywhere yet could not be strongly countered.
+
+The December 2024 ban left Boros's actual engine intact (*Guide of Souls*, *Ocelot Pride*, *Phlage, Titan of Fire's Fury*, and *Ajani, Nacatl Pariah*), and the underlying matchups that made Energy strong were unchanged. But what finally broke its dominance was the May 18, 2026 ban of *Phlage, Titan of Fire's Fury*. Both variants ran it their win condition as a recurring sorce of damage to any target on entry and on attack, so it could kill a key creature or hit the face for 3 every turn.
+
+<CardShowcase
+  cards={[
+    { name: 'Guide of Souls',               set: 'MH3'             },
+    { name: 'Ocelot Pride',                 set: 'MH3', id: 126093 },
+    { name: "Phlage, Titan of Fire's Fury", set: 'MH3'             },
+    { name: 'Ajani, Nacatl Pariah',         set: 'MH3'             },
+  ]}
+  size="sm"
+/>
+
+Because it could be re-cast from the graveyard for {RR}{WW} and exiling five other cards, even if the opponent killed it, Energy could still bring it back.  Much like the [February 15 2021 B&R](https://magic.wizards.com/en/news/announcements/february-15-2021-banned-and-restricted-announcement) banning *Uro, Titan of Nature's Wrath* and *Field of the Dead* (among other cards) several years earlier, the metagame still had no reliable answer to remove *Phlage, Titan of Fire's Fury* despite the release of MH3, and removing in the May 18 B&R finally gave the metagame the chance breathe and diversify its strategy.
+
+### 3.4 A diverse field can still have lopsided matchups
+
+The May 18 B&R announcement also banned *Lotus Field*, a key land in Amulet Titan, and unbanned both *Violent Outburst* and *Umezawa's Jitte*. Over the following month, Boros Energy fell from 19.5% to 10.8%, while Mardu Energy dropped out of the metagame. Shortly after, many fast combo decks rose in its absence.
+
+By June 16, Boros Energy still led the field at 10.8%, and each of the next seven archetypes held between 6.6% and 9.2%. Field diversity had risen from 8.8 to 13.1, and the top eight decks posted nearly identical winrates, between 50.2% and 52.3%. By the usual metrics this showed to be an even and healthy field. But the metagame quickly reached a polarit of 25.7%, equivalent to a 63-37 average non-mirror matchup across the field.
+
+<TournamentSnapshot
+  metaShare="10.8%"
+  winRate="51.6%"
+  nEff={13.1}
+  pMeta={25.7}
+  archetypes={[
+    {
+      deck: 'Boros Energy',
+      colors: ['R', 'W'],
+      cards: [
+        { name: 'Guide of Souls',       set: 'MH3'             },
+        { name: 'Ocelot Pride',         set: 'MH3', id: 126093 },
+        { name: 'Ajani, Nacatl Pariah', set: 'MH3'             },
+        { name: 'Galvanic Discharge',   set: 'MH3'             },
+        { name: 'Goblin Bombardment',   set: 'MH2'             },
+      ],
+    },
+    {
+      deck: "Goryo's Vengeance",
+      colors: ['W', 'U', 'B'],
+      cards: [
+        { name: "Goryo's Vengeance",     set: 'BOK' },
+        { name: 'Atraxa, Grand Unifier', set: 'ONE' },
+        { name: 'Griselbrand',           set: 'AVR' },
+        { name: 'Psychic Frog',          set: 'MH3' },
+        { name: 'Tainted Indulgence',    set: 'SNC' },
+      ],
+    },
+    {
+      deck: 'Ruby Storm',
+      colors: ['R'],
+      cards: [
+        { name: 'Ruby Medallion',    set: 'MH3' },
+        { name: 'Ral, Monsoon Mage', set: 'MH3' },
+        { name: 'Manamorphose',      set: 'SHM' },
+        { name: 'Past in Flames',    set: 'ISD' },
+        { name: 'Wish',              set: 'AFR' },
+      ],
+    },
+    {
+      deck: 'Dimir Frog',
+      colors: ['U', 'B'],
+      cards: [
+        { name: 'Psychic Frog',      set: 'MH3' },
+        { name: 'Orcish Bowmasters', set: 'LTR' },
+        { name: 'Counterspell',      set: 'MH2' },
+        { name: 'Fatal Push',        set: 'AER' },
+        { name: 'Murktide Regent',   set: 'MH2' },
+      ],
+    },
+  ]}
+/>
+
+But over the next ten weeks, polarity fell to 18.0% by July 28 and again to 17.2% by August 27. By then, no deck exceeded 9.5% of the field and field diversity once again held at 13.3 of 16. The eight leading decks again posted nearly identical winrates, this time between 49.8% and 51.8%, and the average non-mirror matchup had narrowed from a 63-37 equivalent in June to 59-41 in August and falling.
+
+### 3.5 Izzet Prowess broke out at Magic Spotlight Series: The Hobbit
+
+At the Magic Spotlight Series: The Hobbit from August 28--30, 2026, Izzet Prowess broke out as the clear leader of the field, with 75 of 574 players (13.1%) registering it. Goryo's Vengeance followed at 8.0%, the previous leader from the last month of MTGO results, while every other archetype remained below 5.5%.
+
+Field diversity held at 11.3 of 16, and Prowess accounted for 42.4% of the field's expected mirrors. Although its average winrate was only 48.4%, its matchups were even enough that the average non-mirror match was equivalent to 60-40 across the field. The field was still broad and diverse, though the average matchup was still lopsided enough to produce a polarity score of 20.4%.
+
+<TournamentSnapshot
+  metaShare="13.1%"
+  winRate="48.4%"
+  nEff={11.3}
+  pMeta={20.4}
+  archetypes={[
+    {
+      deck: 'Izzet Prowess',
+      colors: ['U', 'R'],
+      cards: [
+        { name: "Dragon's Rage Channeler", set: 'MH2' },
+        { name: 'Cori-Steel Cutter',       set: 'TDM' },
+        { name: 'Slickshot Show-Off',      set: 'OTJ' },
+        { name: 'Violent Urge',            set: 'DSK' },
+        { name: 'Expressive Iteration',    set: 'STX' },
+      ],
+    },
+    {
+      deck: "Goryo's Vengeance",
+      colors: ['W', 'U', 'B'],
+      cards: [
+        { name: "Goryo's Vengeance",     set: 'BOK'             },
+        { name: 'Atraxa, Grand Unifier', set: 'ONE'             },
+        { name: 'Griselbrand',           set: 'AVR'             },
+        { name: 'Psychic Frog',          set: 'MH3'             },
+        { name: 'Quantum Riddler',       set: 'EOE', id: 142757 },
+      ],
+    },
+    {
+      deck: 'Mono-Green Eldrazi',
+      colors: ['G'],
+      cards: [
+        { name: 'Slumbering Trudge',       set: 'SOS' },
+        { name: 'Ugin, Eye of the Storms', set: 'TDM' },
+        { name: 'Sowing Mycospawn',        set: 'MH3' },
+        { name: 'Fanatic of Rhonas',       set: 'MH3' },
+        { name: 'Fight Rigging',           set: 'SNC' },
+      ],
+    },
+    {
+      deck: 'Affinity',
+      colors: ['U', 'R'],
+      cards: [
+        { name: 'Mox Opal',              set: 'SOM' },
+        { name: 'Pinnacle Emissary',     set: 'EOE' },
+        { name: 'Weapons Manufacturing', set: 'EOE' },
+        { name: 'Kappa Cannoneer',       set: 'NEC' },
+        { name: "Urza's Saga",           set: 'MH2' },
+      ],
+    },
+  ]}
+/>
+
+A 20.4% polarity score, however, does not mean the field is evenly matched. As the table below shows, the top four decks had individual polarity scores between only 10.9% and 13.0%, while the six smaller archetypes among the top ten ranged from 22.2% to 35.4%. The latter decks formed the fast aggro and combo decks that had previously rose in the week following the May 18 B&R.
+
+<br/>
+<MetagameBreakdown
+  decks={[
+    {
+      name: 'Izzet Prowess',
+      share: 13.1,
+      winRate: 48.4,
+      homogeneity: 42.4,
+      polarity: 10.9
+    },
+    {
+      name: "Goryo's Vengeance",
+      share: 8.0,
+      winRate: 52.4,
+      homogeneity: 16.0,
+      polarity: 11.5
+    },
+    {
+      name: 'Mono-Green Eldrazi',
+      share: 5.4,
+      winRate: 52.0,
+      homogeneity: 7.2,
+      polarity: 13.0
+    },
+    {
+      name: 'Affinity',
+      share: 5.1,
+      winRate: 51.5,
+      homogeneity: 6.3,
+      polarity: 12.7
+    },
+    {
+      name: 'Ruby Storm',
+      share: 4.2,
+      winRate: 40.6,
+      homogeneity: 4.3,
+      polarity: 35.4
+    },
+    {
+      name: 'Boros Energy',
+      share: 3.8,
+      winRate: 48.6,
+      homogeneity: 3.7,
+      polarity: 25.4
+    },
+    {
+      name: 'Eldrazi Tron',
+      share: 3.8,
+      winRate: 43.5,
+      homogeneity: 3.7,
+      polarity: 34.3
+    },
+    {
+      name: 'Gruul Basking Broodscale',
+      share: 3.3,
+      winRate: 55.6,
+      homogeneity: 2.7,
+      polarity: 26.5
+    },
+    {
+      name: 'Living End',
+      share: 3.1,
+      winRate: 51.7,
+      homogeneity: 2.4,
+      polarity: 23.8
+    },
+    {
+      name: 'Devoted Combo',
+      share: 3.0,
+      winRate: 55.2,
+      homogeneity: 2.2,
+      polarity: 22.2
+    },
+  ]}
+/>
+<br/>
+
+As a result, most of the event's polarized matchups came from strategies that each represented 4.2% or less of the field, and their low metagame shares did help keep those polarized matchups from dominating the aggregate score. Notably, Izzet Prowess's 10.9% polarity was the lowest in the metagame, with Goryo's Vengeance close behind at 11.5%. The metagame still shows a lot of room to grow with no clear winners at the top.
+
+As the metagame continues to evolve, the top decks may keep offering broad matchup coverage even as more fringe strategies demand targeted preparation. That flatter spread may help explain why Prowess became the most-played deck so quickly among players in this event, even though its 48.4% winrate showed no clear edge in the aggregate.
+
+## 4. Reading field diversity and polarity together
+
+The figure below shows the same timeline as above, with the addition of Eldrazi Winter, Hogaak Summer, Pro Tour Rivals of Ixalan, and the combined Ghent and Hartford Regional Championships in 2024 (another comparable example in recent years). It shows how these two dimensions of the metagame often move independently and describe different problems in the same format.
+
+<MetagameTaxonomyFigure />
+
+As section 1 described, Eldrazi Winter and Hogaak Summer were both significantly concentrated fields with heavily favored matchups. At the opposite extreme, Pro Tour Rivals of Ixalan (2018) and the combined Ghent and Hartford Regional Championship events (2024) had significantly more diverse metagames with much more interactive matchups. These are often the gold standards that players refer to as ideal for Modern.
+
+Also shown on the plot is a dashed line connecting the three recent paper events, with the intervening curves informed by the direction of the weekly MTGO results. Pro Tour Marvel from July 17--19 this year recorded a 10.9 of 16 field diversity and 21.4% polarity. The August destination RCQs had nearly the same field diversity at 11.3, although polarity rose to 25.4%. At Magic Spotlight: The Hobbit from August 28-30, field diversity remained 11.3 of 16 while polarity fell modestly to 20.4%.
+
+Those paper results place Modern in roughly the same part of the chart across six weeks, even as the leading decks continued to change. Their movement was primarily horizontal as the field stayed comparably broad while the average matchup widened at the destination RCQs and narrowed again at the Hobbit Spotlight. Metagame share alone captures little of that change, and we see the metagame trending in a healthy direction following the B&R.
+
+Also of note in this chart, we set reference lines for these four quadrants at 10.0 of 16 field diversity and 20% polarity as arbitrary points of comparison. They do, however, mark the approximate thresholds where Wizards has taken action in Modern previously, and where the average non-mirror matchup is roughly 60-40.
+
+## 5. Matchup polarity before and after sideboarding
+
+Matchup polarity also separates what happens before and after players sideboard. Because polarity measures the spread of individual matchups, comparing Game 1 polarity against post-board polarity allows us to find how much of a deck's disadvantage is repairable within its 15 sideboard slots. In Modern, where silver bullets are often color-specific, that gap has driven the format's overall polarity in previous metagames. Often a deck that is favored against most of the field in Game 1 but unfavored in nearly every sideboarded matchup can post a perfectly average match winrate.
+
+A good example of this situation occurred in Pauper when it [banned *Monastery Swiftspear* in December 2023](https://magic.wizards.com/en/news/announcements/explanation-of-pauper-bans-for-december-4-2023). The Pauper Format Panel described how Mono-Red's non-mirror winrate was a fair 50.8%, but the deck reached that average by starting favored against most of the field in Game 1 and becoming unfavored in nearly every sideboarded matchup. Opponents often brought in dedicated hate cards like *Hydroblast*, *Blue Elemental Blast*, and other life-gain or creature-removal cards. Some players even devoted as many as eight sideboard slots to red. The ban's deciding factor was Mono-Red's polarity as the panel decided that the spread of its matchups and the sideboard war it forced on the rest of the field was too unhealthy for Pauper.
+
+Modern is a much higher power format and tends to show the same effects at the format level, with polarity over the last month falling from 23.1% in Game 1 to 19.2% after sideboarding (a 3.9-point compression across the format). Mono-Green Eldrazi for instance had the largest drop in polarity, from 47.1% in Game 1 to 20.1% post-board as opponents brought in cards like *Blood Moon*, *Break the Ice*, and targeted land hate. Boros Energy (21.9% to 15.2%) and Esper Blink (25.6% to 14.2%) in comparison hold moderate polarity both pre-board and post-board, reflecting flexible game plans that do not depend on catching an unprepared opponent. Other decks like Dimir Midrange saw the opposite effect, with polarity rising from 14.2% pre-board to 21.4% post-board, where it's sideboard plan significantly widened the spread of its matchups.
+
+All in all, this comparison gives us another signal about the manner in which players are preparing for the metagame. A broad reliance on silver-bullet cards to counter a strategy will often show up as a compression of polarity after sideboarding. And the effects of this can be felt in decks targeted by those hate cards whose polarity shrinks after sideboarding. This is one of the many rock-paper-scissors dynamics that can exist in a metagame unknown to how we traditionally track Magic: The Gathering formats.
+
+## 6. Conclusion
+
+Metagame share and aggregate winrate each reduce a format to a single number, and most of what separates a healthy metagame from an unhealthy one tends to sit in what it leaves out. Field diversity measures how concentrated the field is, the effective number of decks a player has to prepare for, while polarity measures how lopsided the average matchup is, the field's weighted distance from a 50-50 pairing. As we have explored, these two move independently, so a metagame can be even but lopsided, or concentrated but even, without either showing up in either metagame share or aggregate winrate.
+
+Since Modern's last B&R on May 18th this year, the polarity that built up in June 2026 has eased on its own over the following ten weeks. While the metagame over the past summer has often been fast, the field has emerged to be broad and diverse without a clear leader just yet. We will continue to see how this shakes out at [Magic Spotlight: The Hobbit at SCG CON Dallas](https://scgcon.starcitygames.com/event/scg-con-dallas-2026/) this weekend and in the upcoming [US Regionals in Baltimore](https://scgcon.starcitygames.com/event/scg-con-baltimore-2026/) next week from September 11-13th. The metagame is still evolving rapidly, and it will be interesting to see how it continues to develop in the coming months.
+
+## Appendix: methodology
+
+Section 2 defines field diversity, homogeneity, and matchup polarity. This appendix documents the data preparation, sampling choices, and statistical adjustment used for the results in the article.
+
+### Data preparation
+
+For each comparison, we use the 16 most-played archetypes and renormalize their observed metagame shares across that group:
+
+$$
+f_i = \frac{s_i}{\sum_{k=1}^{16} s_k}
+$$
+
+The same normalized shares are used for field diversity, homogeneity, deck polarity, and format polarity.
+
+We cleaned the tournament data before calculating the paper results. Player and deck identities were reconciled across sources, and incomplete or inconsistent records were corrected when the underlying event data supported a resolution.
+
+Archetypes were canonicalized through our [**Manafold**](https://github.com/videre-project/manafold) project before we constructed metagame shares or matchup matrices. We used third-party archetype labels as weak supervision and assigned the final classifications through Manafold. This kept equivalent strategies under a consistent classification when their source labels differed.
+
+For polarity calculations, mirror matches are excluded from the matchup matrix. Draws count as half a win when estimating matchup winrates, following the Magic Tournament Rules.
+
+### Data sources
+
+#### MTGO
+
+The dated MTGO samples used in sections 3.2 through 3.4 and section 5 pool **Challenges, Preliminaries, and Qualifiers** over the date ranges stated in the article. Both endpoints are included, and League results are excluded.
+
+Decklists are classified before metagame shares and matchup records are aggregated. The underlying data is available through the Videre Project API and separately through our [**MTGO-DB project**](https://github.com/videre-project/mtgo-db).
+
+For section 5, we construct separate matchup matrices for Game 1 and post-board games. Every Game 1 result contributes to the pre-board matrix, while Games 2 and 3 are pooled into the post-board matrix. We then calculate polarity independently for the two matrices using the same field shares and sample adjustment described below.
+
+#### Magic Spotlight Series: The Hobbit
+
+For Magic Spotlight Series: The Hobbit, we use the published MTGGoldfish deck data and the [completed matches published on Melee](https://melee.gg/Tournament/View/441441).
+
+We canonicalized the MTGGoldfish archetype labels through Manafold, reconciled player identities between the two sources, and joined those classifications to the completed Melee matches. The resulting cleaned dataset supplies the field composition and matchup matrix used in the article.
+
+#### Pro Tour Marvel
+
+For Pro Tour Marvel, the published decklists provide the tournament field and the ten Modern Swiss rounds provide the matchup results. Draft rounds and the draft Top 8 are excluded.
+
+We canonicalized the decklists and reconciled the published match records before constructing the matchup matrix.
+
+#### August destination RCQs
+
+The August destination RCQ comparison combines the NRG Series event with the two Modern events held at LFG Con on August 15 and 16.
+
+We classified the available decklists under the same archetype taxonomy, joined them to their corresponding Swiss results, and combined the three events into one matchup sample. This sample contains fewer matches than Pro Tour Marvel or Magic Spotlight Series: The Hobbit, so its polarity estimate carries more sampling uncertainty.
+
+#### Historical comparisons
+
+The 2023 timeline uses rolling 30-day windows of classified MTGO results to estimate metagame shares.
+
+Its matchup estimates come from the most recent complete Melee events needed to reach approximately 3,000 matches. The sample is bounded by the release of *The Lord of the Rings: Tales of Middle-earth* and the December 2023 ban.
+
+For this timeline, polarity weights are renormalized across observed matchups. Pairings absent from the historical sample receive no weight.
+
+The Pro Tour and Mythic Championship snapshots use the published decklists, standings, and pairings from the event named on each card. The spring 2024 comparison combines the Ghent and Hartford Regional Championships.
+
+### Polarity calculation
+
+Using the notation introduced in section 2, the observed disparity of matchup $i$ against $j$ is:
+
+$$
+\delta_{ij} = |2\widehat{W}_{ij}-1|
+$$
+
+Deck polarity weights each non-mirror matchup by the opponent's share of the field:
+
+$$
+P_i =
+\sum_{j \neq i}
+\frac{f_j}{\sum_{k \neq i} f_k}
+\delta_{ij}
+$$
+
+Format polarity weights each pairing by the metagame shares of both archetypes:
+
+$$
+P_{\text{meta}} =
+\frac{
+\sum_i\sum_{j \neq i} f_i f_j\delta_{ij}
+}{
+\sum_i\sum_{j \neq i} f_i f_j
+}
+$$
+
+The reported polarity values substitute the sample-adjusted disparity $\widetilde{\delta}_{ij}$ below for the raw $\delta_{ij}$.
+
+### Adjusting sparse matchup samples
+
+Absolute matchup disparity has an upward sampling bias. Even when the underlying matchup is 50--50, a finite sample will usually finish away from an exact tie, and taking the absolute value turns deviations in either direction into positive disparity.
+
+For a true 50--50 matchup, the expected raw disparity is approximately:
+
+$$
+\mathbb{E}[\hat{\delta}_{\text{raw}}]
+\approx
+\sqrt{\frac{2}{\pi N}}
+$$
+
+At $N=20$, sampling variation alone produces roughly 18% raw disparity on average. The problem is common in tournament windows: in the 30-day Modern sample used while developing the estimator, 82 of the 120 possible top-16 matchup pairings had fewer than 30 recorded games.
+
+We evaluated several ways to reduce this bias while developing the metric. Prior-based shrinkage requires a choice of smoothing strength, and a globally fitted empirical-Bayes prior compressed extreme matchups that still carried meaningful signal. Directly subtracting estimated sampling variance removed that prior but introduced a hard boundary at zero, where a single additional win could produce a sharp jump in adjusted disparity.
+
+We therefore use a smooth adjustment based on the observed disparity and its estimated sampling variance. Let:
+
+$$
+Z_{ij}=|2\widehat{W}_{ij}-1|
+$$
+
+and:
+
+$$
+\sigma_{ij}^2 =
+\frac{
+4\widehat{W}_{ij}(1-\widehat{W}_{ij})
+}{
+N_{ij}-1
+}
+$$
+
+The adjusted disparity is:
+
+$$
+\widetilde{\delta}_{ij} =
+\frac{
+Z_{ij}^2
+}{
+\sqrt{Z_{ij}^2+\sigma_{ij}^2}
+}
+$$
+
+Its behavior changes with the strength of the observed signal. When $Z_{ij}$ is small relative to $\sigma_{ij}$,
+
+$$
+\widetilde{\delta}_{ij}
+\approx
+\frac{Z_{ij}^2}{\sigma_{ij}},
+$$
+
+so small deviations from 50--50 are damped approximately quadratically. When $Z_{ij}$ is large relative to $\sigma_{ij}$, the adjustment approaches the observed disparity:
+
+$$
+\widetilde{\delta}_{ij}
+\approx
+Z_{ij}.
+$$
+
+The adjustment therefore fades as the matchup signal becomes large relative to its estimated sampling noise. It also introduces no tunable prior or smoothing constant once $\widehat{W}_{ij}$ and $N_{ij}$ are fixed.
+
+Pairings with fewer than two observations receive zero adjusted disparity. Their non-mirror pairing weight remains in the format-level denominator except for the 2023 timeline described above, where weights are renormalized across observed matchups.
+
+The adjustment reduces small-sample bias while leaving finite-sample uncertainty. A particular limitation occurs when the observed record is 100% or 0%: the plug-in variance becomes zero, so a small perfect record can retain an extreme disparity. We pool tournament windows where appropriate and avoid placing much weight on small movements from limited matchup samples.
+
+<br/>

@@ -3,7 +3,9 @@
   "include": [
     "/metagame",
     "/metagame/",
-    "/og/metagame.png"
+    "/og/metagame.png",
+    "/og/article.png",
+    "/articles/*"
   ],
   "exclude": []
 }

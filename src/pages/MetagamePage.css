@@ -719,8 +719,9 @@
   top: 50%;
   z-index: 2;
   padding-left: 0.35rem;
-  color: white;
+  color: hsl(var(--foreground));
   font-size: 0.8rem;
+  font-weight: 700;
   transform: translateY(-50%);
   white-space: nowrap;
 }
@@ -736,15 +737,15 @@
 }
 
 .metagame-share-label.has-light-text {
+  color: hsl(var(--foreground));
+}
+
+.dark .metagame-share-label.has-light-text {
   color: white;
 }
 
-.metagame-share-label.is-inline.has-dark-text {
-  color: hsl(222 84% 5%);
-}
-
-.metagame-share-label.is-inline.has-light-text {
-  color: white;
+.dark .metagame-share-label:not(.is-inline) {
+  color: hsl(var(--foreground));
 }
 
 .metagame-winrate-row {

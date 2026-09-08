@@ -1,0 +1,30 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+**/
+
+.article-og-image {
+  width: max-content;
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.article-og-error {
+  display: flex;
+  width: 1200px;
+  height: 630px;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.article-og-error h1 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 2rem;
+}
+
+.article-og-error p {
+  margin: 0.35rem 0 0;
+}

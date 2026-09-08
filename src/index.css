@@ -468,3 +468,33 @@ h3 { font-size: 1.1rem; }
     font-size: 1.1rem;
   }
 }
+
+/* ===== Display Math Centering ===== */
+.math-display,
+.katex-display,
+mjx-container[data-math-display="true"],
+mjx-container[display="true"] {
+  display: block !important;
+  width: 100% !important;
+  margin: 1.75rem 0 !important;
+  text-align: center !important;
+}
+
+.math-display svg,
+.katex-display > .katex,
+mjx-container[data-math-display="true"] svg,
+mjx-container[display="true"] svg {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+p:has(> .math-display),
+p:has(> .katex-display),
+p:has(> mjx-container[data-math-display="true"]),
+p:has(> mjx-container[display="true"]),
+p[data-math-display="true"] {
+  display: block !important;
+  width: auto !important;
+  text-align: center !important;
+}

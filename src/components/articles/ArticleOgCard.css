@@ -1,0 +1,182 @@
+/** @file
+  Copyright (c) 2026, The Videre Project Authors. All rights reserved.
+**/
+
+/* 1200x630 OpenGraph card. Pure static HTML/CSS so the same markup renders in
+   the browser preview and through takumi (satori-compatible) for the OG image.
+   Colors match the catalog article card (see ArticlesPage.css). */
+
+.article-og-card {
+  display: flex;
+  width: 1200px;
+  height: 630px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+}
+
+.article-og-card-body {
+  display: flex;
+  flex-direction: column;
+  width: 490px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 56px;
+}
+
+.article-og-card-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.article-og-card-description {
+  margin: 16px 0 0;
+  color: #64748b;
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.article-og-card-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.article-og-card-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.article-og-card-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.article-og-card-author-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.article-og-card-author-name {
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.article-og-card-author-handle {
+  color: #2563eb;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.article-og-card-publish {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.article-og-card-meta-dot {
+  color: #cbd5e1;
+}
+
+.article-og-card-read-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.article-og-card-read-time svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.article-og-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.article-og-card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.article-og-card-tag svg {
+  display: block;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.article-og-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.article-og-card-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.article-og-card-read svg {
+  display: block;
+  flex-shrink: 0;
+  color: #64748b;
+}
+
+.article-og-card-domain {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Right column: the thumbnail, contained on white to match the figure's
+   background (cover would crop the chart's edges). */
+.article-og-card-thumbnail-wrap {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+}
+
+.article-og-card-thumbnail {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
