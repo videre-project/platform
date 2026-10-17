@@ -8,8 +8,10 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
+  memo,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react'
@@ -42,6 +44,11 @@ interface CardTooltipContextType {
 
 const CardTooltipContext = createContext<CardTooltipContextType | null>(null)
 
+// Keep tooltip movement from rerendering the application subtree.
+const TooltipChildren = memo(function TooltipChildren({ children }: { children: ReactNode }) {
+  return children
+})
+
 const CARD_WIDTH = 210
 const CARD_HEIGHT = 294
 const TOOLTIP_GAP = 8
@@ -56,6 +63,10 @@ export function CardTooltipProvider({
   const [resolvedOtherFaceCatalogId, setResolvedOtherFaceCatalogId] = useState<number | null>(null)
   const otherFaceCatalogIdCache = useRef(new Map<number, number | null>())
   const pendingOtherFaceRequests = useRef(new Map<number, Promise<number | null>>())
+  // Wrapper element that hides the tooltip on any press. A native listener is
+  // attached to it (see the effect below) because React synthetic handlers do
+  // not reliably dispatch to a display:contents element in the WebView2 host.
+  const hideOnPressRef = useRef<HTMLDivElement | null>(null)
 
   const showTooltip = useCallback((data: CardTooltipData, nextPosition: CardTooltipPosition) => {
     if (data.catalogId <= 0) return
@@ -73,6 +84,12 @@ export function CardTooltipProvider({
     setResolvedOtherFaceCatalogId(null)
   }, [])
 
+  // Tooltip position changes should not notify every card consuming this context.
+  const contextValue = useMemo(
+    () => ({ showTooltip, updatePosition, hideTooltip }),
+    [showTooltip, updatePosition, hideTooltip],
+  )
+
   // Face lookup is intentionally explicit here. The media provider may expose
   // a resolver for replay transformations, but ordinary tooltip hovers should
   // not turn every card preview into a /face request.
@@ -83,12 +100,34 @@ export function CardTooltipProvider({
     window.addEventListener('mousedown', hideTooltip, { capture: true })
     window.addEventListener('dragstart', hideTooltip, { capture: true })
     window.addEventListener('wheel', hideTooltip, { capture: true, passive: true })
+    window.addEventListener('blur', hideTooltip)
+    document.addEventListener('pointerdown', hideTooltip, { capture: true })
+    document.addEventListener('mousedown', hideTooltip, { capture: true })
 
     return () => {
       window.removeEventListener('pointerdown', hideTooltip, { capture: true })
       window.removeEventListener('mousedown', hideTooltip, { capture: true })
       window.removeEventListener('dragstart', hideTooltip, { capture: true })
       window.removeEventListener('wheel', hideTooltip, { capture: true })
+      window.removeEventListener('blur', hideTooltip)
+      document.removeEventListener('pointerdown', hideTooltip, { capture: true })
+      document.removeEventListener('mousedown', hideTooltip, { capture: true })
+    }
+  }, [hideTooltip])
+
+  // Use native listeners because synthetic events on display:contents do not
+  // reliably dismiss the preview in Wine's WebView2.
+  useEffect(() => {
+    const el = hideOnPressRef.current
+    if (!el) return
+    const handler = () => hideTooltip()
+    el.addEventListener('pointerdown', handler, { capture: true })
+    el.addEventListener('pointerup', handler, { capture: true })
+    el.addEventListener('mousedown', handler, { capture: true })
+    return () => {
+      el.removeEventListener('pointerdown', handler, { capture: true })
+      el.removeEventListener('pointerup', handler, { capture: true })
+      el.removeEventListener('mousedown', handler, { capture: true })
     }
   }, [hideTooltip])
 
@@ -145,8 +184,10 @@ export function CardTooltipProvider({
   }
 
   return (
-    <CardTooltipContext.Provider value={{ showTooltip, updatePosition, hideTooltip }}>
-      {children}
+    <CardTooltipContext.Provider value={contextValue}>
+      <div ref={hideOnPressRef} style={{ display: 'contents' }}>
+        <TooltipChildren>{children}</TooltipChildren>
+      </div>
       {activeCard && typeof document !== 'undefined' ? createPortal(
         <div
           className="pointer-events-none fixed z-[9999] rounded-xl border border-white/15 bg-black/85 p-1.5 shadow-2xl backdrop-blur-md transition-opacity duration-150 animate-in fade-in-0 zoom-in-95"
