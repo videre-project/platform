@@ -4,7 +4,7 @@
 **/
 
 import { motion, AnimatePresence } from "framer-motion"
-import type { BoardState, CardState, BoardTransition } from "../../../types/replay-types"
+import type { BoardState, CardState, BoardTransition, ReplayCardInteraction } from "../../../types/replay-types"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../primitives/Tooltip"
 import { GameLogText } from "../../../utils/parse-game-log"
 import {
@@ -13,6 +13,7 @@ import {
   CardImg,
   CardTooltipContent,
   RevealedCardCell,
+  cardSelectionClassName,
 } from "./card-visuals"
 import { m15FrameUrl as defaultM15FrameUrl } from "../../../assets"
 
@@ -98,6 +99,87 @@ export function RevealedZoneOverlay({
   )
 }
 
+// Pending triggers are scene cards awaiting targets or ordering, not Stack items.
+export function TriggeredAbilitiesOverlay({
+  cards,
+  cardFrameUrl = defaultM15FrameUrl,
+}: {
+  cards: ReplayCardInteraction[]
+  cardFrameUrl?: string
+}) {
+  const sections = [
+    { zone: "LocalTriggers", title: "Your Triggered Abilities" },
+    { zone: "OpponentTriggers", title: "Opponent's Triggered Abilities" },
+  ].map(section => ({ ...section, cards: cards.filter(card => card.zone === section.zone) }))
+    .filter(section => section.cards.length > 0)
+
+  if (sections.length === 0) return null
+
+  return (
+    <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 max-h-[90%] overflow-auto">
+      {sections.map(section => (
+        <section key={section.zone} aria-label={section.title}
+          className="bg-sidebar border border-sidebar-border/60 rounded-lg px-4 py-3 shadow-2xl">
+          <h3 className="text-[10px] font-semibold text-muted-foreground mb-2.5">
+            {section.title} <span className="text-muted-foreground/50">({section.cards.length})</span>
+          </h3>
+          <div className="flex flex-wrap gap-2 max-w-[480px]">
+            {section.cards.map(card => (
+              <TooltipProvider key={card.logicalAddress} delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div data-trigger-address={card.logicalAddress}
+                      className={[
+                        "rounded-md overflow-hidden border border-sidebar-border/60",
+                        cardSelectionClassName({ interaction: card }),
+                        card.isActive === false && !card.isBeingCast ? "brightness-50" : "",
+                      ].filter(Boolean).join(" ")}
+                      style={{ height: STACK_CARD_H, width: STACK_CARD_W }}>
+                      <AbilityCardFace name={card.name ?? "Triggered Ability"}
+                        rulesText={card.rulesText} catalogId={card.catalogId ?? null}
+                        type="Triggered Ability" cardFrameUrl={cardFrameUrl} />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[240px]">
+                    <div className="font-semibold">{card.name ?? "Triggered Ability"}</div>
+                    <GameLogText text={card.rulesText ?? ""} />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function AbilityCardFace({ name, rulesText, catalogId, type, cardFrameUrl }: {
+  name: string
+  rulesText?: string | null
+  catalogId: number | null
+  type: "Triggered Ability" | "Activated Ability"
+  cardFrameUrl: string
+}) {
+  return (
+    <div className="w-full h-full relative">
+      <img src={cardFrameUrl} alt="" className="absolute inset-0 w-full h-full z-10 pointer-events-none" style={{ filter: 'brightness(0.3)' }} />
+      <CardImg catalogId={catalogId} alt={name} className="absolute inset-0 w-full h-full object-cover z-0" />
+      <div className="absolute z-20 flex items-center px-1.5 truncate" style={{ top: '3%', left: '5%', right: '5%', height: '12%' }}>
+        <span className="text-[7px] font-bold text-foreground leading-none truncate">{name}</span>
+      </div>
+      <div className="absolute z-20 flex items-center px-1.5" style={{ top: '55%', left: '5%', right: '5%', height: '10%' }}>
+        <span className="text-[6px] font-semibold text-foreground/80 leading-none">{type}</span>
+      </div>
+      <div className="absolute z-20 overflow-hidden px-1.5 py-0.5" style={{ top: '64.5%', left: '5%', right: '5%', bottom: '5%' }}>
+        <span className="text-[6px] text-foreground/70 leading-tight line-clamp-4">
+          <GameLogText text={rulesText ?? ""} manaSymbolClassName="inline h-[6px] w-[6px] align-text-bottom mx-[0.5px]" />
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // -- Stack overlay --
 
 const STACK_CARD_H = 120
@@ -166,18 +248,20 @@ export function StackOverlay({
             const sourceHighlighted = hasTargets && activeSourceCardId === card.cardId
             return (
               <motion.div
+                data-card-id={card.cardId}
                 key={card.cardId}
                 layoutId={(card.isTriggeredAbility || card.isActivatedAbility) ? undefined : `card-${card.lineageId}`}
                 layout
                 transition={CARD_TRANSITION}
                 className={[
                   "absolute top-0 rounded-md overflow-hidden border",
-                  isTop
-                    ? "border-sidebar-accent ring-1 ring-sidebar-accent/60"
-                    : "border-sidebar-border/60",
                   sourceHighlighted
                     ? "border-blue-400/80 ring-2 ring-blue-500 shadow-[0_0_14px_rgba(59,130,246,0.6)]"
+                    : isTop ? "border-sidebar-accent" : "border-sidebar-border/60",
+                  !sourceHighlighted
+                    ? cardSelectionClassName(card) || (isTop ? "ring-1 ring-sidebar-accent/60" : "")
                     : "",
+                  card.isDimmed ? "brightness-50" : "",
                 ].filter(Boolean).join(" ")}
                 style={{
                   left: i * offset,
@@ -197,28 +281,13 @@ export function StackOverlay({
                     <TooltipTrigger asChild>
                       <div className="w-full h-full">
                         {(card.isTriggeredAbility || card.isActivatedAbility) ? (
-                          <div className="w-full h-full relative">
-                            {/* M15 card frame (art box is transparent) */}
-                            <img src={cardFrameUrl} alt="" className="absolute inset-0 w-full h-full z-10 pointer-events-none" style={{ filter: 'brightness(0.3)' }} />
-                            {/* Full card image behind frame — art shows through transparent art box */}
-                            <CardImg catalogId={card.catalogId} alt={card.name} className="absolute inset-0 w-full h-full object-cover z-0" />
-                            {/* Card name */}
-                            <div className="absolute z-20 flex items-center px-1.5 truncate" style={{ top: '3%', left: '5%', right: '5%', height: '12%' }}>
-                              <span className="text-[7px] font-bold text-foreground leading-none truncate">{card.name}</span>
-                            </div>
-                            {/* Type line */}
-                            <div className="absolute z-20 flex items-center px-1.5" style={{ top: '55%', left: '5%', right: '5%', height: '10%' }}>
-                              <span className="text-[6px] font-semibold text-foreground/80 leading-none">
-                                {card.isTriggeredAbility ? "Triggered Ability" : "Activated Ability"}
-                              </span>
-                            </div>
-                            {/* Rules text */}
-                            <div className="absolute z-20 overflow-hidden px-1.5 py-0.5" style={{ top: '64.5%', left: '5%', right: '5%', bottom: '5%' }}>
-                              <span className="text-[6px] text-foreground/70 leading-tight line-clamp-4">
-                                <GameLogText text={card.rulesText ?? ""} manaSymbolClassName="inline h-[6px] w-[6px] align-text-bottom mx-[0.5px]" />
-                              </span>
-                            </div>
-                          </div>
+                          <AbilityCardFace
+                            name={card.name}
+                            rulesText={card.rulesText}
+                            catalogId={card.catalogId}
+                            type={card.isTriggeredAbility ? "Triggered Ability" : "Activated Ability"}
+                            cardFrameUrl={cardFrameUrl}
+                          />
                         ) : (
                           <CardImg
                             catalogId={card.catalogId}

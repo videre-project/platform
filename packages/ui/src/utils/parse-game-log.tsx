@@ -5,7 +5,7 @@
 
 import React from "react"
 import { HighlightedText } from './highlighted-text'
-import { getManaSymbolSvgPath } from "./mana-symbols"
+import { getManaSymbolSvgPath, splitManaSymbols } from "./mana-symbols"
 import { getMtgoChatMarkupSymbol, getMtgoChatSymbolImagePath } from './mtgo-chat-symbols'
 
 interface ParsedPart {
@@ -64,24 +64,25 @@ function renderTextWithInlineMana(
       )
     }
 
-    const symbol = match[1]
-    const symbolPath = getManaSymbolSvgPath(symbol)
-    if (symbolPath) {
-      nodes.push(
-        <InlineSymbolImage
-          key={`${keyPrefix}-m-${idx++}`}
-          src={symbolPath}
-          alt={symbol}
-          fallback={match[0]}
-          className={symbolClassName}
-        />
-      )
-    } else {
-      nodes.push(
-        <React.Fragment key={`${keyPrefix}-r-${idx++}`}>
-          {match[0]}
-        </React.Fragment>
-      )
+    for (const symbol of splitManaSymbols(match[1])) {
+      const symbolPath = getManaSymbolSvgPath(symbol)
+      if (symbolPath) {
+        nodes.push(
+          <InlineSymbolImage
+            key={`${keyPrefix}-m-${idx++}`}
+            src={symbolPath}
+            alt={symbol}
+            fallback={`{${symbol}}`}
+            className={symbolClassName}
+          />
+        )
+      } else {
+        nodes.push(
+          <React.Fragment key={`${keyPrefix}-r-${idx++}`}>
+            {`{${symbol}}`}
+          </React.Fragment>
+        )
+      }
     }
 
     cursor = re.lastIndex
@@ -193,8 +194,8 @@ export function parseGameLogMarkup(text: string): ParsedPart[] {
       const closeIdx = text.indexOf("}", i)
       if (closeIdx > i) {
         flush()
-        const symbol = text.slice(i + 1, closeIdx)
-        parts.push({ type: "mana", value: symbol })
+        for (const symbol of splitManaSymbols(text.slice(i + 1, closeIdx)))
+          parts.push({ type: "mana", value: symbol })
         i = closeIdx + 1
         continue
       }

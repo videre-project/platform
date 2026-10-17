@@ -7,7 +7,7 @@ import React, { useRef, useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { CardState, BoardTransition } from "../../../types/replay-types"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../primitives/Tooltip"
-import type { GameAction } from "../../../types/game-types"
+import type { PromptOption } from "../../../types/game-types"
 import { parseCardName } from "../../../types/game-types"
 import { GameLogText } from "../../../utils/parse-game-log"
 import {
@@ -17,6 +17,7 @@ import {
   TOP_BAR_PEEK,
   CardImg,
   CardTooltipContent,
+  cardSelectionClassName,
 } from "./card-visuals"
 import { backfaceUrl as defaultBackfaceUrl } from "../../../assets"
 
@@ -27,6 +28,7 @@ const ZONE_CARD_H = TOP_BAR_FULL - (ZONE_INNER_PAD_Y * 2) - ZONE_LABEL_ROW_H
 const ZONE_CARD_W = ZONE_CARD_H * CARD_RATIO
 const DEFAULT_HAND_WIDTH = 520
 const MIN_HAND_OFFSET = 20
+const HAND_CARD_GAP = 6
 
 function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T | null>, fallbackWidth: number) {
   const [width, setWidth] = useState(fallbackWidth)
@@ -35,15 +37,12 @@ function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T | null>, 
     const el = ref.current
     if (!el) return
 
-    const updateWidth = () => {
-      setWidth(el.clientWidth || fallbackWidth)
-    }
-
-    updateWidth()
+    const style = getComputedStyle(el)
+    setWidth(Math.max(0, el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)))
     if (typeof ResizeObserver === "undefined") return
 
     const observer = new ResizeObserver(([entry]) => {
-      setWidth(entry.contentRect.width || fallbackWidth)
+      setWidth(entry.contentRect.width)
     })
     observer.observe(el)
     return () => observer.disconnect()
@@ -55,7 +54,7 @@ function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T | null>, 
 function getHandOffset(handCount: number, cardWidth: number, availableWidth: number) {
   if (handCount <= 1) return cardWidth
   const span = Math.max(0, availableWidth - cardWidth)
-  return Math.min(cardWidth, Math.max(MIN_HAND_OFFSET, span / (handCount - 1)))
+  return Math.min(cardWidth + HAND_CARD_GAP, Math.max(MIN_HAND_OFFSET, span / (handCount - 1)))
 }
 
 interface ZonePileEntry {
@@ -64,6 +63,7 @@ interface ZonePileEntry {
   topCard?: CardState
   isLibrary?: boolean
   cards?: CardState[]
+  isDimmed?: boolean
 }
 
 function ZoneBrowsePanel({
@@ -128,7 +128,7 @@ function ZoneBrowsePanel({
             <TooltipProvider key={card.cardId} delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="rounded-md overflow-hidden border border-sidebar-border/60 bg-muted/20" style={{ aspectRatio: "5/7" }}>
+                  <div data-card-id={card.cardId} className={`rounded-md overflow-hidden border border-sidebar-border/60 bg-muted/20 ${cardSelectionClassName(card)} ${card.isDimmed ? "brightness-50" : ""}`} style={{ aspectRatio: "5/7" }}>
                     <CardImg
                       catalogId={card.catalogId}
                       textureId={card.textureId}
@@ -163,10 +163,11 @@ export function BottomZoneBar({
   zones: ZonePileEntry[]
   transition: BoardTransition
   promptText?: string
-  promptOptions: GameAction[]
+  promptOptions: PromptOption[]
   cardBackUrl?: string
 }) {
-  const [browseZone, setBrowseZone] = useState<ZonePileEntry | null>(null)
+  const [browseLabel, setBrowseLabel] = useState<string | null>(null)
+  const browseZone = zones.find(zone => zone.label === browseLabel)
   const zoneToggleRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const handAreaRef = useRef<HTMLDivElement>(null)
   const handAreaWidth = useElementWidth(handAreaRef, DEFAULT_HAND_WIDTH)
@@ -176,7 +177,7 @@ export function BottomZoneBar({
     <div className="flex border-t border-sidebar-border/60 bg-muted/10 shrink-0" style={{ height: TOP_BAR_FULL }}>
       <PromptBox promptText={promptText} promptOptions={promptOptions} />
 
-      <div ref={handAreaRef} className="flex-1 min-w-0 overflow-clip px-4 py-2.5">
+      <div ref={handAreaRef} role="group" aria-label="Hand" className="flex-1 min-w-0 overflow-clip px-4 py-2.5">
         <div className="flex items-center gap-1.5 mb-1.5">
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Hand</span>
           <span className="text-[10px] text-muted-foreground/60">({hand.length})</span>
@@ -190,7 +191,8 @@ export function BottomZoneBar({
                   layoutId={`card-${card.lineageId}`}
                   layout
                   transition={CARD_TRANSITION}
-                  className="absolute top-0 rounded-md overflow-hidden border border-sidebar-border/60"
+                  data-card-id={card.cardId}
+                  className={`absolute top-0 rounded-md overflow-hidden border border-sidebar-border/60 ${cardSelectionClassName(card)} ${card.isDimmed ? "brightness-50" : ""}`}
                   style={{ left: i * handOffset, width: ZONE_CARD_W, height: ZONE_CARD_H, zIndex: hand.length - i }}
                 >
                   <TooltipProvider delayDuration={200}>
@@ -223,28 +225,37 @@ export function BottomZoneBar({
         {zones.map(zone => {
           const browsable = !zone.isLibrary && zone.cards && zone.cards.length > 0
           const isBrowseOpen = browseZone?.label === zone.label
+          const selectionClass = zone.topCard ? cardSelectionClassName(zone.topCard) : ""
           return (
             <div key={zone.label} className="flex flex-col items-start">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap mb-1.5">
                 {zone.label} <span className="text-muted-foreground/60 font-normal">({zone.count})</span>
               </span>
               <div
+                aria-label={zone.label}
                 ref={el => { zoneToggleRefs.current[zone.label] = el }}
                 className={[
                   "rounded-md border border-sidebar-border/60 overflow-hidden relative bg-muted/20",
+                  zone.isDimmed ? "brightness-50" : "",
                   browsable ? "cursor-pointer group/zone" : "",
                   browsable ? "transition-[border-color,box-shadow] hover:border-sidebar-accent/70 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15)]" : "",
-                  isBrowseOpen ? "border-sidebar-accent ring-1 ring-sidebar-accent/70" : "",
+                  selectionClass || (isBrowseOpen ? "border-sidebar-accent ring-1 ring-sidebar-accent/70" : ""),
                 ].filter(Boolean).join(" ")}
                 style={{ width: ZONE_CARD_W, height: ZONE_CARD_H }}
-                onClick={browsable ? () => setBrowseZone(prev => (prev?.label === zone.label ? null : zone)) : undefined}
-                role={browsable ? "button" : undefined}
+                onClick={browsable ? () => setBrowseLabel(prev => (prev === zone.label ? null : zone.label)) : undefined}
+                role={browsable ? "button" : "group"}
                 aria-expanded={browsable ? isBrowseOpen : undefined}
               >
                 {zone.isLibrary && zone.count > 0 ? (
                   <img src={cardBackUrl} alt="Library" className="w-full h-full object-cover" />
                 ) : zone.topCard ? (
-                  <motion.div layoutId={`card-${zone.topCard.lineageId}`} layout transition={CARD_TRANSITION} className="absolute inset-0">
+                  <motion.div
+                    data-card-id={zone.topCard.cardId}
+                    layoutId={`card-${zone.topCard.lineageId}`}
+                    layout
+                    transition={CARD_TRANSITION}
+                    className={`absolute inset-0 ${!zone.isDimmed && zone.topCard.isDimmed ? "brightness-50" : ""}`}
+                  >
                     <CardImg
                       catalogId={zone.topCard.catalogId}
                       textureId={zone.topCard.textureId}
@@ -281,8 +292,8 @@ export function BottomZoneBar({
           {browseZone && (
             <ZoneBrowsePanel
               label={browseZone.label}
-              cards={browseZone.cards!}
-              onClose={() => setBrowseZone(null)}
+              cards={browseZone.cards ?? []}
+              onClose={() => setBrowseLabel(null)}
               anchorRefs={Object.values(zoneToggleRefs.current)}
             />
           )}
@@ -301,6 +312,7 @@ export function TopZoneBar({
   cardBackUrl = defaultBackfaceUrl,
   idPrefix = "card",
   disableHoverExpansion = false,
+  dimHiddenCards = false,
 }: {
   hand: CardState[]
   handCount: number
@@ -310,8 +322,10 @@ export function TopZoneBar({
   cardBackUrl?: string
   idPrefix?: string
   disableHoverExpansion?: boolean
+  dimHiddenCards?: boolean
 }) {
-  const [browseZone, setBrowseZone] = useState<ZonePileEntry | null>(null)
+  const [browseLabel, setBrowseLabel] = useState<string | null>(null)
+  const browseZone = zones.find(zone => zone.label === browseLabel)
   const zoneToggleRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [isExpanded, setIsExpanded] = useState(false)
   const handAreaRef = useRef<HTMLDivElement>(null)
@@ -337,7 +351,7 @@ export function TopZoneBar({
             {headerContent}
           </div>
 
-          <div ref={handAreaRef} className="flex-1 min-w-0 overflow-clip px-4 py-2.5">
+          <div ref={handAreaRef} role="group" aria-label="Hand" className="flex-1 min-w-0 overflow-clip px-4 py-2.5">
             <div className="flex items-center gap-1.5 mb-1.5">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Hand</span>
               <span className="text-[10px] text-muted-foreground/60">({totalHandCount})</span>
@@ -351,7 +365,8 @@ export function TopZoneBar({
                       layoutId={`${idPrefix}-${card.lineageId}`}
                       layout
                       transition={CARD_TRANSITION}
-                      className="absolute top-0 rounded-md overflow-hidden border border-sidebar-border/60"
+                      data-card-id={card.cardId}
+                      className={`absolute top-0 rounded-md overflow-hidden border border-sidebar-border/60 ${cardSelectionClassName(card)} ${card.isDimmed ? "brightness-50" : ""}`}
                       style={{ left: i * handOffset, width: ZONE_CARD_W, height: ZONE_CARD_H, zIndex: totalHandCount - i }}
                     >
                       <TooltipProvider delayDuration={200}>
@@ -384,7 +399,7 @@ export function TopZoneBar({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={CARD_TRANSITION}
-                        className="absolute top-0 rounded-md overflow-hidden border border-sidebar-border/60"
+                        className={`absolute top-0 rounded-md overflow-hidden border border-sidebar-border/60 ${dimHiddenCards ? "brightness-50" : ""}`}
                         style={{
                           left: position * handOffset,
                           width: ZONE_CARD_W,
@@ -405,28 +420,37 @@ export function TopZoneBar({
             {zones.map(zone => {
               const browsable = !zone.isLibrary && zone.cards && zone.cards.length > 0
               const isBrowseOpen = browseZone?.label === zone.label
+              const selectionClass = zone.topCard ? cardSelectionClassName(zone.topCard) : ""
               return (
                 <div key={zone.label} className="flex flex-col items-start">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap mb-1.5">
                     {zone.label} <span className="text-muted-foreground/60 font-normal">({zone.count})</span>
                   </span>
                   <div
+                    aria-label={zone.label}
                     ref={el => { zoneToggleRefs.current[zone.label] = el }}
                     className={[
                       "rounded-md border border-sidebar-border/60 overflow-hidden relative bg-muted/20",
+                      zone.isDimmed ? "brightness-50" : "",
                       browsable ? (disableHoverExpansion ? "!cursor-not-allowed group/zone" : "cursor-pointer group/zone") : "",
                       browsable ? "transition-[border-color,box-shadow] hover:border-sidebar-accent/70 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15)]" : "",
-                      isBrowseOpen ? "border-sidebar-accent ring-1 ring-sidebar-accent/70" : "",
+                      selectionClass || (isBrowseOpen ? "border-sidebar-accent ring-1 ring-sidebar-accent/70" : ""),
                     ].filter(Boolean).join(" ")}
                     style={{ width: ZONE_CARD_W, height: ZONE_CARD_H }}
-                    onClick={browsable ? () => setBrowseZone(prev => (prev?.label === zone.label ? null : zone)) : undefined}
-                    role={browsable ? "button" : undefined}
+                    onClick={browsable ? () => setBrowseLabel(prev => (prev === zone.label ? null : zone.label)) : undefined}
+                    role={browsable ? "button" : "group"}
                     aria-expanded={browsable ? isBrowseOpen : undefined}
                   >
                     {zone.isLibrary && zone.count > 0 ? (
                       <img src={cardBackUrl} alt="Library" className="w-full h-full object-cover" />
                     ) : zone.topCard ? (
-                      <motion.div layoutId={`${idPrefix}-${zone.topCard.lineageId}`} layout transition={CARD_TRANSITION} className="absolute inset-0">
+                      <motion.div
+                        data-card-id={zone.topCard.cardId}
+                        layoutId={`${idPrefix}-${zone.topCard.lineageId}`}
+                        layout
+                        transition={CARD_TRANSITION}
+                        className={`absolute inset-0 ${!zone.isDimmed && zone.topCard.isDimmed ? "brightness-50" : ""}`}
+                      >
                         <CardImg
                           catalogId={zone.topCard.catalogId}
                           textureId={zone.topCard.textureId}
@@ -466,8 +490,8 @@ export function TopZoneBar({
         {browseZone && (
           <ZoneBrowsePanel
             label={browseZone.label}
-            cards={browseZone.cards!}
-            onClose={() => setBrowseZone(null)}
+            cards={browseZone.cards ?? []}
+            onClose={() => setBrowseLabel(null)}
             anchorRefs={Object.values(zoneToggleRefs.current)}
             position="below"
           />
@@ -479,7 +503,7 @@ export function TopZoneBar({
 
 // -- Prompt box --
 
-function optionLabel(action: GameAction): string {
+function optionLabel(action: PromptOption): string {
   switch (action.$type) {
     case "PrimitiveAction":
     case "ConcedeGameAction":
@@ -510,7 +534,7 @@ function optionLabel(action: GameAction): string {
     case "CardSelectorAction":
       return action.name ?? "Choose card"
     default:
-      return action.name ?? action.$type
+      return action.name ?? action.$type ?? action.type ?? "Option"
   }
 }
 
@@ -519,9 +543,10 @@ function PromptBox({
   promptOptions,
 }: {
   promptText?: string
-  promptOptions: GameAction[]
+  promptOptions: PromptOption[]
 }) {
   const buttons = promptOptions.filter(a =>
+    a.type === "PromptControl" ||
     a.$type === "PrimitiveAction" ||
     a.$type === "ConcedeGameAction" ||
     a.$type === "UndoAction" ||

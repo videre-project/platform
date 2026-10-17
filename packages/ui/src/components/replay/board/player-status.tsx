@@ -162,9 +162,11 @@ export function PlayerAvatar({
       : null
 
   return (
-    <div className={[
+    <div data-player-index={player.playerIndex} className={[
       "flex items-center gap-2 bg-black/70 rounded pl-0.5 pr-2.5 py-0.5 border",
       player.hasPriority ? "border-white/80" : "border-transparent",
+      player.interaction?.isTargeted ? "ring-2 ring-orange-500"
+        : player.interaction?.isTargetable ? "ring-2 ring-amber-300" : "",
     ].filter(Boolean).join(" ")}>
       <div className="relative w-8 h-8 rounded overflow-hidden shrink-0 bg-muted/40">
         {displayAvatarUrl ? (

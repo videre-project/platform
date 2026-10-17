@@ -8,6 +8,7 @@ import type { ReactNode } from 'react'
 import { BoardView } from '../components/replay/BoardView'
 import { ReplayTimeline } from '../components/replay/ReplayTimeline'
 import { cn } from '../lib/cn'
+import type { PromptOption } from '../types/game-types'
 import type { BoardState, BoardTransition, ReplaySnapshot } from '../types/replay-types'
 
 export interface ReplayLayoutProps {
@@ -18,7 +19,7 @@ export interface ReplayLayoutProps {
   transition?: BoardTransition
   perspectivePlayer?: number
   promptText?: string
-  promptOptions?: string | null
+  promptOptions?: PromptOption[] | null
   headerContent?: ReactNode
   defaultAvatarUrl?: string
   cardBackUrl?: string

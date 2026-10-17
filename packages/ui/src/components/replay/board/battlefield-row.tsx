@@ -457,23 +457,36 @@ export function BattlefieldRow({
           }
           if (entry.type === "attached-group") {
             const { parent, attachments } = entry
-            const fanStep = rowH * 0.12
+            const cardWidth = rowH * CARD_W_PCT / 100
+            const cardInset = rowH * CARD_LEFT_PCT / 100
+            let nextVisualLeft = attachments[0].isTapped ? 0 : cardInset
+            const positionedAttachments = attachments.map(card => {
+              // Exiled cards peek out from underneath their source. Auras and
+              // Equipment expose more of their face beside the attached permanent.
+              const peekWidth = cardWidth * (card.isExiledOnBattlefield ? 0.2 : 0.5)
+              const left = nextVisualLeft - (card.isTapped ? 0 : cardInset)
+              nextVisualLeft += peekWidth
+              return { card, left, peekWidth }
+            })
+            // Rotated cards extend to the cell's left edge. Position by the
+            // visible edge so tapping the parent doesn't cover its attachments.
+            const parentLeft = nextVisualLeft - (parent.isTapped ? 0 : cardInset)
             const totalCards = 1 + attachments.length
-            const groupWidth = rowH + (totalCards - 1) * fanStep
+            const groupWidth = parentLeft + rowH
             return (
               <div
                 key={entry.key}
                 className="relative h-full flex-shrink-0"
                 style={{ width: groupWidth, minWidth: groupWidth }}
               >
-                {attachments.map((att, i) => (
+                {positionedAttachments.map(({ card: att, left, peekWidth }, i) => (
                   <motion.div
                     key={att.cardId}
                     layoutId={`${idPrefix}-${att.lineageId}`}
                     transition={CARD_TRANSITION}
-                    className="absolute top-0 bottom-0"
+                    className="absolute top-0 bottom-0 pointer-events-none"
                     style={{
-                      left: `${i * fanStep}px`,
+                      left: `${left}px`,
                       width: rowH,
                       zIndex: i + 1,
                     }}
@@ -487,7 +500,7 @@ export function BattlefieldRow({
                       isSource={sourceCardIds?.has(att.cardId)}
                       isSourceAndTarget={overlapCardIds?.has(att.cardId)}
                       useCellHitbox={att.isExiledOnBattlefield}
-                      peekHitboxPx={att.isExiledOnBattlefield ? fanStep : undefined}
+                      peekHitboxPx={att.isExiledOnBattlefield ? peekWidth : undefined}
                       tooltipAlignOffsetPx={att.isExiledOnBattlefield ? 6 : undefined}
                     />
                   </motion.div>
@@ -505,7 +518,7 @@ export function BattlefieldRow({
                   animate={{ y: getYShift(parent) }}
                   className="absolute top-0 bottom-0 pointer-events-none"
                   style={{
-                    left: `${attachments.length * fanStep}px`,
+                    left: `${parentLeft}px`,
                     width: rowH,
                     zIndex: totalCards,
                   }}

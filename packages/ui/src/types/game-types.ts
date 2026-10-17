@@ -11,11 +11,16 @@ export interface TargetSet {
   isSet?: boolean
   currentTargets?: string[]
   targetRequirements?: unknown
+  isDistributedAmongTargets?: boolean
+  totalToAssign?: number
+  doubleAmountAfter?: number
+  distributions?: Distribution[]
 }
 
 export interface Distribution {
   target?: string
   amount?: number
+  value?: number
   minimum?: number
   maximum?: number
 }
@@ -23,6 +28,8 @@ export interface Distribution {
 export interface CardSelectorChoice {
   name?: string
   id?: number
+  ctn?: number
+  canChoose?: boolean
 }
 
 export interface NamedValue {
@@ -120,6 +127,13 @@ export interface PrimitiveAction extends BaseAction {
   $type: "PrimitiveAction"
 }
 
+export interface ManaPoolAction extends BaseAction {
+  $type: "ManaPoolAction"
+  manaPoolColors?: string | number
+  selectedItem?: string | number
+  selectedID?: number
+}
+
 export interface ConcedeGameAction extends BaseAction {
   $type: "ConcedeGameAction"
 }
@@ -145,9 +159,27 @@ export type GameAction =
   | FunctionKeyMessageAction
   | ToggleMessageAction
   | PrimitiveAction
+  | ManaPoolAction
   | ConcedeGameAction
   | LocalAction
   | UndoAction
+
+/** A captured client-local prompt button without a native game action. */
+export interface PromptControl {
+  $type?: never
+  type: "PromptControl"
+  name: string
+  enabled: boolean
+  controlId: { group: "Standard" | "Mana"; index: number }
+  buttonType: string
+  color?: string | null
+  promptNonce: number
+  /** Decimal SDK revision; a string preserves the full 64-bit identity. */
+  clientRevision: string
+}
+
+/** Native SDK actions or client-local prompt controls captured for replay. */
+export type PromptOption = GameAction | PromptControl
 
 export function parseCardName(cardStr: string | null | undefined): string | null {
   if (!cardStr) return null

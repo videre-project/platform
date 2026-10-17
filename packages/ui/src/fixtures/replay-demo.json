@@ -923,7 +923,7 @@
       "currentPhase": "PreCombatMain",
       "promptedPlayer": 0,
       "promptText": "VidereBot4's first main phase. Cast instants and activate abilities. Spell Pierce will resolve if no player responds.",
-      "promptOptions": "[{\r\n  \"$type\": \"PrimitiveAction\",\r\n  \"actionId\": 268435456,\r\n  \"type\": \"ChooseOption\",\r\n  \"name\": \"Yield to All\"\r\n},{\r\n  \"$type\": \"PrimitiveAction\",\r\n  \"actionId\": 134217728,\r\n  \"type\": \"ChooseOption\",\r\n  \"name\": \"No Response\"\r\n}]",
+      "promptOptions": [{"$type": "PrimitiveAction", "actionId": 268435456, "type": "ChooseOption", "name": "Yield to All"}, {"$type": "PrimitiveAction", "actionId": 134217728, "type": "ChooseOption", "name": "No Response"}],
       "zoneTransfers": [],
       "cardChanges": [
         {

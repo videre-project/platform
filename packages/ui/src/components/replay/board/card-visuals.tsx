@@ -7,6 +7,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { CardImage as SharedCardImage } from "../../cards/CardImage"
 import type { BoardState, CardState, BoardTransition } from "../../../types/replay-types"
+import { hasPowerToughness } from "../../../types/replay-types"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "../../../primitives/Tooltip"
 import { GameLogText } from "../../../utils/parse-game-log"
 // -- Layout constants --
@@ -104,7 +105,8 @@ export function RevealedCardCell({ card, colIdx, rowIdx }: { card: CardState; co
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={CARD_TRANSITION}
-      className="absolute rounded-md overflow-hidden border border-sidebar-border/60"
+      data-card-id={card.cardId}
+      className={`absolute rounded-md overflow-hidden border border-sidebar-border/60 ${cardSelectionClassName(card)} ${card.isDimmed ? "brightness-50" : ""}`}
       style={{
         left: colIdx * (REVEAL_CARD_W + REVEAL_COL_GAP),
         top: rowIdx * REVEAL_VISIBLE_H,
@@ -289,18 +291,12 @@ export function getPlayerZoneCards(
   )
 }
 
-/** A card is a creature if it has power or toughness set (even "0"). */
-export function isCreature(c: CardState): boolean {
-  return (c.power != null && c.power !== "")
-      || (c.toughness != null && c.toughness !== "")
-}
-
 // -- Card tooltip --
 
 export function CardTooltipContent({ card, footer }: { card: CardState; footer?: React.ReactNode }) {
   const isAbility = card.isTriggeredAbility || card.isActivatedAbility
   const nonModifierCounters = Object.entries(card.counters).filter(([n]) => !isModifierCounter(n))
-  const grantedAbilities = card.abilities.filter(a => !(card.initialAbilities ?? []).includes(a))
+  const grantedAbilities = getGrantedAbilities(card)
   const normalizeRulesText = (text: string) => text
     .replace(/\\r\\n/g, "\n")
     .replace(/\\n/g, "\n")
@@ -347,9 +343,23 @@ export function CardTooltipContent({ card, footer }: { card: CardState; footer?:
           <GameLogText text={normalizeRulesText(card.blueText)} manaSymbolClassName="inline h-2.5 w-2.5 align-text-bottom mx-[1px]" />
         </div>
       )}
-      {!isAbility && card.power != null && (
+      {hasPowerToughness(card) && (
         <div className="text-popover-foreground/85">
           {card.power}/{card.toughness}
+        </div>
+      )}
+      {card.interaction?.isTargeted ? (
+        <div className="text-orange-400">Selected target</div>
+      ) : card.interaction?.isTargetable ? (
+        <div className="text-amber-300">Available target</div>
+      ) : card.interaction?.isSelectable ? (
+        <div className="text-popover-foreground/85">Selectable</div>
+      ) : null}
+      {card.interaction && card.interaction.actions.length > 0 && (
+        <div className="border-t border-border/50 pt-1 text-popover-foreground/85">
+          {card.interaction.actions.map((action, index) => (
+            <div key={index}><GameLogText text={action.name ?? action.type ?? action.$type} /></div>
+          ))}
         </div>
       )}
       {footer ?? (
@@ -428,6 +438,13 @@ function formatCounterLabel(name: string): string {
   return name.replace(/([a-z])([A-Z])/g, "$1 $2")
 }
 
+function getGrantedAbilities(card: CardState): string[] {
+  // MTGO's BlueTextString marker is represented by card.blueText.
+  return card.abilities.filter(ability =>
+    ability !== "BlueTextString" && !(card.initialAbilities ?? []).includes(ability)
+  )
+}
+
 /** Splits PascalCase into space-separated words, e.g. "FirstStrike" -> "First Strike" */
 function formatAbility(name: string): string {
   return name.replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -441,6 +458,19 @@ function counterSortKey(name: string): number {
 }
 
 // -- Card component --
+
+export function cardSelectionClassName(
+  card: Pick<CardState, "interaction"> & Partial<Pick<CardState, "isAttacking" | "isBlocking">>,
+): string {
+  const selection = card.interaction
+  if (selection?.isBeingCast) return "ring-2 ring-red-500"
+  if (selection?.isTargeted) return "ring-2 ring-orange-500"
+  if (selection?.isTargetable) return "ring-2 ring-amber-300"
+  if (card.isAttacking) return "ring-2 ring-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+  if (card.isBlocking) return "ring-2 ring-blue-500/70"
+  if (selection?.isSelectable) return "ring-2 ring-white/80"
+  return ""
+}
 
 export function CardImage({
   card,
@@ -459,7 +489,7 @@ export function CardImage({
   transition: BoardTransition
   /** Align tapped cards to the top of the cell (for opponent rows). Default: bottom. */
   tapAlignTop?: boolean
-  /** Render at reduced opacity (e.g. exiled-under cards). */
+  /** Darken the card while keeping its face opaque (e.g. exiled-under cards). */
   dimmed?: boolean
   /** Card is a target of a hovered stack spell/ability. */
   highlighted?: boolean
@@ -476,7 +506,7 @@ export function CardImage({
   /** Optional horizontal tooltip nudge (positive = right when side is top/bottom). */
   tooltipAlignOffsetPx?: number
 }) {
-  const hasPT = card.power != null || card.toughness != null
+  const hasPT = hasPowerToughness(card)
   const ptModified = hasPT && (card.power !== card.initialPower || card.toughness !== card.initialToughness)
   const hasCounters = Object.keys(card.counters).length > 0
   const showDebugHitbox = DEBUG_EXILED_HITBOX && useCellHitbox
@@ -515,19 +545,18 @@ export function CardImage({
       ? "ring-2 ring-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.55)]"
       : highlighted
         ? "ring-2 ring-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.55)]"
-        : ""
+        : cardSelectionClassName(card)
 
   const cardElement = (
     <motion.div
+              data-card-id={card.cardId}
               animate={{ rotate: card.isTapped ? 90 : 0 }}
               transition={CARD_TRANSITION}
               className={[
                 "absolute rounded-md overflow-hidden border border-sidebar-border/60",
                 useCellHitbox ? "pointer-events-none" : "pointer-events-auto",
-                card.isAttacking ? "ring-2 ring-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "",
-                card.isBlocking ? "ring-2 ring-blue-500/70" : "",
                 relationHighlightClass,
-                dimmed ? "opacity-40" : "",
+                dimmed || card.isDimmed ? "brightness-50" : "",
               ].filter(Boolean).join(" ")}
               style={cardBoundsStyle}
             >
@@ -553,7 +582,7 @@ export function CardImage({
               )}
 
               {(() => {
-                const grantedAbilities = card.abilities.filter(a => !(card.initialAbilities ?? []).includes(a))
+                const grantedAbilities = getGrantedAbilities(card)
                 return (card.blueText || grantedAbilities.length > 0) ? (
                   <div className="absolute left-0 right-0 bg-sky-900/80 px-1 py-0.5"
                        style={{ top: '13%' }}>

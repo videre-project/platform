@@ -26,6 +26,8 @@ export class ReplayStateEngine {
   private players = new Map<number, PlayerState>()
   private cards = new Map<number, CardState>()
   private zones = new Map<string, CardState[]>()
+  private arrivalChanges = new Map<ZoneTransfer, { previousZone: string | null; retiredSourceId: number | null }>()
+  private zoneOrders = new Map<number, Map<string, number[]>>()
 
   /** Maps each cardId to its root ancestor cardId (stable across zone changes). */
   private lineageMap = new Map<number, number>()
@@ -35,10 +37,40 @@ export class ReplayStateEngine {
   private supersededAbilities = new Map<number, number>()
   /** Tracks card name history across snapshot steps: snapshotIndex -> (cardId -> previousName). */
   private cardNameHistory = new Map<number, Map<number, string>>()
+  /** Ability baselines come from the recording, independently of seek order. */
+  private abilityBaselines = new Map<number, string[]>()
+  private counterBaselines = new Map<number, Record<string, number>>()
 
   constructor(data: ReplayData) {
     this.data = data
     this.buildLineageMap()
+    this.buildCardBaselines()
+  }
+
+  private buildCardBaselines(): void {
+    for (const card of this.data.cards) {
+      if (card.initialAbilities != null) {
+        try { this.abilityBaselines.set(card.cardId, JSON.parse(card.initialAbilities)) }
+        catch { this.abilityBaselines.set(card.cardId, []) }
+      }
+      if (card.initialCounters != null) {
+        try { this.counterBaselines.set(card.cardId, JSON.parse(card.initialCounters)) }
+        catch { this.counterBaselines.set(card.cardId, {}) }
+      }
+    }
+    // Older exports omit initial metadata; the first delta retains its baseline.
+    for (const snapshot of this.data.snapshots) {
+      for (const change of snapshot.cardChanges) {
+        if (change.property === "Abilities" && !this.abilityBaselines.has(change.cardId)) {
+          try { this.abilityBaselines.set(change.cardId, change.oldValue ? JSON.parse(change.oldValue) : []) }
+          catch { this.abilityBaselines.set(change.cardId, []) }
+        }
+        if (change.property === "Counters" && !this.counterBaselines.has(change.cardId)) {
+          try { this.counterBaselines.set(change.cardId, change.oldValue ? JSON.parse(change.oldValue) : {}) }
+          catch { this.counterBaselines.set(change.cardId, {}) }
+        }
+      }
+    }
   }
 
   /** Follow each card's sourceId chain to find the root ancestor. */
@@ -122,6 +154,10 @@ export class ReplayStateEngine {
     this.players.clear()
     this.cards.clear()
     this.zones.clear()
+    this.arrivalChanges.clear()
+    this.zoneOrders.clear()
+    this.supersededAbilities.clear()
+    this.cardNameHistory.clear()
     this._currentIndex = -1
     return this.buildBoardState()
   }
@@ -169,6 +205,12 @@ export class ReplayStateEngine {
   private applyForward(snapshotIndex: number): void {
     const snapshot = this.data.snapshots[snapshotIndex]
     this._currentIndex = snapshotIndex
+    if (snapshot.zoneTransfers.length > 0
+      || this.data.cards.some(card => card.firstSeenSnapshotIndex === snapshotIndex)) {
+      this.zoneOrders.set(snapshotIndex, new Map(
+        [...this.zones].map(([zone, cards]) => [zone, cards.map(card => card.cardId)])
+      ))
+    }
 
     // Add cards first seen at this snapshot
     for (const card of this.data.cards) {
@@ -191,9 +233,9 @@ export class ReplayStateEngine {
           isBlocking: false,
           attackingOrderIds: [],
           blockingOrderIds: [],
-          counters: {},
-          abilities: [],
-          initialAbilities: [],
+          counters: { ...(this.counterBaselines.get(card.cardId) ?? {}) },
+          abilities: [...(this.abilityBaselines.get(card.cardId) ?? [])],
+          initialAbilities: [...(this.abilityBaselines.get(card.cardId) ?? [])],
           blueText: null,
           typeLine: null,
           controllerId: card.ownerId,
@@ -286,6 +328,17 @@ export class ReplayStateEngine {
       }
     }
 
+    // Reverse transfers restore membership. Restore the prior ordering too,
+    // rather than leaving returned hand/graveyard cards appended at the end.
+    const orders = this.zoneOrders.get(snapshotIndex)
+    if (orders) {
+      for (const [zone, cards] of this.zones) {
+        const ranks = new Map((orders.get(zone) ?? []).map((id, index) => [id, index]))
+        cards.sort((a, b) => (ranks.get(a.cardId) ?? Number.MAX_SAFE_INTEGER)
+          - (ranks.get(b.cardId) ?? Number.MAX_SAFE_INTEGER))
+      }
+      this.zoneOrders.delete(snapshotIndex)
+    }
     this.orderStackByThingId()
 
     this._currentIndex = snapshotIndex - 1
@@ -328,6 +381,10 @@ export class ReplayStateEngine {
     }
 
     if (zt.type === "Arrived") {
+      const changes: { previousZone: string | null; retiredSourceId: number | null } = {
+        previousZone: null, retiredSourceId: null,
+      }
+      this.arrivalChanges.set(zt, changes)
       // Card was placed at initialZone during card initialization.
       // If it has a sourceId, retire the old ThingID it supersedes — but only
       // if buildLineageMap confirmed this is a real lineage link (not a false
@@ -335,8 +392,9 @@ export class ReplayStateEngine {
       if (zt.sourceId != null && zt.sourceId !== zt.cardId) {
         if (this.parentMap.get(zt.cardId) === zt.sourceId) {
           const oldCard = this.cards.get(zt.sourceId)
-          if (oldCard) {
+          if (oldCard && this.zones.get(oldCard.zone)?.some(card => card.cardId === zt.sourceId)) {
             this.removeFromZone(oldCard.zone, zt.sourceId)
+            changes.retiredSourceId = zt.sourceId
           }
         }
       }
@@ -353,6 +411,7 @@ export class ReplayStateEngine {
       if (arrivedCard && zt.toZone && arrivedCard.zone !== zt.toZone) {
         const isActive = arrivedCard.zone !== "" && (this.zones.get(arrivedCard.zone)?.some(c => c.cardId === arrivedCard!.cardId) ?? false)
         if (!isActive) {
+          changes.previousZone = arrivedCard.zone
           arrivedCard.zone = zt.toZone
           this.addToZone(zt.toZone, arrivedCard)
         }
@@ -459,30 +518,22 @@ export class ReplayStateEngine {
     }
 
     if (zt.type === "Arrived") {
+      const changes = this.arrivalChanges.get(zt)
       // Restore any ability that was superseded when this card arrived
       this.restoreSupersededAbility(zt.cardId)
 
       // Reverse: card will be removed during applyBackward's card cleanup.
       // If it had a confirmed sourceId link, restore the old ThingID to its zone.
-      if (zt.sourceId != null && zt.sourceId !== zt.cardId) {
-        if (this.parentMap.get(zt.cardId) === zt.sourceId) {
-          const oldCard = this.cards.get(zt.sourceId)
-          if (oldCard) {
-            this.addToZone(oldCard.zone, oldCard)
-          }
-        }
+      if (changes?.retiredSourceId != null) {
+        const oldCard = this.cards.get(changes.retiredSourceId)
+        if (oldCard) this.addToZone(oldCard.zone, oldCard)
       }
-      // Reverse re-placement of reused cards: remove from destination zone
-      // and reset zone to empty (matching the post-Departed state).
+      // Undo only a placement made by this arrival. A reconnect observation
+      // leaves the existing zone membership unchanged in both directions.
       const arrivedCard = this.cards.get(zt.cardId)
-      if (arrivedCard && zt.toZone && arrivedCard.zone === zt.toZone) {
-        const cardData = this.data.cards.find(c => c.cardId === zt.cardId)
-        // Only reverse if this isn't the card's first-seen snapshot
-        // (first-seen cards are cleaned up by applyBackward's card removal)
-        if (cardData && cardData.firstSeenSnapshotIndex !== this._currentIndex) {
-          this.removeFromZone(zt.toZone, zt.cardId)
-          arrivedCard.zone = ""
-        }
+      if (arrivedCard && changes?.previousZone != null) {
+        this.removeFromZone(arrivedCard.zone, zt.cardId)
+        arrivedCard.zone = changes.previousZone
       }
       return
     }
@@ -562,17 +613,6 @@ export class ReplayStateEngine {
       case "Abilities":
         try { card.abilities = value ? JSON.parse(value) : [] }
         catch { card.abilities = [] }
-        // The first Abilities change establishes the card's innate abilities.
-        // The oldValue of this change is the ability set before any grant/removal,
-        // i.e. the innate baseline.
-        if (forward && (!card.initialAbilities || card.initialAbilities.length === 0)) {
-          if (cc.oldValue) {
-            try { card.initialAbilities = JSON.parse(cc.oldValue) }
-            catch { card.initialAbilities = [] }
-          } else {
-            card.initialAbilities = []
-          }
-        }
         break
       case "Associations": {
         try { card.associations = value ? JSON.parse(value) : {} }
@@ -764,6 +804,17 @@ export class ReplayStateEngine {
 
   private buildBoardState(): BoardState {
     const snapshot = this.currentSnapshot
+    const interaction = snapshot?.interaction ?? null
+    // Eligibility only dims cards while an interaction mode is active.
+    const dimInactiveCards = interaction != null
+      && interaction.mode !== "None" && interaction.mode !== "Undefined"
+    // Scene-only cards can share unassigned IDs. Never apply their flags to
+    // an unrelated replay card, or use SourceId across a zone transition.
+    const selections = new Map<number, NonNullable<CardState["interaction"]> | null>()
+    for (const card of interaction?.cards ?? []) {
+      if (card.cardId > 0)
+        selections.set(card.cardId, selections.has(card.cardId) ? null : card)
+    }
 
     // Only include cards that are currently in a zone (filter out
     // retired old ThingIDs that were removed from zones by Moved transfers)
@@ -775,13 +826,23 @@ export class ReplayStateEngine {
     const cards = new Map<number, CardState>()
     for (const [id, c] of this.cards) {
       if (activeCardIds.has(id)) {
-        cards.set(id, this.cloneCard(c))
+        const card = this.cloneCard(c)
+        card.interaction = selections.get(id) ?? undefined
+        card.isDimmed = !card.interaction?.isBeingCast && (
+          card.interaction?.isActive != null
+            ? !card.interaction.isActive
+            : dimInactiveCards && !card.interaction?.isSelectable
+              && !card.interaction?.isTargetable && !card.interaction?.isTargeted
+        )
+        cards.set(id, card)
       }
     }
 
     const players = new Map<number, PlayerState>()
     for (const [id, p] of this.players) {
-      players.set(id, this.clonePlayer(p))
+      const player = this.clonePlayer(p)
+      player.interaction = interaction?.players.find(item => item.playerIndex === id)
+      players.set(id, player)
     }
 
     // Zone lists reference the cloned card objects (by cardId lookup)
@@ -797,6 +858,7 @@ export class ReplayStateEngine {
       players,
       zones,
       cards,
+      interaction,
     }
   }
 }

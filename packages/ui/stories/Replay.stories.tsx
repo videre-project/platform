@@ -15,7 +15,7 @@ import { REPLAY_SHOWCASE_DATA } from '../src/fixtures'
 import { ReplayLayout } from '../src/layouts/ReplayLayout'
 import { Button } from '../src/primitives/Button'
 import { ReplayStateEngine } from '../src/state/ReplayStateEngine'
-import { computeBoardTransition, type BoardState, type ReplayData } from '../src/types/replay-types'
+import { computeBoardTransition, type BoardState, type CardState, type ReplayData } from '../src/types/replay-types'
 
 const replay = REPLAY_SHOWCASE_DATA as unknown as ReplayData
 
@@ -116,5 +116,107 @@ export const BoardOnly: Story = {
     const engine = new ReplayStateEngine(replay)
     const board = engine.stepTo(61)
     return <div className="h-[600px] w-[1050px]"><BoardView board={board} perspectivePlayer={0} promptText={engine.currentSnapshot?.promptText} promptOptions={engine.currentSnapshot?.promptOptions} /></div>
+  },
+}
+
+function PendingTriggersFixture() {
+  const initialBoard = useMemo(() => new ReplayStateEngine(replay).stepTo(61), [])
+  const [pending, setPending] = useState(true)
+  const board: BoardState = {
+    ...initialBoard,
+    interaction: {
+      mode: 'SelectTargets', promptText: 'Choose target creature you control.', players: [],
+      cards: pending ? [
+        {
+          logicalAddress: '11464', cardId: 346, sourceId: -1, zone: 'LocalTriggers',
+          name: 'Luminarch Aspirant', catalogId: 82987,
+          rulesText: 'At the beginning of combat on your turn, put a +1/+1 counter on target creature you control.',
+          hasActions: true, isSelectable: false, isTargetable: false, isTargeted: false,
+          isActive: true, actions: [],
+        },
+        {
+          logicalAddress: '11465', cardId: -1, sourceId: -1, zone: 'OpponentTriggers',
+          name: 'Soul Warden', rulesText: 'Whenever another creature enters, you gain 1 life.',
+          hasActions: false, isSelectable: false, isTargetable: false, isTargeted: false,
+          isActive: true, actions: [],
+        },
+      ] : [],
+    },
+  }
+  return (
+    <div className="h-full flex flex-col">
+      <button type="button" onClick={() => setPending(false)}>Clear pending triggers</button>
+      <div className="flex-1 min-h-0"><BoardView board={board} /></div>
+    </div>
+  )
+}
+
+export const PendingTriggeredAbilities: Story = {
+  render: () => <PendingTriggersFixture />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // Neither ability has a gameplay card record. Scene identity is sufficient,
+    // including an opponent's ability without an assigned card ID.
+    const local = canvas.getByRole('region', { name: 'Your Triggered Abilities' })
+    const opponent = canvas.getByRole('region', { name: "Opponent's Triggered Abilities" })
+    await expect(within(local).getByText('Luminarch Aspirant')).toBeVisible()
+    await expect(within(local).getByText(/put a \+1\/\+1 counter/)).toBeVisible()
+    await expect(within(opponent).getByText('Soul Warden')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear pending triggers' }))
+    await expect(canvas.queryByRole('region', { name: 'Your Triggered Abilities' })).toBeNull()
+    await expect(canvas.queryByRole('region', { name: "Opponent's Triggered Abilities" })).toBeNull()
+  },
+}
+
+function CombatHighlightFixture() {
+  const initialBoard = useMemo(() => new ReplayStateEngine(replay).stepTo(61), [])
+  const [mode, setMode] = useState<'attack' | 'block' | 'target'>('attack')
+  const creature = initialBoard.cards.get(424)!
+  const card: CardState = {
+    ...creature,
+    isAttacking: mode !== 'block',
+    isBlocking: mode === 'block',
+    interaction: {
+      logicalAddress: '424', cardId: 424, sourceId: 0,
+      hasActions: true, isSelectable: true,
+      isTargetable: mode === 'target', isTargeted: false,
+      actions: [{ $type: 'CardAction', actionId: 1, name: mode === 'block' ? "Don't block" : "Don't attack" }],
+    },
+  }
+  const board: BoardState = {
+    ...initialBoard,
+    phase: mode === 'block' ? 'DeclareBlockers' : 'DeclareAttackers',
+    interaction: {
+      mode: mode === 'target' ? 'SelectTargets' : 'None',
+      promptText: mode === 'target' ? 'Choose a creature.' : null,
+      cards: [card.interaction!], players: [],
+    },
+    cards: new Map(initialBoard.cards).set(card.cardId, card),
+    zones: new Map([...initialBoard.zones].map(([zone, cards]) =>
+      [zone, cards.map(item => item.cardId === card.cardId ? card : item)])),
+  }
+  return (
+    <div className="h-full flex flex-col">
+      <div>
+        <button type="button" onClick={() => setMode('block')}>Show blocker</button>
+        <button type="button" onClick={() => setMode('target')}>Show targetable attacker</button>
+      </div>
+      <div className="flex-1 min-h-0"><BoardView board={board} /></div>
+    </div>
+  )
+}
+
+export const CombatHighlightPriority: Story = {
+  render: () => <CombatHighlightFixture />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const card = () => canvasElement.querySelector('[data-card-id="424"]')
+    await expect(card()).toHaveClass('ring-red-500')
+    await expect(card()).not.toHaveClass('ring-white/80')
+    await userEvent.click(canvas.getByRole('button', { name: 'Show blocker' }))
+    await expect(card()).toHaveClass('ring-blue-500/70')
+    await userEvent.click(canvas.getByRole('button', { name: 'Show targetable attacker' }))
+    await expect(card()).toHaveClass('ring-amber-300')
+    await expect(card()).not.toHaveClass('ring-red-500')
   },
 }

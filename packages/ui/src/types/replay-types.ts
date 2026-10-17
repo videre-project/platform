@@ -5,6 +5,8 @@
 
 // Replay data types — mirrors backend ReplayDataDTO structure
 
+import type { GameAction, PromptOption } from './game-types'
+
 export interface ReplayData {
   gameId: number
   perspectivePlayerIndex?: number | null
@@ -37,6 +39,8 @@ export interface ReplayCard {
   initialZone: string
   initialPower: string | null
   initialToughness: string | null
+  initialCounters?: string | null
+  initialAbilities?: string | null
   ownerId: number
   sourceId: number | null
   isTapped: boolean
@@ -50,18 +54,54 @@ export interface ReplayCard {
 export interface ReplaySnapshot {
   index: number
   nonce: number
+  serverNonce?: number | null
   timestamp: string
   turnNumber: number
   currentPhase: string
   promptedPlayer: number
   promptText: string
-  /** JSON array of available prompt actions, e.g. [{"type":"ChooseOption","name":"OK"}] */
-  promptOptions: string | null
+  /** Captured native prompt actions and client-local controls. */
+  promptOptions: PromptOption[] | null
+  /** Complete captured selection state; absent in older recordings. */
+  interaction?: ReplayInteraction | null
   zoneTransfers: ZoneTransfer[]
   cardChanges: CardChange[]
   playerChanges: PlayerChange[]
   actions: ReplayAction[]
   logs: ReplayLog[]
+}
+
+export interface ReplayInteraction {
+  mode: string
+  promptText: string | null
+  cards: ReplayCardInteraction[]
+  players: ReplayPlayerInteraction[]
+}
+
+export interface ReplayCardInteraction {
+  /** Scene zone and display values, including abilities awaiting Stack placement. */
+  zone?: string | null
+  name?: string | null
+  rulesText?: string | null
+  catalogId?: number | null
+  /** MTGO's captured brightness flag; absent in older recordings. */
+  isActive?: boolean | null
+  isBeingCast?: boolean | null
+  logicalAddress: string
+  cardId: number
+  sourceId: number
+  hasActions: boolean
+  isSelectable: boolean
+  isTargetable: boolean
+  isTargeted: boolean
+  actions: GameAction[]
+}
+
+export interface ReplayPlayerInteraction {
+  playerIndex: number
+  isTargetable: boolean
+  isTargeted: boolean
+  isActive: boolean
 }
 
 export interface ZoneTransfer {
@@ -114,9 +154,11 @@ export interface BoardState {
   players: Map<number, PlayerState>
   zones: Map<string, CardState[]>
   cards: Map<number, CardState>
+  interaction?: ReplayInteraction | null
 }
 
 export interface PlayerState {
+  interaction?: ReplayPlayerInteraction
   playerIndex: number
   name: string
   life: number
@@ -132,6 +174,8 @@ export interface PlayerState {
 }
 
 export interface CardState {
+  interaction?: ReplayCardInteraction
+  isDimmed?: boolean
   cardId: number
   /** Stable identity across zone changes — the root ancestor cardId. */
   lineageId: number
@@ -186,11 +230,19 @@ export function getPlayerZoneCards(
 
 export function isCreature(card: CardState): boolean {
   if (card.isActivatedAbility || card.isTriggeredAbility) return false
-  if (card.power != null || card.toughness != null) return true
   if (card.typeLine) {
-    return card.typeLine.toLowerCase().includes("creature")
+    return /\bcreature\b/i.test(card.typeLine.split(/[—–]/, 1)[0])
   }
-  return false
+  // Older recordings may have stats without a captured type line.
+  return card.power != null || card.toughness != null
+}
+
+/** Show live stat overlays for current creatures and Vehicles. */
+export function hasPowerToughness(card: CardState): boolean {
+  if (card.isActivatedAbility || card.isTriggeredAbility) return false
+  if (card.power == null && card.toughness == null) return false
+  return isCreature(card)
+    || /\bvehicle\b/i.test(card.typeLine ?? "")
 }
 
 // Board state diff for animations

@@ -7,7 +7,7 @@ import React, { useState, useCallback, useMemo } from "react"
 import { LayoutGroup, motion } from "framer-motion"
 import type { BoardState, CardState, BoardTransition } from "../../types/replay-types"
 import { EMPTY_TRANSITION, getPlayerZoneCards, isCreature } from "../../types/replay-types"
-import type { GameAction } from "../../types/game-types"
+import type { PromptOption } from "../../types/game-types"
 
 import { BattlefieldRow, COMBAT_PHASES } from "./board/battlefield-row"
 import {
@@ -18,6 +18,7 @@ import {
 import {
   RevealedZoneOverlay,
   StackOverlay,
+  TriggeredAbilitiesOverlay,
   type StackHoverRelation,
 } from "./board/overlays"
 import { ManaPoolBox, PhaseLadder, PlayerAvatar } from "./board/player-status"
@@ -27,7 +28,7 @@ export interface BoardViewProps {
   transition?: BoardTransition
   perspectivePlayer?: number
   promptText?: string
-  promptOptions?: string | null
+  promptOptions?: PromptOption[] | null
   /** Content rendered in the top-left pane (aligned with the prompt box below). */
   headerContent?: React.ReactNode
   /** Optional fallback image URL for player avatars */
@@ -198,6 +199,12 @@ function PopulatedBoardView({
       .filter(c => !(c.attachedToId > 0 && allBfIds.has(c.attachedToId)))
 
   const stackCards = board.zones.get("Stack") ?? []
+  const dimInactiveZones = board.interaction != null && (
+    board.interaction.cards.some(card => card.isActive != null)
+      ? board.interaction.cards.some(card => card.isActive === false)
+      : board.interaction.mode !== "None" && board.interaction.mode !== "Undefined"
+  )
+  const isZoneDimmed = (cards: CardState[]) => dimInactiveZones && cards.every(card => card.isDimmed)
 
   // Stack relation highlighting: source on stack (blue), targets on battlefield (orange).
   const [activeStackRelation, setActiveStackRelation] = useState<StackHoverRelation | null>(null)
@@ -220,11 +227,6 @@ function PopulatedBoardView({
     setActiveStackRelation(relation)
   }, [])
 
-  let parsedPromptOptions: GameAction[] = []
-  if (promptOptions) {
-    try { parsedPromptOptions = JSON.parse(promptOptions) } catch { /* */ }
-  }
-
   return (
     <LayoutGroup id="board">
     <div className="relative flex h-full min-w-0 flex-col overflow-clip bg-background">
@@ -233,15 +235,16 @@ function PopulatedBoardView({
         hand={topHand}
         handCount={topPlayer?.handCount ?? topHand.length}
         zones={[
-          { label: "Library", count: topPlayer?.libraryCount ?? 0, isLibrary: true },
-          { label: "Graveyard", count: topGraveyard.length, topCard: topGraveyard.at(-1), cards: topGraveyard },
-          { label: "Exile", count: topExile.length, topCard: topExile.at(-1), cards: topExile },
+          { label: "Library", count: topPlayer?.libraryCount ?? 0, isLibrary: true, isDimmed: isZoneDimmed(getPlayerZoneCards(board, "Library", topIdx)) },
+          { label: "Graveyard", count: topGraveyard.length, topCard: topGraveyard.at(-1), cards: topGraveyard, isDimmed: isZoneDimmed(topGraveyard) },
+          { label: "Exile", count: topExile.length, topCard: topExile.at(-1), cards: topExile, isDimmed: isZoneDimmed(topExile) },
         ]}
         transition={transition}
         headerContent={headerContent}
         cardBackUrl={cardBackUrl}
         idPrefix="card-opponent"
         disableHoverExpansion={disableTopZoneHoverExpansion}
+        dimHiddenCards={dimInactiveZones}
       />
 
       {/* Spacer to let the top zone bar peek through — pointer-events-none so it doesn't block the header */}
@@ -287,7 +290,7 @@ function PopulatedBoardView({
         )}
 
         {/* Opponent half */}
-        <div className={`flex flex-col flex-1 min-h-0 -mx-3 -my-1 px-3 py-1 rounded-lg ${isCombat ? "mb-1" : ""} ${topPlayer?.isActivePlayer && !bottomPlayer?.isActivePlayer ? "bg-white/5" : ""}`}>
+        <div className={`flex flex-col flex-1 min-h-0 gap-3 -mx-3 -my-1 px-3 py-1 rounded-lg ${isCombat ? "mb-1" : ""} ${topPlayer?.isActivePlayer && !bottomPlayer?.isActivePlayer ? "bg-white/5" : ""}`}>
           <BattlefieldRow
             cards={splitWithAttachments(topBattlefield, false)}
             transition={transition}
@@ -299,7 +302,6 @@ function PopulatedBoardView({
             sourceCardIds={sourceCardIds}
             overlapCardIds={overlapCardIds}
           />
-          <div className="shrink-0 h-1" />
           <BattlefieldRow
             cards={splitWithAttachments(topBattlefield, true)}
             transition={transition}
@@ -327,11 +329,11 @@ function PopulatedBoardView({
             className="shrink-0 -mx-7 border-y border-red-500/50 bg-red-900/15"
           />
         ) : (
-          <div className="border-t border-dashed border-sidebar-border/30 shrink-0 my-1" />
+          <div className="border-t border-dashed border-sidebar-border/30 shrink-0 my-2" />
         )}
 
         {/* Our half */}
-        <div className={`flex flex-col flex-1 min-h-0 -mx-3 -my-1 px-3 py-1 rounded-lg ${isCombat ? "mt-1" : ""} ${bottomPlayer?.isActivePlayer ? "bg-white/5" : ""}`}>
+        <div className={`flex flex-col flex-1 min-h-0 gap-3 -mx-3 -my-1 px-3 py-1 rounded-lg ${isCombat ? "mt-1" : ""} ${bottomPlayer?.isActivePlayer ? "bg-white/5" : ""}`}>
           <BattlefieldRow
             cards={splitWithAttachments(bottomBattlefield, true)}
             transition={transition}
@@ -343,7 +345,6 @@ function PopulatedBoardView({
             sourceCardIds={sourceCardIds}
             overlapCardIds={overlapCardIds}
           />
-          <div className="shrink-0 h-1" />
           <BattlefieldRow
             cards={splitWithAttachments(bottomBattlefield, false)}
             transition={transition}
@@ -359,6 +360,8 @@ function PopulatedBoardView({
 
         {/* Flying card animation layer */}
         <FlyingCardLayer board={board} transition={transition} />
+
+        <TriggeredAbilitiesOverlay cards={board.interaction?.cards ?? []} cardFrameUrl={cardFrameUrl} />
 
         {/* Stack overlay */}
         <StackOverlay
@@ -385,13 +388,13 @@ function PopulatedBoardView({
       <BottomZoneBar
         hand={bottomHand}
         zones={[
-          { label: "Library", count: bottomPlayer?.libraryCount ?? 0, isLibrary: true },
-          { label: "Graveyard", count: bottomGraveyard.length, topCard: bottomGraveyard.at(-1), cards: bottomGraveyard },
-          { label: "Exile", count: bottomExile.length, topCard: bottomExile.at(-1), cards: bottomExile },
+          { label: "Library", count: bottomPlayer?.libraryCount ?? 0, isLibrary: true, isDimmed: isZoneDimmed(getPlayerZoneCards(board, "Library", bottomIdx)) },
+          { label: "Graveyard", count: bottomGraveyard.length, topCard: bottomGraveyard.at(-1), cards: bottomGraveyard, isDimmed: isZoneDimmed(bottomGraveyard) },
+          { label: "Exile", count: bottomExile.length, topCard: bottomExile.at(-1), cards: bottomExile, isDimmed: isZoneDimmed(bottomExile) },
         ]}
         transition={transition}
-        promptText={promptText}
-        promptOptions={parsedPromptOptions}
+        promptText={board.interaction?.promptText ?? promptText}
+        promptOptions={promptOptions ?? []}
         cardBackUrl={cardBackUrl}
       />
       </div>{/* end z-10 wrapper */}
