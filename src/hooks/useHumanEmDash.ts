@@ -5,7 +5,7 @@
 
 import { useEffect, type RefObject } from 'react'
 
-export function useHumanEmDash(containerRef: RefObject<HTMLElement | null>, dep: any) {
+export function useHumanEmDash(containerRef: RefObject<HTMLElement | null>, dep: unknown) {
   useEffect(() => {
     const root = containerRef.current
     if (!root) return

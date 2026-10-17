@@ -42,7 +42,7 @@ export function useTableOfContents(
 
       let id = el.id
       if (!id) {
-        let baseSlug = slugify(text) || 'section'
+        const baseSlug = slugify(text) || 'section'
         let slug = baseSlug
         let counter = 1
         while (usedSlugs.has(slug) || document.getElementById(slug)) {
@@ -67,8 +67,8 @@ export function useTableOfContents(
     })
 
     setItems(tocItems)
-    if (tocItems.length > 0 && !activeId) {
-      setActiveId(tocItems[0].id)
+    if (tocItems.length > 0) {
+      setActiveId(current => current || tocItems[0].id)
     }
   }, [containerRef, contentKey])
 

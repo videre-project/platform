@@ -7,17 +7,32 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeMathjaxSvg from 'rehype-mathjax/svg';
 import path from 'path';
+import type { Nodes as MarkdownNode, Root as MarkdownRoot, RootContent as MarkdownContent } from 'mdast';
+import type { Nodes as HtmlNode, Root as HtmlRoot, RootContent as HtmlContent, Properties } from 'hast';
+
+interface ArticleFile {
+  data: {
+    matter?: { readTime?: string; wordCount?: number };
+  };
+}
+
+declare module 'mdast' {
+  interface Data {
+    hChildren?: HtmlContent[];
+    hProperties?: Properties;
+  }
+}
 
 function remarkReadingTime() {
-  return (tree: any, file: any) => {
+  return (tree: MarkdownRoot, file: ArticleFile) => {
     let wordCount = 0;
-    function walk(node: any) {
+    function walk(node: MarkdownNode) {
       if (node.type === 'text' || node.type === 'inlineCode' || node.type === 'code') {
         const text = node.value || '';
         const words = text.trim().split(/\s+/).filter(Boolean);
         wordCount += words.length;
       }
-      if (node.children) {
+      if ('children' in node) {
         for (const child of node.children) {
           walk(child);
         }
@@ -35,27 +50,27 @@ function remarkReadingTime() {
 }
 
 function remarkSmartDashes() {
-  return (tree: any) => {
+  return (tree: MarkdownRoot) => {
     function replaceTextDashes(value: string) {
       return value
         .replace(/(\\text\{[^{}]*?)---(?=[^{}]*\})/g, '$1—')
         .replace(/(\\text\{[^{}]*?)--(?=[^{}]*\})/g, '$1–')
     }
 
-    function replaceMathText(children: any[], value: string) {
+    function replaceMathText(children: HtmlContent[] | undefined, value: string): boolean {
       for (const child of children || []) {
         if (child.type === 'text') {
           child.value = value
           return true
         }
-        if (child.children && replaceMathText(child.children, value)) {
+        if ('children' in child && replaceMathText(child.children, value)) {
           return true
         }
       }
       return false
     }
 
-    function walk(node: any) {
+    function walk(node: MarkdownNode) {
       if (node.type === 'text') {
         let val = node.value || '';
         // Replace triple dashes with em-dash (—)
@@ -66,16 +81,9 @@ function remarkSmartDashes() {
       } else if (node.type === 'math' || node.type === 'inlineMath') {
         node.value = replaceTextDashes(node.value || '');
         replaceMathText(node.data?.hChildren, node.value)
-      } else if (
-        node.type !== 'code' &&
-        node.type !== 'inlineCode' &&
-        node.type !== 'math' &&
-        node.type !== 'inlineMath'
-      ) {
-        if (node.children) {
-          for (const child of node.children) {
-            walk(child);
-          }
+      } else if ('children' in node) {
+        for (const child of node.children) {
+          walk(child);
         }
       }
     }
@@ -84,11 +92,11 @@ function remarkSmartDashes() {
 }
 
 function remarkMarkStandaloneInlineMath() {
-  return (tree: any) => {
-    function walk(node: any) {
+  return (tree: MarkdownRoot) => {
+    function walk(node: MarkdownNode) {
       if (
         node.type === 'paragraph' &&
-        node.children?.length === 1 &&
+        node.children.length === 1 &&
         node.children[0].type === 'inlineMath'
       ) {
         node.data = node.data || {}
@@ -96,7 +104,7 @@ function remarkMarkStandaloneInlineMath() {
         node.data.hProperties['data-math-display'] = 'true'
       }
 
-      if (node.children) {
+      if ('children' in node) {
         for (const child of node.children) {
           walk(child)
         }
@@ -116,12 +124,12 @@ function remarkMana() {
   const MANA_COST = /^[0-9WUBRGX]{1,2}$/
   const MANA_IMPORT = "import { Mana } from '@/components/articles/Mana'"
 
-  return (tree: any) => {
+  return (tree: MarkdownRoot) => {
     let converted = 0
 
-    function walk(node: any) {
-      const children = node.children
-      if (!Array.isArray(children)) return
+    function walk(node: MarkdownNode) {
+      if (!('children' in node)) return
+      const children = node.children as MarkdownContent[]
 
       for (let i = 0; i < children.length; i++) {
         const child = children[i]
@@ -135,19 +143,25 @@ function remarkMana() {
           const isFlow = child.type === 'mdxFlowExpression'
           const elementType = isFlow ? 'mdxJsxFlowElement' : 'mdxJsxTextElement'
           const prev = children[i - 1]
+          const previousCost = prev?.type === 'mdxJsxTextElement' && prev.name === 'Mana'
+            ? prev.attributes.find(attribute =>
+                attribute.type === 'mdxJsxAttribute' && attribute.name === 'cost')
+            : undefined
           // Only merge adjacent inline costs ({RR}{WW} → one group); block-level
           // expressions are separate blocks and stay independent.
-          if (!isFlow && prev && prev.type === 'mdxJsxTextElement' && prev.name === 'Mana') {
-            const attr = prev.attributes.find((a: any) => a.name === 'cost')
-            attr.value += cost
+          if (!isFlow && previousCost?.type === 'mdxJsxAttribute' &&
+              typeof previousCost.value === 'string') {
+            previousCost.value += cost
             children.splice(i, 1)
             i--
           } else {
-            child.type = elementType
-            child.name = 'Mana'
-            child.attributes = [{ type: 'mdxJsxAttribute', name: 'cost', value: cost }]
-            child.children = []
-            delete child.value
+            children[i] = {
+              type: elementType,
+              name: 'Mana',
+              attributes: [{ type: 'mdxJsxAttribute', name: 'cost', value: cost }],
+              children: [],
+              position: child.position,
+            }
           }
           converted++
         } else {
@@ -204,18 +218,18 @@ function remarkMana() {
 // <div class="article-appendix"> so it can be given a distinct background,
 // echoing the hero header. No-op for articles without an appendix.
 function rehypeAppendix() {
-  function collectText(node: any) {
+  function collectText(node: HtmlNode): string {
     if (node.type === 'text') return node.value || ''
-    if (node.children) return node.children.map(collectText).join('')
+    if ('children' in node) return node.children.map(collectText).join('')
     return ''
   }
 
-  return (tree: any) => {
+  return (tree: HtmlRoot) => {
     const children = tree.children
     if (!Array.isArray(children)) return
 
     const start = children.findIndex(
-      (node: any) =>
+      (node: HtmlContent) =>
         node.type === 'element' &&
         node.tagName === 'h2' &&
         /^appendix/i.test(collectText(node).trim())

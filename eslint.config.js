@@ -16,6 +16,7 @@ export default tseslint.config(
       '**/*.d.ts',
       '**/*.g.ts',
       '**/generated/**',
+      'artifacts/**',
       '**/node_modules/**',
     ],
   },

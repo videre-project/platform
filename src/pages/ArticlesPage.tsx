@@ -32,7 +32,7 @@ export interface ArticleFrontmatter {
 }
 
 interface ArticleModule {
-  default: ComponentType
+  default: ComponentType<{ components?: { em?: typeof CardName } }>
   frontmatter?: ArticleFrontmatter
 }
 
@@ -240,7 +240,7 @@ function positionAppendixTocBar(toc: HTMLElement) {
 }
 
 function ArticleReaderView({ slug }: { slug: string }) {
-  const [ArticleComponent, setArticleComponent] = useState<ComponentType<any> | null>(null)
+  const [ArticleComponent, setArticleComponent] = useState<ArticleModule['default'] | null>(null)
   const [meta, setMeta] = useState<ArticleFrontmatter | null>(null)
   const [notFound, setNotFound] = useState(false)
   const articleContainerRef = useRef<HTMLDivElement>(null)

@@ -23,7 +23,7 @@ export interface CardNameProps {
  * and TournamentSnapshot previews. Anything that is not a card name
  * (deck names, event names, emphasis) renders as a plain `<em>`, unchanged.
  */
-export function CardName({ children, className, node, ...rest }: CardNameProps) {
+export function CardName({ children, className, node: _node, ...rest }: CardNameProps) {
   const text = typeof children === 'string' ? children.trim() : ''
   const resolvable = text.length >= 2 && text.length <= 60
   const record = useCardImage(resolvable ? text : '')
