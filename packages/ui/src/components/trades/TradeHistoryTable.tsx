@@ -33,7 +33,7 @@ export function TradeResultBadge({ result }: { result: TradeEscrowResult }) {
     <Badge
       variant={variant}
       className={cn(
-        'rounded-md px-1.5 text-xs capitalize',
+        'whitespace-nowrap rounded-md px-1.5 text-xs capitalize',
         result === 'Completed' && 'border-transparent bg-green-700 text-white hover:bg-green-700/90 dark:bg-green-800 dark:text-green-50 dark:hover:bg-green-800/90',
         result === 'InProgress' && 'border-yellow-500/30 bg-yellow-500/15 text-yellow-700 dark:text-yellow-400',
       )}
@@ -132,14 +132,14 @@ export function TradeHistoryTable({
             No trade escrows have been recorded yet.
           </div>
         ) : (
-          <Table className="table-fixed min-w-0" wrapperClassName="min-w-0 overflow-x-hidden">
+          <Table className="table-auto min-w-0" wrapperClassName="min-w-0 overflow-x-hidden">
             <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead>Trade</TableHead>
-                <TableHead className="w-[9.5rem]">Started</TableHead>
-                <TableHead className="w-[4rem]">Given</TableHead>
-                <TableHead className="w-[5rem]">Received</TableHead>
-                <TableHead className="w-[5rem]">Status</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Started</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Given</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Received</TableHead>
+                <TableHead className="w-px whitespace-nowrap">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -163,7 +163,7 @@ export function TradeHistoryTable({
                     }}
                     tabIndex={0}
                   >
-                    <TableCell>
+                    <TableCell className="max-w-0">
                       <div className="flex min-w-0 items-center gap-2">
                         <TradePartyAvatar trade={trade} />
                         <div className="min-w-0 flex-1">
