@@ -19,7 +19,6 @@ export default defineConfig({
       'react/jsx-dev-runtime',
       'framer-motion',
       'lucide-react',
-      'radix-ui',
       'recharts',
     ],
   },

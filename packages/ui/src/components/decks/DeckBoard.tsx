@@ -782,7 +782,7 @@ function DeckGrid({
     })
 
     return changed
-  }, [diffMap, zone, unrolledCards, defaultSlots])
+  }, [diffMap, unrolledCards, defaultSlots])
 
   const effectiveCardSlots = useMemo(() => {
     if (dragPreview?.targetZone === zone && dragPreview.sourceZone !== zone) {

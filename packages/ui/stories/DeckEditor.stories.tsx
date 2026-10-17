@@ -9,7 +9,11 @@ import { expect, fn, within } from 'storybook/test'
 
 import { DECK_EDITOR_SHOWCASE_CARDS } from '../src/fixtures/layout-showcase'
 import { DeckEditorLayout } from '../src/layouts/DeckEditorLayout'
-import type { DeckSortMode, DeckSidePanelView } from '../src/types/decks'
+import type {
+  DeckBoardSelection,
+  DeckSortMode,
+  DeckSidePanelView,
+} from '../src/types/decks'
 import backfaceUrl from '../src/assets/backface.png'
 
 const meta = {
@@ -34,7 +38,11 @@ type Story = StoryObj<typeof meta>
 
 const cards = DECK_EDITOR_SHOWCASE_CARDS.map(card => ({ ...card, imageUrl: backfaceUrl }))
 
-function DeckEditorHarness() {
+function DeckEditorHarness({
+  onSelectionChange,
+}: {
+  onSelectionChange?: (selection: DeckBoardSelection | null) => void
+}) {
   const [sortMode, setSortMode] = useState<DeckSortMode>('cmc')
   const [sidePanelView, setSidePanelView] = useState<DeckSidePanelView>('cards')
   const [sideboardCollapsed, setSideboardCollapsed] = useState(false)
@@ -73,6 +81,7 @@ function DeckEditorHarness() {
       canExport
       copiedList={false}
       onArchetypeChange={fn()}
+      onSelectionChange={onSelectionChange}
     />
   )
 }
@@ -82,4 +91,24 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('Showcase Red Deck')).toBeVisible()
   },
+}
+
+function SelectionHarness() {
+  const [selection, setSelection] = useState<DeckBoardSelection | null>(null)
+
+  return (
+    <div className="relative h-full">
+      <DeckEditorHarness onSelectionChange={setSelection} />
+      <div
+        data-testid="selection-count"
+        className="pointer-events-none absolute bottom-2 left-2 z-50 rounded bg-background/90 px-2 py-1 text-xs shadow"
+      >
+        {selection ? `${selection.cardIndices.length} selected` : 'none selected'}
+      </div>
+    </div>
+  )
+}
+
+export const MarqueeSelection: Story = {
+  render: () => <SelectionHarness />,
 }
