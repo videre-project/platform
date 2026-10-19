@@ -348,20 +348,6 @@ export function CardTooltipContent({ card, footer }: { card: CardState; footer?:
           {card.power}/{card.toughness}
         </div>
       )}
-      {card.interaction?.isTargeted ? (
-        <div className="text-orange-400">Selected target</div>
-      ) : card.interaction?.isTargetable ? (
-        <div className="text-amber-300">Available target</div>
-      ) : card.interaction?.isSelectable ? (
-        <div className="text-popover-foreground/85">Selectable</div>
-      ) : null}
-      {card.interaction && card.interaction.actions.length > 0 && (
-        <div className="border-t border-border/50 pt-1 text-popover-foreground/85">
-          {card.interaction.actions.map((action, index) => (
-            <div key={index}><GameLogText text={action.name ?? action.type ?? action.$type} /></div>
-          ))}
-        </div>
-      )}
       {footer ?? (
         <div className="text-muted-foreground/60 text-[10px]">
           Zone: {card.zone} | ID: {card.cardId}
