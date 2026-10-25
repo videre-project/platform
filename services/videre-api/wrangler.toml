@@ -6,13 +6,17 @@ routes = [
   { pattern = "api.videreproject.com", custom_domain = true }
 ]
 
+[build]
+command = "pnpm run typecheck"
+watch_dir = [ "src", "scripts" ]
+
 [vars]
 PGHOST = "worker-db.videreproject.com"
 PGPORT = "5432"
 PGDATABASE = "mtgo"
 PGUSER = "api"
 PGSSL = "true"
-CACHE_VERSION = "8"
+CACHE_VERSION = "9"
 
 [secrets]
 required = [ "PGPASSWORD", "CF_CLIENT_ID", "CF_CLIENT_SECRET" ]

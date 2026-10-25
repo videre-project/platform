@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 import type { IRequest } from 'itty-router';
 
 import { CACHE_POLICY, QUERY_MEDIA_TYPE, prepareBodyCache } from '@/cache';
@@ -41,7 +42,9 @@ import {
   StringValidator
 } from '@/db/validators';
 import { Optional, Required, withValidation } from '@/validation';
+import { DEFAULT_LIST_LIMIT, MAX_AUTOCOMPLETE_LIMIT } from '@/queryPolicy';
 import { readCardCollection } from './cardCollection';
+import type { ICard, ICardFace } from '@/db/queries/cards/types';
 
 
 export const args = {
@@ -126,8 +129,16 @@ const cacheCardSearch = (req: any, ctx: any, env: any) => prepareBodyCache(
   },
 );
 
+const collectionSearch = describe({
+  operationId: 'searchCardsWithCollection',
+  description: 'POST and QUERY accept the same JSON body and share response caching.',
+  requestBody: { required: false, content: { 'application/json': { schema: { $ref: '#/components/schemas/CardSearchRequest' } } } },
+  responses: responses('CatalogSearchItem'),
+});
+
 export default Router({ base: '/cards' })
   .get('/',
+    describe({ operationId: 'searchCards', responses: responses('Card', 'ListResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {
@@ -135,26 +146,15 @@ export default Router({ base: '/cards' })
     }
   )
   .post('/search',
+    collectionSearch,
     withValidation(args),
     readCardSearchBody,
     cacheCardSearch,
     withPostgres,
-    async (req, { sql, params }) => {
-      const response = await searchCards(sql, params, { allowProductSearch: true });
-      if (response instanceof Response) {
-        response.headers.set('Cache-Control', 'private, no-store');
-        return response;
-      }
-
-      return asJSON(response, {
-        headers: {
-          'Accept-Query': QUERY_MEDIA_TYPE,
-          'Cache-Control': CACHE_POLICY,
-        },
-      });
-    }
+    handleCollectionSearch
   )
   .get('/named',
+    describe({ operationId: 'getCardNamed', responses: responses('Card', 'QueryResponse') }),
     withValidation(namedArgs),
     withPostgres,
     async (req, { sql, params }) => {
@@ -192,6 +192,10 @@ export default Router({ base: '/cards' })
     }
   )
   .get('/autocomplete',
+    describe({
+      operationId: 'autocompleteCardNames', responses: responses({ type: 'string' }),
+      parameters: [{ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 0, maximum: MAX_AUTOCOMPLETE_LIMIT, default: DEFAULT_LIST_LIMIT } }],
+    }),
     withValidation(autocompleteArgs),
     withPostgres,
     async (req, { sql, params }) => {
@@ -203,6 +207,7 @@ export default Router({ base: '/cards' })
     }
   )
   .get('/random',
+    describe({ operationId: 'getRandomCard', responses: responses('Card', 'QueryResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {
@@ -244,6 +249,7 @@ export default Router({ base: '/cards' })
     }
   )
   .get('/:id',
+    describe({ operationId: 'getCard', responses: responses('Card', 'QueryResponse') }),
     withValidation(detailArgs),
     withPostgres,
     async (req, { sql, params }) => {
@@ -260,25 +266,28 @@ export default Router({ base: '/cards' })
     }
   )
   .query('/search',
+    collectionSearch,
     withValidation(args),
     readCardSearchBody,
     cacheCardSearch,
     withPostgres,
-    async (_req: IRequest, { sql, params }: Context) => {
-      const response = await searchCards(sql, params, { allowProductSearch: true });
-      if (response instanceof Response) {
-        response.headers.set('Cache-Control', 'private, no-store');
-        return response;
-      }
-
-      return asJSON(response, {
-        headers: {
-          'Accept-Query': QUERY_MEDIA_TYPE,
-          'Cache-Control': CACHE_POLICY,
-        },
-      });
-    }
+    handleCollectionSearch
   );
+
+async function handleCollectionSearch(_req: IRequest, { sql, params }: Context) {
+  const response = await searchCards(sql, params, { allowProductSearch: true });
+  if (response instanceof Response) {
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  }
+
+  return asJSON(response, {
+    headers: {
+      'Accept-Query': QUERY_MEDIA_TYPE,
+      'Cache-Control': CACHE_POLICY,
+    },
+  });
+}
 
 type CardSearchOptions = {
   readonly allowProductSearch?: boolean,
@@ -385,12 +394,17 @@ const cardSearchResponseParams = (params: any) => {
   };
 };
 
-const normalizeCards = (cards: any[]) =>
+export interface CardResponseRow extends ICard {
+  in_collection?: boolean,
+  faces?: readonly ICardFace[],
+}
+
+const normalizeCards = (cards: readonly CardResponseRow[]): CardResponseRow[] =>
   cards.map((card) => ({
     ...card,
     mana_value: card.mana_value === null ? null : Number(card.mana_value),
     faces: Array.isArray(card.faces)
-      ? card.faces.map((face: any) => ({
+      ? card.faces.map((face: ICardFace) => ({
           ...face,
           mana_value: face.mana_value === null ? null : Number(face.mana_value),
         }))

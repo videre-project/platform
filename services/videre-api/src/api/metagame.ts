@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { withPostgres } from '@/db/postgres';
 import { getMetagame } from '@/db/queries';
@@ -21,6 +22,7 @@ export const args = All(eventArgs, {
 
 export default Router({ base: '/metagame' })
   .get('/:format?',
+    describe({ operationId: 'getMetagame', responses: responses('Metagame', 'QueryResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {

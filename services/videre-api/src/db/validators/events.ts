@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { error } from 'itty-router';
+import { Error as error } from '../../responses.ts';
 
 import { EVENTS, FORMATS } from '@videreproject/constants';
 import type { EventType, FormatType } from '@videreproject/constants';
@@ -24,6 +24,7 @@ export const FormatTypeValidator = (
 
   params[key] = format;
 };
+FormatTypeValidator.schema = { type: 'string' as const, enum: [...FORMATS] };
 
 export const EventTypeValidator = (
   params: ValidationParams,
@@ -36,3 +37,4 @@ export const EventTypeValidator = (
 
   params[key] = kind;
 };
+EventTypeValidator.schema = { type: 'string' as const, enum: [...EVENTS] };

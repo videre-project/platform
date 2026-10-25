@@ -6,17 +6,22 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy src/index.ts",
-		"typecheck": "tsc -p tsconfig.test.json",
-		"test": "node --test --experimental-strip-types test/*.test.mjs test/*.test.ts"
+		"generate:schemas": "node scripts/generate-openapi-schemas.mjs",
+		"typecheck": "pnpm generate:schemas && tsc -p tsconfig.test.json",
+		"test": "pnpm generate:schemas && node --import tsx --test test/*.test.mjs test/*.test.ts"
 	},
 	"dependencies": {
 		"@videreproject/constants": "workspace:*",
-		"@videreproject/sql-schema": "workspace:*",
 		"@videreproject/sql-builder": "workspace:*",
+		"@videreproject/sql-schema": "workspace:*",
 		"itty-router": "^5.0.16",
 		"postgres": "^3.4.4"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20231025.0"
+		"@cloudflare/workers-types": "^4.20231025.0",
+		"@openapi-contrib/json-schema-to-openapi-schema": "4.3.4",
+		"openapi-types": "12.1.3",
+		"tsx": "4.21.0",
+		"typescript-json-schema": "0.67.4"
 	}
 }

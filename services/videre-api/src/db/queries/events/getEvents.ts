@@ -31,7 +31,7 @@ type IMatchDeckJoin = {
   event_id: number,
   player: string,
   id1: number | null,
-  id2: number,
+  id2: number | null,
   deck_id: number,
   date: Date,
   format: IMatch['format'],
@@ -85,8 +85,8 @@ export const getDecks = (
       name,
       archetype,
       archetype_id,
-      mainboard,
-      sideboard
+      to_jsonb(mainboard) AS mainboard,
+      to_jsonb(sideboard) AS sideboard
     FROM (${deckEntries}) d
     WHERE archetype_id IS NOT NULL
   `;

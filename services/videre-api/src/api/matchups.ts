@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { withPostgres } from '@/db/postgres';
 import { getMatchupMatrix } from '@/db/queries';
@@ -22,6 +23,7 @@ export const args = All(eventArgs, {
 
 export default Router({ base: '/matchups' })
   .get('/:format?',
+    describe({ operationId: 'getMatchups', responses: responses('MatchupMatrix', 'QueryResponse') }),
     withValidation(args),
     withPostgres,
     async ({ archetype }, { sql, params }) => {

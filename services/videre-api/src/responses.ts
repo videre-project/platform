@@ -7,6 +7,7 @@ import { clampListLimit, clampOffset } from './queryPolicy';
 
 export interface ErrorResponse {
   object: 'error',
+  /** @multipleOf 1 */
   status: number,
   reason: string,
   message: string,
@@ -91,9 +92,11 @@ export const getProbePagination = (
   };
 }
 
-export const buildListResponse = (
+export type ListResponse = ReturnType<typeof buildListResponse>;
+
+export const buildListResponse = <T>(
   params: { [key: string]: any },
-  data: any[],
+  data: readonly T[],
   total: number | null,
   start: number,
   pagination: ListPagination = {}
@@ -103,17 +106,22 @@ export const buildListResponse = (
   const offset = getListOffset(params);
 
   return {
-    object: 'list',
+    object: 'list' as const,
     parameters: outputParams,
     meta: {
-      database: host,
-      backend,
+      database: host as string | undefined,
+      backend: backend as string | undefined,
       exec_ms: Number((performance.now() - start).toFixed(3)),
+      /** @multipleOf 1 */
       row_count: data.length,
+      /** @multipleOf 1 */
       total,
+      /** @multipleOf 1 */
       limit,
+      /** @multipleOf 1 */
       offset,
       has_more: pagination.has_more ?? false,
+      /** @multipleOf 1 */
       next_offset: pagination.next_offset ?? null,
     },
     data

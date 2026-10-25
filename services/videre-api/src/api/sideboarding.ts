@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { withPostgres } from '@/db/postgres';
 import { getSideboarding, getSideboardingMatchups } from '@/db/queries';
@@ -26,6 +27,7 @@ export const matchupArgs = All(eventArgs, {
 
 export default Router({ base: '/sideboarding' })
   .get('/:format?/matchups',
+    describe({ operationId: 'getSideboardingMatchups', responses: responses('SideboardingMatrix', 'QueryResponse') }),
     withValidation(matchupArgs),
     withPostgres,
     async ({ archetype }, { sql, params }) => {
@@ -40,6 +42,7 @@ export default Router({ base: '/sideboarding' })
     }
   )
   .get('/:format?',
+    describe({ operationId: 'getSideboarding', responses: responses('Sideboarding', 'QueryResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {

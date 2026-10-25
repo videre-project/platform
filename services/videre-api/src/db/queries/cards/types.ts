@@ -4,6 +4,7 @@
 **/
 
 import type { TableColumn } from '@videreproject/sql-schema';
+import type { CardColor, CardRarity } from '@videreproject/constants';
 import type {
   CardOrderDirection,
   CardOrderMode,
@@ -11,6 +12,8 @@ import type {
 } from '../../searchOptions.ts';
 
 const field = <T>() => undefined as unknown as T;
+
+export type CardColorSymbol = CardColor['symbol'];
 
 export type CardQueryParams = {
   readonly q?: string | null,
@@ -77,26 +80,30 @@ export type UniqueMode = CardUniqueMode;
 export type { CardOrderDirection, CardOrderMode };
 
 const cardColumnShape = {
+  /** @multipleOf 1 */
   id: field<number>(),
+  /** @format uuid */
   oracle_id: field<string>(),
   set_code: field<string | null>(),
   collector_number: field<string | null>(),
   name: field<string | null>(),
   printed_name: field<string | null>(),
   artist: field<string | null>(),
+  /** @multipleOf 1 */
   art_id: field<number | null>(),
   mana_cost: field<string | null>(),
   mana_value: field<number | null>(),
   type_line: field<string | null>(),
   oracle_text: field<string | null>(),
   flavor_text: field<string | null>(),
-  colors: field<string[]>(),
-  color_identity: field<string[]>(),
+  colors: field<CardColorSymbol[]>(),
+  color_identity: field<CardColorSymbol[]>(),
   power: field<string | null>(),
   toughness: field<string | null>(),
   loyalty: field<string | null>(),
   defense: field<string | null>(),
-  rarity: field<string | null>(),
+  rarity: field<CardRarity | null>(),
+  /** @multipleOf 1 */
   frame_style: field<number | null>(),
   promo_label: field<string | null>(),
   is_token: field<boolean | null>(),
@@ -109,9 +116,11 @@ const _cardComputedShape = {
   is_promo: field<boolean>(),
   is_multiface: field<boolean>(),
   is_split: field<boolean>(),
+  /** @format date-time */
   set_release_date: field<string | null>(),
   set_type: field<string | null>(),
   legalities: field<Record<string, string>>(),
+  /** @format uri */
   image_url: field<string>(),
 };
 
@@ -122,8 +131,18 @@ export type CardColumnField = Extract<keyof typeof cardColumnShape, TableColumn<
 export const CARD_COLUMN_FIELDS = Object.keys(cardColumnShape) as readonly CardColumnField[];
 
 const cardFaceShape = {
+  /**
+   * @multipleOf 1
+   */
   card_id: field<number>(),
+  /**
+   * @multipleOf 1
+   * @minimum 0
+   */
   face_index: field<number>(),
+  /**
+   * @multipleOf 1
+   */
   source_catalog_id: field<number | null>(),
   name: field<string | null>(),
   printed_name: field<string | null>(),
@@ -132,12 +151,15 @@ const cardFaceShape = {
   type_line: field<string | null>(),
   oracle_text: field<string | null>(),
   flavor_text: field<string | null>(),
-  colors: field<string[]>(),
+  colors: field<CardColorSymbol[]>(),
   power: field<string | null>(),
   toughness: field<string | null>(),
   loyalty: field<string | null>(),
   defense: field<string | null>(),
   artist: field<string | null>(),
+  /**
+   * @multipleOf 1
+   */
   art_id: field<number | null>(),
 } satisfies Partial<Record<TableColumn<'card_faces'>, unknown>>;
 

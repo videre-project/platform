@@ -10,7 +10,7 @@ export type CardUniqueMode = 'cards' | 'prints';
 
 export type CardOrderMode = 'rank' | 'name' | 'mana_value' | 'set' | 'released';
 
-const CARD_UNIQUE_ALIASES = new Map<string, CardUniqueMode>([
+export const CARD_UNIQUE_ALIASES = new Map<string, CardUniqueMode>([
   ['prints',    'prints'],
   ['printings', 'prints'],
   ['cards',     'cards'],
@@ -19,7 +19,7 @@ const CARD_UNIQUE_ALIASES = new Map<string, CardUniqueMode>([
   ['oracles',   'cards'],
 ]);
 
-const CARD_ORDER_ALIASES = new Map<string, CardOrderMode>([
+export const CARD_ORDER_ALIASES = new Map<string, CardOrderMode>([
   ['rank',       'rank'],
   ['relevance',  'rank'],
   ['name',       'name'],

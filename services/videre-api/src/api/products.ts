@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { Execute } from '@/db/helpers';
 import { withPostgres } from '@/db/postgres';
@@ -41,6 +42,7 @@ export const detailArgs = {
 
 export default Router({ base: '/products' })
   .get('/',
+    describe({ operationId: 'searchProducts', responses: responses('Product', 'ListResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {
@@ -57,6 +59,7 @@ export default Router({ base: '/products' })
     }
   )
   .get('/:id',
+    describe({ operationId: 'getProduct', responses: responses('Product', 'QueryResponse') }),
     withValidation(detailArgs),
     withPostgres,
     async (req, { sql, params }) => {

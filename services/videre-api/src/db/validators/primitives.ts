@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { error } from 'itty-router';
+import { Error as error } from '../../responses.ts';
 
 type ValidationParams = Record<string, unknown>;
 
@@ -28,6 +28,7 @@ export const BooleanValidator = (
 
   return error(400, `Invalid ${key} specified: '${value}'`);
 };
+BooleanValidator.schema = { type: 'boolean' as const };
 
 export const DateValidator = (
   params: ValidationParams,
@@ -40,6 +41,7 @@ export const DateValidator = (
 
   params[key] = date;
 };
+DateValidator.schema = { type: 'string' as const, format: 'date' };
 
 export const NumberValidator = (
   params: ValidationParams,
@@ -52,6 +54,7 @@ export const NumberValidator = (
 
   params[key] = number;
 };
+NumberValidator.schema = { type: 'number' as const };
 
 export const StringValidator = (
   params: ValidationParams,
@@ -64,3 +67,4 @@ export const StringValidator = (
 
   params[key] = string;
 };
+StringValidator.schema = { type: 'string' as const };

@@ -3,14 +3,16 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { error } from 'itty-router';
+import { Error as error } from '../../responses.ts';
 
 import {
+  CARD_ORDER_ALIASES,
+  CARD_UNIQUE_ALIASES,
   parseCardOrderMode,
   parseCardUniqueMode,
   parseSortDirection
 } from '../searchOptions.ts';
-import { FORMATS, normalizeCardRarity } from '@videreproject/constants';
+import { CARD_RARITIES, FORMATS, normalizeCardRarity } from '@videreproject/constants';
 
 type ValidationParams = Record<string, unknown>;
 
@@ -42,6 +44,7 @@ export const CardFormatValidator = (
 
   params[key] = format;
 };
+CardFormatValidator.schema = { type: 'string' as const, enum: [...FORMAT_CODES.values()] };
 
 export const normalizeCardFormatCode = (value: string): string | undefined =>
   FORMAT_CODES.get(normalizeLookupKey(value));
@@ -57,6 +60,7 @@ export const CardLegalityValidator = (
 
   params[key] = legality;
 };
+CardLegalityValidator.schema = { type: 'string' as const, enum: [...new Set(LEGALITY_ALIASES.values())] };
 
 export const normalizeCardLegality = (value: string): string | undefined =>
   LEGALITY_ALIASES.get(normalizeLookupKey(value));
@@ -72,6 +76,7 @@ export const CardRarityValidator = (
 
   params[key] = rarity;
 };
+CardRarityValidator.schema = { type: 'string' as const, enum: [...CARD_RARITIES] };
 
 export const CardSearchQueryValidator = (
   params: ValidationParams,
@@ -84,6 +89,7 @@ export const CardSearchQueryValidator = (
 
   params[key] = query;
 };
+CardSearchQueryValidator.schema = { type: 'string' as const };
 
 export const CardSortDirectionValidator = (
   params: ValidationParams,
@@ -98,6 +104,7 @@ export const CardSortDirectionValidator = (
 
   return error(400, `Invalid ${key} specified: '${value}'`);
 };
+CardSortDirectionValidator.schema = { type: 'string' as const, enum: ['asc', 'desc'] };
 
 export const CardSortOrderValidator = (
   params: ValidationParams,
@@ -110,6 +117,7 @@ export const CardSortOrderValidator = (
 
   params[key] = order;
 };
+CardSortOrderValidator.schema = { type: 'string' as const, enum: [...new Set(CARD_ORDER_ALIASES.values())] };
 
 export const CardUniqueModeValidator = (
   params: ValidationParams,
@@ -122,3 +130,4 @@ export const CardUniqueModeValidator = (
 
   params[key] = unique;
 };
+CardUniqueModeValidator.schema = { type: 'string' as const, enum: [...new Set(CARD_UNIQUE_ALIASES.values())] };

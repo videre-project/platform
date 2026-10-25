@@ -6,14 +6,16 @@
 import { MAX_DB_QUERY_EXECUTION } from '@/handler';
 import { Error } from '@/responses';
 
-import type { PendingSql, RowList, Sql } from "./postgres";
+import type { PendingSql, Sql } from "./postgres";
 
-export async function Execute(
-  query: PendingSql<any[]>,
+export type QueryResponse = Exclude<Awaited<ReturnType<typeof Execute>>, Response>;
+
+export async function Execute<T>(
+  query: PendingSql<T[]>,
   parameters: { [key: string]: any } = {}
 ) {
   const start = performance.now();
-  let data: RowList<any[]> = null!;
+  let data: T[];
   try {
     data = await new Promise<typeof data>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -55,9 +57,10 @@ export async function Execute(
   const output = {
     parameters: params,
     meta: {
-      database: host,
-      backend: backend,
+      database: host as string | undefined,
+      backend: backend as string | undefined,
       exec_ms: Number((performance.now() - start).toFixed(3)),
+      /** @multipleOf 1 */
       row_count: data?.length || 0,
     },
     data

@@ -44,6 +44,8 @@ const opponentArchetype = table('archetypes', 'a2');
 
 const eventDeckSelectFields = {
   ...tableColumnFields(decks, EVENT_DECK_DECK_FIELDS),
+  mainboard: sql`to_jsonb(${decks.column('mainboard')})`,
+  sideboard: sql`to_jsonb(${decks.column('sideboard')})`,
   ...tableColumnFields(events, EVENT_DATE_FORMAT_FIELDS),
   ...tableColumnFields(archetypes, EVENT_ARCHETYPE_FIELDS),
   event_name: events.column('name'),
@@ -53,6 +55,7 @@ const eventDeckSelectFields = {
 
 const eventMatchSelectFields = {
   ...tableColumnFields(matches, EVENT_MATCH_MATCH_FIELDS),
+  games: sql`to_jsonb(${matches.column('games')})`,
   ...tableColumnFields(events, EVENT_DATE_FORMAT_FIELDS),
   event_name: events.column('name'),
   event_type: events.column('kind'),

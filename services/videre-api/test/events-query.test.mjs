@@ -108,11 +108,17 @@ test('event queries return events, decks, and matches for a real event', async (
   assert.ok(eventDecks.length > 0);
   assert.ok(eventDecks.every((deck) => deck.event_id === candidate.id));
   assert.ok(Array.isArray(eventDecks[0].mainboard));
+  const cards = eventDecks.flatMap(deck => deck.mainboard ?? []);
+  assert.ok(cards.length > 0);
+  assert.ok(cards.every(card => typeof card === 'object' && Number.isInteger(card.id) && Number.isInteger(card.quantity)));
 
   const eventMatches = await getEventMatches(sql, { event_id: candidate.id });
   assert.ok(eventMatches.length > 0);
   assert.ok(eventMatches.every((match) => match.event_id === candidate.id));
   assert.ok(Array.isArray(eventMatches[0].games));
+  const games = eventMatches.flatMap(match => match.games ?? []);
+  assert.ok(games.length > 0);
+  assert.ok(games.every(game => typeof game === 'object' && Number.isInteger(game.id) && typeof game.result === 'string'));
 
   const eventStandings = await getEventStandings(sql, { event_id: candidate.id });
   assert.ok(eventStandings.length > 0);

@@ -3,12 +3,17 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { error } from 'itty-router';
+import { Error as error } from './responses.ts';
 import type { IRequest } from 'itty-router';
+import type { OpenAPIV3 } from 'openapi-types';
 
 import type { Context } from './handler';
 import { getDefault } from './parameters';
 
+export type ParameterValidator = ((params: any, key: string, value: any) => Response | void) & {
+  required?: boolean,
+  schema?: OpenAPIV3.SchemaObject,
+};
 
 /**
  * Merges multiple validation objects into one.
@@ -22,7 +27,7 @@ export const All = (...sources: object[]) => Object.assign({}, ...sources);
  * @param obj The parameter to mark as required.
  * @returns The parameter validator function.
  */
-export const Required = (obj: any): any => {
+export const Required = <T extends ParameterValidator>(obj: T): T & { required: true } => {
   return new Proxy(obj, {
     apply: (target, thisArg, [params, key, value]) => {
       if (value === undefined)
@@ -32,9 +37,9 @@ export const Required = (obj: any): any => {
     },
     get: (target, prop) => {
       if (prop === 'required') return true;
-      return target[prop];
+      return Reflect.get(target, prop);
     }
-  });
+  }) as T & { required: true };
 }
 
 /**
@@ -42,7 +47,7 @@ export const Required = (obj: any): any => {
  * @param obj The parameter to mark as optional.
  * @returns The parametervalidator function.
  */
-export const Optional = (obj: any): any => {
+export const Optional = <T extends ParameterValidator>(obj: T): T & { optional: true } => {
   return new Proxy(obj, {
     apply: (target, thisArg, [params, key, value]) => {
       if (value === undefined && getDefault(key) === undefined)
@@ -52,9 +57,9 @@ export const Optional = (obj: any): any => {
     },
     get: (target, prop) => {
       if (prop === 'optional') return true;
-      return target[prop];
+      return Reflect.get(target, prop);
     }
-  });
+  }) as T & { optional: true };
 }
 
 /**
@@ -63,18 +68,15 @@ export const Optional = (obj: any): any => {
  * @returns A middleware function that validates the given parameters.
  */
 export const withValidation = (
-  map: {
-    [key in string]: (params: any, key: string, value: any) => Response | void
-  }
+  map: Record<string, ParameterValidator>
 ) => {
-  return ({ proxy }: IRequest, { params }: Context, ..._: any[]) => {
+  return Object.assign(({ proxy }: IRequest, { params }: Context, ..._: any[]) => {
     for (const [key, validator] of Object.entries(map)) {
       const value = proxy?.params?.[key] ?? proxy?.query?.[key] ?? getDefault(key);
-      // @ts-expect-error - Validator is a proxy that extends the function type.
       if (validator?.required || value !== undefined) {
         const result = validator(params, key, value);
         if (result) return result;
       }
     }
-  }
+  }, { validators: map });
 }

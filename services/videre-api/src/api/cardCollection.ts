@@ -13,6 +13,16 @@ import type {
 import { MAX_INLINE_COLLECTION_IDS } from '@/queryPolicy';
 import { Error } from '@/responses';
 
+export interface CardCollectionRequest {
+  ids: CardCollectionFilter['ids'],
+  mode?: CardCollectionMode | '' | null,
+  match?: CardCollectionMatchMode | '' | null,
+}
+
+export interface CardSearchRequest {
+  collection?: CardCollectionRequest | null,
+}
+
 export async function readCardCollection(
   req: IRequest
 ): Promise<CardCollectionFilter | Response | null> {
@@ -47,7 +57,7 @@ export async function readCardCollection(
   return parseCollection(collection);
 }
 
-function parseCollection(collection: object): CardCollectionFilter | Response {
+function parseCollection(collection: Partial<CardCollectionRequest>): CardCollectionFilter | Response {
   if (!('ids' in collection) || !Array.isArray(collection.ids)) {
     return Error(400, 'collection.ids must be an array of MTGO catalog IDs.');
   }

@@ -163,6 +163,21 @@ CI database checks use the read-only `public_api` role through the `public-db.vi
 
 The API publishes its [OpenAPI 3.0 specification](https://api.videreproject.com/openapi.json) at `api.videreproject.com/openapi.json`. Generate client SDKs and API model types from this document.
 
+API schemas are generated from the existing query, request, and response types by
+`pnpm --filter videre-api generate:schemas`. The service's development, deployment,
+typechecking, and test commands generate them automatically. Intermediate type
+declarations and schema output stay in the ignored `services/videre-api/build/`
+directory. Use JSDoc constraints such as `@multipleOf 1`, `@minimum`, and `@format`
+on the source fields for details TypeScript cannot express; whole-number
+constraints generate OpenAPI integers without changing nullable unions.
+
+Document operations beside their router registrations with `describe` and
+`responses`. Paths come from those registrations, and parameter schemas come from
+the existing validators. A new public response type needs an entry in
+`services/videre-api/scripts/generate-openapi-schemas.mjs`; it does not need a
+second model or a handwritten schema. Runtime constraints that TypeScript cannot
+express, such as collection size limits, reuse the API's shared policy constants.
+
 * [API overview](docs/api/index.md)
 * [Cards](docs/api/cards.md)
 * [Sets](docs/api/sets.md)

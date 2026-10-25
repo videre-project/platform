@@ -6,7 +6,6 @@
 import type {
   CardQuantityPair,
   GameResult,
-  RecordType,
 } from '@videreproject/sql-schema';
 import type { EventType, FormatType, ResultType } from '@videreproject/constants';
 import type { CI, Percentage } from '@/db/statistics';
@@ -23,12 +22,15 @@ export type EventQueryParams = {
 };
 
 const eventShape = {
+  /** @multipleOf 1 */
   id: field<number>(),
   name: field<string>(),
   date: field<Date>(),
   format: field<FormatType>(),
   kind: field<EventType>(),
+  /** @multipleOf 1 */
   rounds: field<number>(),
+  /** @multipleOf 1 */
   players: field<number>(),
 } satisfies Partial<Record<TableColumn<'events'>, unknown>>;
 
@@ -41,6 +43,7 @@ export const EVENT_FIELDS = Object.keys(eventShape) as readonly EventField[];
 const deckSummaryArchetypeShape = {
   name: field<string>(),
   archetype: field<string>(),
+  /** @multipleOf 1 */
   archetype_id: field<number>(),
 } satisfies Partial<Record<TableColumn<'archetypes'>, unknown>>;
 
@@ -54,8 +57,8 @@ export const DECK_SUMMARY_ARCHETYPE_FIELDS = Object.keys(
 ) as readonly DeckSummaryArchetypeField[];
 
 const deckSummaryDeckShape = {
-  mainboard: field<CardQuantityPair[]>(),
-  sideboard: field<CardQuantityPair[]>(),
+  mainboard: field<CardQuantityPair[] | null>(),
+  sideboard: field<CardQuantityPair[] | null>(),
 } satisfies Partial<Record<TableColumn<'decks'>, unknown>>;
 
 export type DeckSummaryDeckField = Extract<
@@ -68,6 +71,7 @@ export const DECK_SUMMARY_DECK_FIELDS = Object.keys(
 ) as readonly DeckSummaryDeckField[];
 
 const _deckSummaryJoinedShape = {
+  /** @multipleOf 1 */
   id: field<number>(),
 };
 
@@ -76,11 +80,15 @@ export type IDeck = typeof _deckSummaryJoinedShape
   & typeof deckSummaryDeckShape;
 
 export type IMatch = {
-  id1: number,
-  id2: number,
+  /** @multipleOf 1 */
+  id1: number | null,
+  /** @multipleOf 1 */
+  id2: number | null,
+  /** @multipleOf 1 */
   deck_id: number,
   date: Date,
   format: FormatType,
+  /** @multipleOf 1 */
   event_id: number,
   event_type: EventType,
   archetype1: string,
@@ -112,11 +120,13 @@ export const EVENT_DATE_FORMAT_FIELDS = Object.keys(
 ) as readonly EventDateFormatField[];
 
 const eventDeckDeckShape = {
+  /** @multipleOf 1 */
   id: field<number>(),
+  /** @multipleOf 1 */
   event_id: field<number>(),
   player: field<string>(),
-  mainboard: field<CardQuantityPair[]>(),
-  sideboard: field<CardQuantityPair[]>(),
+  mainboard: field<CardQuantityPair[] | null>(),
+  sideboard: field<CardQuantityPair[] | null>(),
 } satisfies Partial<Record<TableColumn<'decks'>, unknown>>;
 
 export type EventDeckDeckField = Extract<
@@ -130,6 +140,7 @@ export const EVENT_DECK_DECK_FIELDS = Object.keys(
 
 const eventArchetypeShape = {
   archetype: field<string | null>(),
+  /** @multipleOf 1 */
   archetype_id: field<number | null>(),
 } satisfies Partial<Record<TableColumn<'archetypes'>, unknown>>;
 
@@ -154,15 +165,18 @@ export type IEventDeck = typeof eventDeckDeckShape
   & typeof _eventDeckJoinedShape;
 
 const eventMatchMatchShape = {
+  /** @multipleOf 1 */
   id: field<number>(),
+  /** @multipleOf 1 */
   event_id: field<number>(),
+  /** @multipleOf 1 */
   round: field<number>(),
   player: field<string>(),
   opponent: field<string>(),
-  record: field<RecordType>(),
+  record: field<string>(),
   result: field<ResultType>(),
   isbye: field<boolean>(),
-  games: field<GameResult[]>(),
+  games: field<GameResult[] | null>(),
 } satisfies Partial<Record<TableColumn<'matches'>, unknown>>;
 
 export type EventMatchMatchField = Extract<
@@ -177,13 +191,17 @@ export const EVENT_MATCH_MATCH_FIELDS = Object.keys(
 const _eventMatchJoinedShape = {
   event_name: field<string>(),
   event_type: field<EventType>(),
+  /** @multipleOf 1 */
   player_deck_id: field<number | null>(),
   player_deck_name: field<string | null>(),
   player_archetype: field<string | null>(),
+  /** @multipleOf 1 */
   player_archetype_id: field<number | null>(),
+  /** @multipleOf 1 */
   opponent_deck_id: field<number | null>(),
   opponent_deck_name: field<string | null>(),
   opponent_archetype: field<string | null>(),
+  /** @multipleOf 1 */
   opponent_archetype_id: field<number | null>(),
 };
 
@@ -192,11 +210,14 @@ export type IEventMatch = typeof eventMatchMatchShape
   & typeof _eventMatchJoinedShape;
 
 const eventStandingStandingShape = {
+  /** @multipleOf 1 */
   event_id: field<number>(),
-  rank: field<number>(),
+  /** @multipleOf 1 */
+  rank: field<number | null>(),
   player: field<string>(),
-  record: field<RecordType>(),
-  points: field<number>(),
+  record: field<string>(),
+  /** @multipleOf 1 */
+  points: field<number | null>(),
   omwp: field<number | null>(),
   gwp: field<number | null>(),
   owp: field<number | null>(),
@@ -214,6 +235,7 @@ export const EVENT_STANDING_STANDING_FIELDS = Object.keys(
 const _eventStandingJoinedShape = {
   event_name: field<string>(),
   event_type: field<EventType>(),
+  /** @multipleOf 1 */
   deck_id: field<number | null>(),
   deck_name: field<string | null>(),
 };
@@ -225,52 +247,67 @@ export type IEventStanding = typeof eventStandingStandingShape
 
 export type ICardStatistics = {
   card: string,
+  /** @multipleOf 1 */
   count: number,
   percentage: Percentage,
+  /** @multipleOf 1 */
   total: number,
   average: number
 };
 
 export type IDeckStatistics = {
+  /** @multipleOf 1 */
   id: number,
   archetype: string,
+  /** @multipleOf 1 */
   count: number,
   mainboard: ICardStatistics[],
   sideboard: ICardStatistics[]
 };
 
 export type IMetagame = {
+  /** @multipleOf 1 */
   id: number,
   archetype: string,
+  /** @multipleOf 1 */
   count: number,
   percentage: Percentage,
+  /** @multipleOf 1 */
   match_count: number,
   match_winrate: Percentage,
   match_ci: CI,
+  /** @multipleOf 1 */
   game_count: number,
   game_winrate: Percentage,
   game_ci: CI
 };
 
 export type IMatchup = {
-  id1: string,
-  id2: string,
+  /** @multipleOf 1 */
+  id1: number | null,
+  /** @multipleOf 1 */
+  id2: number | null,
   archetype1: string,
   archetype2: string,
+  /** @multipleOf 1 */
   match_count: number,
   match_winrate: Percentage,
   match_ci: CI,
+  /** @multipleOf 1 */
   game_count: number,
   game_winrate: Percentage,
   game_ci: CI
 };
 
 const matchupSummaryShape = {
-  id: field<string>(),
+  /** @multipleOf 1 */
+  id: field<number | null>(),
   archetype: field<string>(),
+  /** @multipleOf 1 */
   match_count: field<number>(),
   match_winrate: field<Percentage>(),
   match_ci: field<CI>(),
+  /** @multipleOf 1 */
   game_count: field<number>(),
   game_winrate: field<Percentage>(),
   game_ci: field<CI>(),
@@ -285,28 +322,35 @@ export const MATCHUP_SUMMARY_FIELDS = Object.keys(
 ) as readonly MatchupSummaryField[];
 
 export type IMatchupMatrix = {
-  id: string,
+  /** @multipleOf 1 */
+  id: number | null,
   archetype: string,
   matchups: IMatchupSummary[]
 };
 
 export type ISideboarding = {
-  id: number,
+  /** @multipleOf 1 */
+  id: number | null,
   archetype: string,
+  /** @multipleOf 1 */
   game_one_count: number,
   game_one_winrate: Percentage,
   game_one_ci: CI,
+  /** @multipleOf 1 */
   postboard_game_count: number | null,
   postboard_game_winrate: Percentage | null,
   postboard_game_ci: CI | null,
 };
 
 const sideboardingSummaryShape = {
-  id: field<number>(),
+  /** @multipleOf 1 */
+  id: field<number | null>(),
   archetype: field<string>(),
+  /** @multipleOf 1 */
   game_one_count: field<number>(),
   game_one_winrate: field<Percentage>(),
   game_one_ci: field<CI>(),
+  /** @multipleOf 1 */
   postboard_game_count: field<number | null>(),
   postboard_game_winrate: field<Percentage | null>(),
   postboard_game_ci: field<CI | null>(),
@@ -321,7 +365,8 @@ export const SIDEBOARDING_SUMMARY_FIELDS = Object.keys(
 ) as readonly SideboardingSummaryField[];
 
 export type ISideboardingMatrix = {
-  id: number,
+  /** @multipleOf 1 */
+  id: number | null,
   archetype: string,
   matchups: ISideboardingSummary[]
 };

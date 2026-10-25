@@ -4,10 +4,11 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { Execute } from '@/db/helpers';
 import { withPostgres } from '@/db/postgres';
-import { getSetCount, getSets } from '@/db/queries';
+import { getSetCount, getSets, type ISet } from '@/db/queries';
 import { buildListResponse, Error, getListPagination } from '@/responses';
 import { applySetSearchQuery } from '@/search/setSearchQuery';
 import {
@@ -36,6 +37,7 @@ export const detailArgs = {
 
 export default Router({ base: '/sets' })
   .get('/',
+    describe({ operationId: 'searchSets', responses: responses('Set', 'ListResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {
@@ -52,6 +54,7 @@ export default Router({ base: '/sets' })
     }
   )
   .get('/:code',
+    describe({ operationId: 'getSet', responses: responses('Set', 'QueryResponse') }),
     withValidation(detailArgs),
     withPostgres,
     async (req, { sql, params }) => {
@@ -65,13 +68,11 @@ export default Router({ base: '/sets' })
         return response;
       }
 
-      const output = response as any;
-      output.data = normalizeSets(output.data);
-      return output;
+      return { ...response, data: normalizeSets(response.data) };
     }
   );
 
-const normalizeSets = (sets: any[]) =>
+const normalizeSets = (sets: readonly ISet[]): ISet[] =>
   sets.map((set) => ({
     ...set,
     card_count: Number(set.card_count),

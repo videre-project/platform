@@ -4,11 +4,14 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 import type { IRequest } from 'itty-router';
 
 import { QUERY_MEDIA_TYPE, prepareBodyCache } from '@/cache';
 import { withPostgres } from '@/db/postgres';
 import { getPriceCachePolicy } from '@/priceCache';
+import { MAX_INLINE_COLLECTION_IDS } from '@/queryPolicy';
+import type { ListResponse } from '@/responses';
 import {
   getBatchPrices,
   getLatestPrice,
@@ -24,12 +27,39 @@ import {
 } from '@/db/validators';
 import { asJSON, buildListResponse, Error, getListPagination } from '@/responses';
 import { Optional, Required, withValidation } from '@/validation';
+import type { CardCollectionRequest } from './cardCollection';
 
 
-const MAX_BATCH_PRICE_IDS = 10_000;
 const GOATBOTS_SOURCE_URL = 'https://www.goatbots.com/';
 
-type PriceResponseRow = ReturnType<typeof normalizePrice>;
+export interface PriceResponseRow extends Omit<ICatalogPrice, 'price_date' | 'sell_price'> {
+  /** @format date */
+  price_date: string,
+  sell_price: number,
+  /** @format uri */
+  url: string | null,
+}
+export type PriceCollectionRequest = {
+  ids: CardCollectionRequest['ids'],
+};
+
+export type PriceRequest = {
+  /**
+   * An ISO date, or latest when omitted, null, or empty.
+   * @default latest
+   */
+  date?: string | null,
+} & (
+  { ids: PriceCollectionRequest['ids'], collection?: PriceCollectionRequest | null }
+  | { ids?: never, collection: PriceCollectionRequest }
+);
+export interface PriceBatchResponse extends ListResponse {
+  data: readonly PriceResponseRow[],
+  meta: ListResponse['meta'] & {
+    /** @items.type integer */
+    missing_ids: readonly number[],
+  },
+}
 
 export const detailArgs = {
   id: Required(NumberValidator),
@@ -43,14 +73,26 @@ export const historyArgs = {
   offset: Optional(NumberValidator),
 };
 
+const batchPrices = describe({
+  operationId: 'getPrices',
+  description: 'POST and QUERY accept the same JSON body and share response caching.',
+  requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/PriceRequest' } } } },
+  responses: responses('PriceBatchResponse', null),
+});
+
 export default Router({ base: '/prices' })
   .post('/',
+    batchPrices,
     readBatchPriceParams,
     cacheBatchPrices,
     withPostgres,
     handleBatchPriceRequest
   )
   .get('/:id/history',
+    describe({
+      operationId: 'getPriceHistory', responses: responses('Price'),
+      parameters: ['from', 'to'].map(name => ({ name, in: 'query', schema: { type: 'string', format: 'date' } })),
+    }),
     withValidation(historyArgs),
     withPostgres,
     async (req, { sql, params }) => {
@@ -89,6 +131,7 @@ export default Router({ base: '/prices' })
     }
   )
   .get('/:id',
+    describe({ operationId: 'getLatestPrice', responses: responses('Price', 'ListResponse') }),
     withValidation(detailArgs),
     withPostgres,
     async (req, { sql, params }) => {
@@ -105,6 +148,7 @@ export default Router({ base: '/prices' })
     }
   )
   .query('/',
+    batchPrices,
     readBatchPriceParams,
     cacheBatchPrices,
     withPostgres,
@@ -148,13 +192,16 @@ async function handleBatchPriceRequest(req: IRequest, { sql, params }: any, _env
   const data = normalizePrices(await getBatchPrices(sql, queryParams));
   const returnedIds = new Set(data.map((row) => row.id));
   const missingIds = queryParams.ids.filter((id) => !returnedIds.has(id));
-  const response = buildListResponse(
+  const page = buildListResponse(
     { ...params, date: queryParams.date, ids: { size: queryParams.ids.length } },
     data,
     data.length,
     start
   );
-  (response.meta as Record<string, unknown>).missing_ids = missingIds;
+  const response: PriceBatchResponse = {
+    ...page,
+    meta: { ...page.meta, missing_ids: missingIds },
+  };
 
   return asJSON(response, {
     headers: {
@@ -168,7 +215,7 @@ function normalizePrices(rows: readonly ICatalogPrice[]): PriceResponseRow[] {
   return rows.map(normalizePrice);
 }
 
-function normalizePrice(row: ICatalogPrice) {
+function normalizePrice(row: ICatalogPrice): PriceResponseRow {
   return {
     ...row,
     price_date: normalizeOutputDate(row.price_date),
@@ -217,8 +264,8 @@ async function readPriceSearchBody(req: IRequest): Promise<{ ids: readonly numbe
     return Error(400, `${idsBody.key} cannot be empty.`);
   }
 
-  if (idsBody.ids.length > MAX_BATCH_PRICE_IDS) {
-    return Error(400, `${idsBody.key} cannot contain more than ${MAX_BATCH_PRICE_IDS} IDs.`);
+  if (idsBody.ids.length > MAX_INLINE_COLLECTION_IDS) {
+    return Error(400, `${idsBody.key} cannot contain more than ${MAX_INLINE_COLLECTION_IDS} IDs.`);
   }
 
   const ids = normalizeIds(idsBody.ids, idsBody.key);

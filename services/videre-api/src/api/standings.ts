@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { withPostgres } from '@/db/postgres';
 import { getEventStandings } from '@/db/queries';
@@ -34,6 +35,7 @@ export const args = {
 
 export default Router({ base: '/standings' })
   .get('/:format?',
+    describe({ operationId: 'getStandings', responses: responses('EventStanding', 'ListResponse') }),
     withValidation(args),
     withPostgres,
     async (req, { sql, params }) => {

@@ -11,10 +11,14 @@ export interface ISet {
   code: string,
   name: string | null,
   release_date: string | null,
+  /** @multipleOf 1 */
   age: number | null,
   set_type: string | null,
+  /** @multipleOf 1 */
   card_count: number,
+  /** @multipleOf 1 */
   token_count: number,
+  /** @multipleOf 1 */
   product_count: number
 };
 

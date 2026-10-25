@@ -162,12 +162,17 @@ test('high-volume price batch lookups run against deterministic 2K and 10K pools
 });
 
 test('HTTP /prices/:id returns latest price metadata', { skip: !apiBaseUrl }, async () => {
+  const [latest] = await sql`
+    SELECT max(price_date)::text AS price_date
+    FROM catalog_price_history WHERE catalog_id = 11 AND source = 'goatbots'
+  `;
+  assert.ok(latest?.price_date);
   const body = await fetchPriceRoute('/prices/11');
 
   assert.equal(body.object, 'list');
   assert.equal(body.data.length, 1);
   assert.equal(body.data[0].id, 11);
-  assert.equal(body.data[0].price_date, '2026-07-06');
+  assert.equal(body.data[0].price_date, latest.price_date);
   assert.equal(body.data[0].source, 'goatbots');
   assert.equal(body.data[0].url, 'https://www.goatbots.com/');
   assert.equal(body.data[0].kind, 'product');

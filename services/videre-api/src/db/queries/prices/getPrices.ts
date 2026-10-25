@@ -16,6 +16,7 @@ import {
 
 
 export interface ICatalogPrice {
+  /** @multipleOf 1 */
   id: number,
   price_date: string | Date,
   sell_price: string,

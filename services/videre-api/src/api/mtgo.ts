@@ -4,6 +4,8 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
+import { Error } from '@/responses';
 
 
 export interface AssemblyIdentity {
@@ -25,6 +27,7 @@ export interface DeploymentManifest {
 
 export default Router({ base: '/mtgo' })
   .get('/manifest',
+    describe({ operationId: 'getMtgoManifest', responses: { ...responses('DeploymentManifest', null), 502: { $ref: '#/components/responses/ServerError' } } }),
     async (_req, { params: _params }) => {
       // The deployment manifest names the active client version; the
       // application manifest lists the assemblies that make up that version.
@@ -33,7 +36,7 @@ export default Router({ base: '/mtgo' })
         'mtg/live/client/MTGO.application',
       ].join('/'));
       if (!response.ok) {
-        return Error('Failed to fetch the MTGO deployment manifest.');
+        return Error(502, 'Failed to fetch the MTGO deployment manifest.');
       }
       let text = await response.text();
 
@@ -52,7 +55,7 @@ export default Router({ base: '/mtgo' })
         `mtg/live/client/${codebase}/MTGO.exe.manifest`,
       ].join('/'));
       if (!response.ok) {
-        return Error('Failed to fetch the MTGO application manifest.');
+        return Error(502, 'Failed to fetch the MTGO application manifest.');
       }
       text = await response.text();
 

@@ -9,7 +9,7 @@ import { applyPublicApiCors, publicApiPreflight } from '@/apiPolicy';
 import { useCache } from '@/cache';
 import { withParams } from '@/parameters';
 import { Error, asJSON } from '@/responses';
-import { openApiResponse } from '@/openapi';
+import { openApiResponse } from '@/openapiDocument';
 
 import archetypes from './archetypes';
 import cards from './cards';
@@ -26,37 +26,18 @@ import sideboarding from './sideboarding';
 import standings from './standings';
 
 
-export default Router({
+export const apiRouters = { archetypes, cards, decks, events, matchups, matches, metagame, mtgo, prices, products, sets, sideboarding, standings };
+
+const router = Router({
   before: [publicApiPreflight],
   finally: [asJSON, applyPublicApiCors],
 })
   .get('*', useCache)
   .all('*', withParams)
-  .get('/openapi.json', openApiResponse)
-  .all('/archetypes', archetypes.fetch)
-  .all('/archetypes/*', archetypes.fetch)
-  .all('/cards', cards.fetch)
-  .all('/cards/*', cards.fetch)
-  .all('/decks', decks.fetch)
-  .all('/decks/*', decks.fetch)
-  .all('/events', events.fetch)
-  .all('/events/*', events.fetch)
-  .all('/matchups', matchups.fetch)
-  .all('/matchups/*', matchups.fetch)
-  .all('/matches', matches.fetch)
-  .all('/matches/*', matches.fetch)
-  .all('/metagame', metagame.fetch)
-  .all('/metagame/*', metagame.fetch)
-  .all('/mtgo', mtgo.fetch)
-  .all('/mtgo/*', mtgo.fetch)
-  .all('/prices', prices.fetch)
-  .all('/prices/*', prices.fetch)
-  .all('/products', products.fetch)
-  .all('/products/*', products.fetch)
-  .all('/sets', sets.fetch)
-  .all('/sets/*', sets.fetch)
-  .all('/sideboarding', sideboarding.fetch)
-  .all('/sideboarding/*', sideboarding.fetch)
-  .all('/standings', standings.fetch)
-  .all('/standings/*', standings.fetch)
-  .all('*', () => Error(404, 'Could not find the requested resource.'));
+  .get('/openapi.json', () => openApiResponse(apiRouters));
+
+for (const [base, child] of Object.entries(apiRouters)) {
+  router.all(`/${base}`, child.fetch).all(`/${base}/*`, child.fetch);
+}
+router.all('*', () => Error(404, 'Could not find the requested resource.'));
+export default router;

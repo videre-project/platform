@@ -4,6 +4,7 @@
 **/
 
 import { Router } from 'itty-router';
+import { describe, responses } from '@/openapi';
 
 import { withPostgres } from '@/db/postgres';
 import { getDeckStatistics } from '@/db/queries';
@@ -22,6 +23,7 @@ export const args = All(eventArgs, {
 
 export default Router({ base: '/archetypes' })
   .get('/:format?',
+    describe({ operationId: 'getArchetypes', responses: responses('DeckStatistics', 'QueryResponse') }),
     withValidation(args),
     withPostgres,
     async ({ archetype }, { sql, params }) => {
