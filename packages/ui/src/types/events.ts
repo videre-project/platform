@@ -55,13 +55,15 @@ export type TournamentEvent = {
 }
 
 export type StandingEntry = {
-  rank: number
+  rank: number | null
   player: string
-  points: number
+  points: number | null
   record: string
   opponentMatchWinPercentage: string
   gameWinPercentage: string
   opponentGameWinPercentage: string
+  archetype?: string | null
+  colors?: string[]
 }
 
 export type EventDetailExtras = {
@@ -114,6 +116,43 @@ export type EventsLayoutProps = {
   className?: string
 }
 
+export type TournamentMatch = {
+  id: number | null
+  round: number | null
+  opponent: string | null
+  record: string | null
+  result: 'win' | 'loss' | 'draw' | 'bye' | 'in-progress' | 'pending'
+  isRecorded: boolean
+  opponentArchetype?: string | null
+  opponentColors?: string[]
+}
+
+export type EventDecklistCard = {
+  id: number
+  name: string
+  quantity: number
+  manaValue: number | null
+  manaCost: string | null
+  typeLine: string | null
+  imageUrl: string | null
+  colors?: string[]
+}
+
+export type TournamentPlayerDetails = {
+  player: string | null
+  matches: TournamentMatch[]
+  loading?: boolean
+  error?: string | null
+  deck?: {
+    name?: string | null
+    archetype?: string | null
+    mainboard: EventDecklistCard[]
+    sideboard: EventDecklistCard[]
+  } | null
+  deckLoading?: boolean
+  deckError?: string | null
+}
+
 export type EventDetailsLayoutProps = {
   event: TournamentEvent | null
   standings?: StandingEntry[]
@@ -125,6 +164,10 @@ export type EventDetailsLayoutProps = {
   timerText?: string | null
   /** Highlight standing rows for players with matches in progress. */
   playerNamesWithMatchesInProgress?: string[] | Set<string>
+  playerDetails?: TournamentPlayerDetails
+  onPlayerSelect?: (player: string) => void
+  onMatchClick?: (matchId: number) => void
+  onPreviewDeck?: (deck: NonNullable<TournamentPlayerDetails['deck']>) => void
   onBack?: () => void
   className?: string
 }

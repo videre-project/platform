@@ -138,11 +138,15 @@ export type {
 
 // Reusable deck preview
 export { DeckGalleryTile } from './components/decks/DeckGalleryTile'
+export { DeckWinrateBar } from './components/decks/DeckWinrate'
 export { DeckEditorVignette } from './components/decks/DeckEditorVignette'
+export { DeckBoard } from './components/decks/DeckBoard'
 
 // Composed layouts
 export { CollectionLayout } from './layouts/CollectionLayout'
 export { MatchDetailsLayout } from './layouts/MatchDetailsLayout'
+export { OpponentArchetypePicker } from './components/match/OpponentArchetypePicker'
+export type { OpponentArchetypeContext, OpponentArchetypePickerProps } from './components/match/OpponentArchetypePicker'
 export type { MatchDetailsLayoutProps } from './layouts/MatchDetailsLayout'
 export { ReplayLayout } from './layouts/ReplayLayout'
 export type { ReplayLayoutProps } from './layouts/ReplayLayout'
@@ -226,6 +230,11 @@ export type {
   CardTypeFilter,
   CardTypeFilterState,
 } from './utils/card-search-model'
+export { MatchDeckCard } from './components/match/MatchDeckCard'
+export { DeckManaSymbols } from './components/cards/DeckManaSymbols'
+export { GameReviewPanel } from './components/match/GameReviewPanel'
+export type { SideboardingCard } from './components/match/GameReviewPanel'
+
 // Public data contracts
 export type {
   CollectionCardEntry,
@@ -234,6 +243,7 @@ export type {
   CollectionPriceHistoryPoint,
   CollectionProductEntry,
   CollectionSelection,
+  CollectionSelectionKey,
   CollectionSortDirection,
   CollectionSortMode,
   CollectionViewMode,
@@ -286,6 +296,7 @@ export type {
   ZoneTransferData,
 } from './types/game-log'
 export type {
+  EventDecklistCard,
   EventDetailExtras,
   EventDetailsLayoutProps,
   EventStatus,
@@ -294,6 +305,8 @@ export type {
   StandingEntry,
   TournamentEvent,
   TournamentPhase,
+  TournamentMatch,
+  TournamentPlayerDetails,
   TournamentState,
 } from './types/events'
 export type {
@@ -330,3 +343,9 @@ export { getStackPeekOffset } from './utils/card-layout'
 export { getCardStatText } from './utils/card-stats'
 export * from './types/game-types'
 export * from './types/replay-types'
+
+export { EventDecklist } from './components/events/EventDecklist'
+export { EventPlayerTabs } from './components/events/EventPlayerTabs'
+
+export { CollectionDrawer } from './components/collection/CollectionDrawer'
+export { VirtualCollectionGrid } from './components/collection/VirtualCollectionGrid'

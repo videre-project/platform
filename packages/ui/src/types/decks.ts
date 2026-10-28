@@ -29,6 +29,8 @@ export interface DeckCardEntry {
   types?: string[]
   rarity?: string
   imageUrl?: string | null
+  /** null indicates a known single-faced card; omitted permits host lookup. */
+  otherFaceCatalogId?: number | null
 }
 
 export type DeckZone = 'Mainboard' | 'Sideboard'
@@ -51,6 +53,8 @@ export interface DeckEditorCard {
   rarity: string
   zone: DeckZone
   imageUrl?: string | null
+  /** null indicates a known single-faced card; omitted permits host lookup. */
+  otherFaceCatalogId?: number | null
 }
 
 export type DeckSortMode = 'cmc' | 'colors' | 'types' | 'rarity'
@@ -177,6 +181,8 @@ export interface DeckCardSearchResult {
   toughness?: string | null
   loyalty?: string | null
   defense?: string | null
+  /** null indicates a known single-faced card; omitted permits host lookup. */
+  otherFaceCatalogId?: number | null
 }
 
 export type DeckSidePanelView = 'cards' | 'stats' | 'history' | 'rental'
@@ -211,6 +217,8 @@ export interface DeckBoardSelection {
   cardIndices: number[]
   /** Unique catalog ids contained in the selection. */
   catalogIds: number[]
+  /** Selected copies grouped by catalog ID, for moving a selection between zones. */
+  cards?: { catalogId: number; quantity: number }[]
 }
 
 /** Identifies a card on the board by catalog ID; all copies in both zones are highlighted. */
@@ -225,6 +233,8 @@ export interface DeckBoardProps {
   onSortModeChange?: (mode: DeckSortMode) => void
   sideboardCollapsed?: boolean
   onSideboardCollapsedChange?: (collapsed: boolean) => void
+  /** Sideboard previews use the roomier edge unless an adjacent Stats pane needs protecting. */
+  sideboardTooltipPlacement?: 'left' | 'auto'
   diffMap?: DeckDiffMap
   onDragEnd?: (payload: DeckCardDragEndPayload) => void | Promise<void>
   /**
@@ -233,6 +243,10 @@ export interface DeckBoardProps {
    * data change that invalidates the selected indices).
    */
   onSelectionChange?: (selection: DeckBoardSelection | null) => void
+  /** Unique card names in visual column order (left to right, then top to bottom). */
+  onCardOrderChange?: (zone: DeckZone, cardNames: readonly string[]) => void
+  /** The card name under the board pointer; clears on leave, scrolling, or drag. */
+  onCardHoverChange?: (name: string | null) => void
   onCardContextMenu?: (
     card: DeckEditorCard,
     position: DeckContextMenuPosition,
@@ -242,6 +256,8 @@ export interface DeckBoardProps {
    * can show which card a transient action (e.g. a context menu) targets.
    */
   highlightedCard?: DeckBoardHighlight | null
+  /** Emphasize copies of this name across both zones with selection styling and dim unrelated cards. */
+  emphasizedCardName?: string | null
   /** Show the small stats strip above the board. Default false for editor chrome. */
   showDeckStats?: boolean
   /** Show internal header with sort / sideboard controls. Default false when host chrome owns controls. */
@@ -256,6 +272,8 @@ export interface DeckBoardProps {
 export interface DeckBuildSidePaneProps {
   view: DeckSidePanelView
   onViewChange: (view: DeckSidePanelView) => void
+  /** Host-provided deck statistics; enables the Stats tab when supplied. */
+  statsContent?: ReactNode
   isCollapsed?: boolean
   historyData?: DeckHistoryData | null
   historyLoading?: boolean
@@ -311,12 +329,18 @@ export interface DeckEditorLayoutProps {
    * data change that invalidates the selected indices).
    */
   onSelectionChange?: (selection: DeckBoardSelection | null) => void
+  /** Unique card names in visual column order (left to right, then top to bottom). */
+  onCardOrderChange?: (zone: DeckZone, cardNames: readonly string[]) => void
+  /** Board pointer hover for host tools; emitted while the Stats pane is open. */
+  onDeckCardHoverChange?: (name: string | null) => void
   onDeckCardContextMenu?: (
     card: DeckEditorCard,
     position: DeckContextMenuPosition,
   ) => void
   /** Outlines the matching board card pile while a host context menu targets it. */
   highlightedDeckCard?: DeckBoardHighlight | null
+  /** Card name emphasized by a host tool such as the statistics sidebar. */
+  emphasizedCardName?: string | null
 
   // View controls
   sortMode?: DeckSortMode
@@ -333,6 +357,8 @@ export interface DeckEditorLayoutProps {
   sidePanelView?: DeckSidePanelView
   defaultSidePanelView?: DeckSidePanelView
   onSidePanelViewChange?: (view: DeckSidePanelView) => void
+  /** Host-provided statistics, including navigation to deeper analysis. */
+  statsContent?: ReactNode
   historyData?: DeckHistoryData | null
   historyLoading?: boolean
   historyError?: string | null

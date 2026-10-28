@@ -7,6 +7,7 @@ import {
   type ComponentType,
   type FormEvent,
   type ReactNode,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -179,8 +180,11 @@ export function DeckEditorLayout({
   diffMap,
   onDragEnd,
   onSelectionChange,
+  onCardOrderChange,
+  onDeckCardHoverChange,
   onDeckCardContextMenu,
   highlightedDeckCard,
+  emphasizedCardName,
   sortMode: controlledSortMode,
   defaultSortMode = 'cmc',
   onSortModeChange,
@@ -193,6 +197,7 @@ export function DeckEditorLayout({
   sidePanelView: controlledSidePanelView,
   defaultSidePanelView = 'cards',
   onSidePanelViewChange,
+  statsContent,
   historyData,
   historyLoading,
   historyError,
@@ -226,7 +231,20 @@ export function DeckEditorLayout({
   const [internalSideboardCollapsed, setInternalSideboardCollapsed] = useState(
     defaultSideboardCollapsed,
   )
-  const [internalToolsCollapsed, setInternalToolsCollapsed] = useState(defaultToolsCollapsed)
+  const [narrowWindow, setNarrowWindow] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      && window.matchMedia('(max-width: 1279px)').matches,
+  )
+  // A user toggle overrides the responsive default for this editor session.
+  const [internalToolsCollapsed, setInternalToolsCollapsed] = useState<boolean | undefined>(undefined)
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia('(max-width: 1279px)')
+    const update = () => setNarrowWindow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
   const [internalSidePanelView, setInternalSidePanelView] =
     useState<DeckSidePanelView>(defaultSidePanelView)
   const [splitEditorHeaderControls, setSplitEditorHeaderControls] = useState(false)
@@ -238,7 +256,7 @@ export function DeckEditorLayout({
 
   const sortMode = controlledSortMode ?? internalSortMode
   const isSideboardCollapsed = controlledSideboardCollapsed ?? internalSideboardCollapsed
-  const isDeckToolsCollapsed = controlledToolsCollapsed ?? internalToolsCollapsed
+  const isDeckToolsCollapsed = controlledToolsCollapsed ?? internalToolsCollapsed ?? (narrowWindow || defaultToolsCollapsed)
   const sidePanelView = controlledSidePanelView ?? internalSidePanelView
   const splitHeaderLayout = splitEditorHeaderControls || splitEditorStats
 
@@ -528,6 +546,7 @@ export function DeckEditorLayout({
         <DeckBoard
           cards={cards}
           loading={cardsLoading}
+          sideboardTooltipPlacement={sidePanelView === 'stats' && !isDeckToolsCollapsed ? 'left' : 'auto'}
           sortMode={sortMode}
           onSortModeChange={handleSortModeChange}
           sideboardCollapsed={isSideboardCollapsed}
@@ -535,8 +554,11 @@ export function DeckEditorLayout({
           diffMap={activeDiffMap}
           onDragEnd={onDragEnd}
           onSelectionChange={onSelectionChange}
+          onCardOrderChange={onCardOrderChange}
+          onCardHoverChange={sidePanelView === 'stats' && !isDeckToolsCollapsed ? onDeckCardHoverChange : undefined}
           onCardContextMenu={onDeckCardContextMenu}
           highlightedCard={highlightedDeckCard}
+          emphasizedCardName={sidePanelView === 'stats' && !isDeckToolsCollapsed ? emphasizedCardName : null}
           showDeckStats={false}
           showHeader={false}
           className="h-full flex-1 gap-0 px-4 py-0"
@@ -544,6 +566,7 @@ export function DeckEditorLayout({
         <DeckBuildSidePane
           className="pr-4"
           view={sidePanelView}
+          statsContent={statsContent}
           onViewChange={handleSidePanelViewChange}
           isCollapsed={isDeckToolsCollapsed}
           historyData={historyData}

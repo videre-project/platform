@@ -71,7 +71,7 @@ export const Interactions: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await userEvent.type(canvas.getByPlaceholderText('Search cards'), 'Lightning')
-    await userEvent.click(canvas.getByTitle(/Lightning Bolt/))
+    await userEvent.click(canvas.getByRole('button', { name: /Lightning Bolt/ }))
     await expect(args.onSelectionChange).toHaveBeenCalled()
     await userEvent.click(canvas.getByRole('button', { name: 'Close price history' }))
     await expect(args.onCloseDetails).toHaveBeenCalledOnce()

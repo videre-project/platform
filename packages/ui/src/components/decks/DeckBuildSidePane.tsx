@@ -16,7 +16,6 @@ import type {
   DeckHistoryChange,
   DeckSidePanelView,
 } from '../../types/decks'
-import { getDisplayCardColors } from '../../utils/card-colors'
 import {
   DEFAULT_CARD_FILTERS,
   buildCardSearchQuery,
@@ -24,7 +23,7 @@ import {
   type CardFilterState,
 } from '../../utils/card-search-model'
 import { getCardStatText } from '../../utils/card-stats'
-import { getManaSymbolSvgPath } from '../../utils/mana-symbols'
+import { DeckManaSymbols } from '../cards/DeckManaSymbols'
 import { CardImage } from '../cards/CardImage'
 import { useCardTooltipHover } from '../cards/CardTooltip'
 import { CardFilterPanel } from '../filters/CardFilterPanel'
@@ -59,6 +58,7 @@ function SearchResultCardRow({
   const tooltipHandlers = useCardTooltipHover({
     catalogId: card.mtgoId,
     name: card.name,
+    otherFaceCatalogId: card.otherFaceCatalogId,
   })
 
   const normalizedText = card.text
@@ -85,16 +85,7 @@ function SearchResultCardRow({
             : 'bg-background/50 ring-sidebar-border/60 hover:bg-background/80 hover:ring-sidebar-border',
       )}
     >
-      <div className="absolute right-2.5 top-2 flex shrink-0 items-center gap-0.5">
-        {getDisplayCardColors(card.colors).map(color => (
-          <img
-            key={`${card.name}-${color}`}
-            src={getManaSymbolSvgPath(color) ?? undefined}
-            alt={color}
-            className="h-4 w-4 rounded-full bg-background ring-1 ring-background"
-          />
-        ))}
-      </div>
+      <DeckManaSymbols colors={card.colors} className="absolute right-2.5 top-2 shrink-0" symbolClassName="h-4 w-4 shadow-none" />
 
       <div className="flex min-w-0 items-center gap-2 overflow-hidden pr-8">
         <div className="min-w-0 truncate text-sm font-medium text-foreground">{card.name}</div>
@@ -249,6 +240,7 @@ function MiniCardDiffColumns({ changes }: { changes: DeckHistoryChange[] }) {
 export function DeckBuildSidePane({
   view,
   onViewChange,
+  statsContent,
   isCollapsed = false,
   historyData,
   historyLoading = false,
@@ -378,7 +370,7 @@ export function DeckBuildSidePane({
     <div
       className={cn(
         'relative min-h-0 shrink-0 self-stretch',
-        isCollapsed ? 'hidden' : 'hidden xl:flex',
+        isCollapsed ? 'hidden' : 'flex',
         className,
       )}
     >
@@ -397,8 +389,9 @@ export function DeckBuildSidePane({
             <Button
               variant="outline"
               size="sm"
-              disabled
-              title="Deck statistics are not available yet"
+              disabled={statsContent == null}
+              onClick={() => onViewChange('stats')}
+              title={statsContent == null ? 'Deck statistics are not available yet' : undefined}
               className={tabClass('stats')}
             >
               <BarChart3 className="h-4 w-4" />
@@ -427,7 +420,9 @@ export function DeckBuildSidePane({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
-          {activeView === 'history' ? (
+          {activeView === 'stats' && statsContent != null ? (
+            <div className="flex min-h-0 flex-1 flex-col">{statsContent}</div>
+          ) : activeView === 'history' ? (
             <div className="flex min-h-0 flex-1 flex-col gap-3">
               <div className="flex shrink-0 items-center justify-between">
                 <div>
@@ -640,6 +635,7 @@ export function DeckBuildSidePane({
         role="dialog"
         aria-modal="false"
         aria-hidden={!filtersOpen}
+        {...(!filtersOpen ? { inert: '' } : {})}
         aria-labelledby="deck-card-filters-title"
         className={cn(
           'absolute bottom-0 right-full top-0 z-30 mr-3 flex w-[min(28rem,calc(100vw-43rem))] min-w-80 flex-col overflow-hidden rounded-lg border border-sidebar-border/70 bg-card shadow-xl transition-all duration-200 ease-out',

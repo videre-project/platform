@@ -7,7 +7,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { setAPIRequestTimingObserver } from './hooks/apiClient';
-import 'mana-font/css/mana.css';
 import './index.css';
 
 if (

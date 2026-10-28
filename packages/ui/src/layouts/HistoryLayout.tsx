@@ -4,17 +4,20 @@
 **/
 
 import type { ColumnDef } from '@tanstack/react-table'
+import { Pencil, X } from 'lucide-react'
+import { useMemo } from 'react'
 
 import { Badge } from '../primitives/Badge'
-import { Button } from '../primitives/Button'
 import { DatePickerWithRange } from '../components/date/DatePickerWithRange'
 import { GameTypeFormatFilter } from '../components/filters/GameTypeFormatFilter'
 import { DataTable } from '../components/tables/DataTable'
+import { DataTablePagination } from '../components/tables/DataTablePagination'
 import { TableBodySkeleton } from '../components/tables/TableBodySkeleton'
 import { cn } from '../lib/cn'
 import type { HistoryLayoutProps, MatchHistoryItem } from '../types/history'
-import { getDisplayCardColors } from '../utils/card-colors'
-import { getManaSymbolSvgPath } from '../utils/mana-symbols'
+import { DeckManaSymbols } from '../components/cards/DeckManaSymbols'
+import { ObservedOpponentCard } from '../components/match/OpponentArchetypePicker'
+import { Button } from '../primitives/Button'
 
 function formatDate(dateString?: string) {
   if (!dateString) return '-'
@@ -26,25 +29,6 @@ function formatDate(dateString?: string) {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-function DeckManaSymbols({ colors }: { colors?: string[] | null }) {
-  if (!colors) return null
-
-  const visibleColors = getDisplayCardColors(colors)
-
-  return (
-    <span className="inline-flex h-4 translate-y-px items-center gap-0.5 leading-none">
-      {visibleColors.map((color, index) => (
-        <img
-          key={`${color}-${index}`}
-          src={getManaSymbolSvgPath(color) ?? undefined}
-          alt={color}
-          className="block h-3.5 w-3.5 rounded-full bg-background shadow-sm ring-1 ring-background"
-        />
-      ))}
-    </span>
-  )
 }
 
 function MatchResultPill({ result, isActive }: { result: string; isActive?: boolean }) {
@@ -71,7 +55,7 @@ function MatchResultPill({ result, isActive }: { result: string; isActive?: bool
   )
 }
 
-function OpponentSummary({ match }: { match: MatchHistoryItem }) {
+function OpponentSummary({ match, renderEditor }: { match: MatchHistoryItem; renderEditor?: HistoryLayoutProps['renderOpponentArchetype'] }) {
   if (match.isEvent) {
     return <span className="text-muted-foreground">-</span>
   }
@@ -80,15 +64,21 @@ function OpponentSummary({ match }: { match: MatchHistoryItem }) {
   const opponentDeckLabel =
     match.opponentDeckArchetype?.trim() || match.opponentDeckName?.trim() || 'Deck unknown'
 
+  const label = <><span className="truncate">{opponentDeckLabel}</span><DeckManaSymbols colors={match.opponentDeckColors} className="shrink-0 translate-y-px" /></>
+  const trigger = <button type="button" aria-label={`Classify opponent in match ${match.id}`}
+    onClick={event => event.stopPropagation()} className="group/classify mt-0.5 inline-flex max-w-full items-center gap-1.5 rounded text-left text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring">
+    {label}<Pencil className="h-3 w-3 shrink-0 opacity-0 group-hover/classify:opacity-100 group-focus-visible/classify:opacity-100" />
+  </button>
   return (
     <div className="min-w-0">
       <div className="truncate text-sm font-medium">
         {opponentName ? `vs ${opponentName}` : 'Opponent unknown'}
       </div>
-      <div className="mt-0.5 inline-flex max-w-full items-center gap-1.5 text-xs text-muted-foreground">
-        <span className="truncate">{opponentDeckLabel}</span>
-        <DeckManaSymbols colors={match.opponentDeckColors} />
-      </div>
+      {renderEditor ? renderEditor(match, trigger) : <div className="mt-0.5 inline-flex max-w-full items-center gap-1.5 text-xs text-muted-foreground">{label}</div>}
+      {match.opponentCards && <div aria-label="Observed opponent cards" className="mt-2 flex gap-1 overflow-hidden">
+        {match.opponentCards.slice(0, 7).map(card => <ObservedOpponentCard key={card.name} card={card} compact />)}
+        {!match.opponentCards.length && <span className="text-[11px] text-muted-foreground">No opponent cards recorded</span>}
+      </div>}
     </div>
   )
 }
@@ -97,45 +87,58 @@ const columns: ColumnDef<MatchHistoryItem>[] = [
   {
     accessorKey: 'eventName',
     header: 'Event',
+    minSize: 160,
+    cell: ({ row }) => <span className="inline-grid min-w-0 gap-0.5">
+      <span className="truncate">{row.depth ? `Match ${row.index + 1}` : row.original.eventName}</span>
+      {row.original.isEvent && <span className="text-xs text-muted-foreground">{row.original.matches?.length ?? 0} matches</span>}
+    </span>,
   },
   {
     accessorKey: 'format',
     header: 'Format',
-    size: 120,
+    size: 104,
+    minSize: 104,
   },
   {
     accessorKey: 'deckName',
     header: 'Deck',
+    minSize: 168,
     cell: ({ row }) => {
-      const deckName = row.original.deckName
+      const deckName = row.original.deckName?.trim()
       if (!deckName) {
         return <span className="italic text-muted-foreground">Unknown</span>
       }
 
       return (
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <span className="truncate">{deckName}</span>
-          <DeckManaSymbols colors={row.original.deckColors} />
-        </span>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{deckName}</div>
+          <div className="mt-0.5 inline-flex max-w-full items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="truncate">{row.original.deckArchetype?.trim() || 'Unclassified deck'}</span>
+            <DeckManaSymbols colors={row.original.deckColors} className="shrink-0 translate-y-px" />
+          </div>
+        </div>
       )
     },
   },
   {
     id: 'opponent',
     header: 'Opponent',
-    size: 190,
+    size: 180,
+    minSize: 180,
     cell: ({ row }) => <OpponentSummary match={row.original} />,
   },
   {
     accessorKey: 'startTime',
     header: 'Date',
-    size: 140,
+    size: 152,
+    minSize: 152,
     cell: ({ row }) => formatDate(row.original.startTime),
   },
   {
     accessorKey: 'result',
     header: 'Result',
-    size: 80,
+    size: 112,
+    minSize: 112,
     cell: ({ row }) => (
       <MatchResultPill result={row.original.result} isActive={row.original.isActive} />
     ),
@@ -143,12 +146,16 @@ const columns: ColumnDef<MatchHistoryItem>[] = [
   {
     accessorKey: 'record',
     header: 'Record',
-    size: 80,
+    size: 72,
+    minSize: 72,
+    cell: ({ row }) => <span className="whitespace-nowrap tabular-nums">{row.original.record}</span>,
   },
   {
     accessorKey: 'duration',
     header: 'Duration',
-    size: 70,
+    size: 88,
+    minSize: 88,
+    cell: ({ row }) => <span className="whitespace-nowrap tabular-nums">{row.original.duration}</span>,
   },
 ]
 
@@ -194,22 +201,28 @@ export function HistoryLayout({
   onDateRangeChange,
   onRowClick,
   pagination,
-  onPreviousPage,
-  onNextPage,
+  renderOpponentArchetype,
+  reviewLabel,
+  onClearReview,
   className,
 }: HistoryLayoutProps) {
+  // TanStack renders cell functions as components; replacing one closes its editor.
+  const displayedColumns = useMemo(() => columns.map(column => column.id === 'opponent'
+    ? { ...column, size: reviewLabel ? 280 : 180, minSize: reviewLabel ? 280 : 180,
+      cell: ({ row }: { row: { original: MatchHistoryItem } }) => <OpponentSummary match={row.original} renderEditor={renderOpponentArchetype} /> }
+    : column), [renderOpponentArchetype, reviewLabel])
   const errorMessage =
     error == null ? null : typeof error === 'string' ? error : error.message || String(error)
 
   return (
     <div
       className={cn(
-        'videre-ui w-full space-y-4 px-4 pb-4 pt-1 font-sans',
+        'videre-ui flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 pt-1 font-sans',
         className,
       )}
       data-ui-layout="history"
     >
-      <div className="flex flex-wrap items-center justify-start gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-start gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <GameTypeFormatFilter
             gameType={gameType}
@@ -228,17 +241,20 @@ export function HistoryLayout({
           presets={DATE_PRESETS}
         />
       </div>
+      {reviewLabel && <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+        <span>{reviewLabel}</span><Button variant="ghost" size="icon" onClick={onClearReview} aria-label="Clear review filters" className="h-6 w-6"><X className="h-3.5 w-3.5" /></Button>
+      </div>}
 
       {errorMessage ? (
         <div className="rounded-md bg-destructive/15 px-4 py-3 text-sm font-medium text-destructive">
           Error loading history: {errorMessage}
         </div>
       ) : loading && items.length === 0 ? (
-        <div className="rounded-md border border-sidebar-border/60">
+        <div className="min-h-0 overflow-hidden rounded-md border border-sidebar-border/60">
           <table className="w-full">
             <thead>
               <tr className="border-b border-sidebar-border/60 bg-muted/50">
-                {columns.map((col, i) => (
+                {displayedColumns.map((col, i) => (
                   <th
                     key={i}
                     className="h-10 px-4 text-left align-middle text-sm font-medium text-muted-foreground"
@@ -249,45 +265,27 @@ export function HistoryLayout({
               </tr>
             </thead>
             <tbody>
-              <TableBodySkeleton rows={15} columns={columns.length} />
+              <TableBodySkeleton rows={15} columns={displayedColumns.length} />
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           <DataTable
-            columns={columns}
+            columns={displayedColumns}
             data={items}
             getSubRows={row => row.matches}
+            defaultExpanded={false}
+            manualPagination={!!pagination}
+            getRowId={row => `${row.isEvent ? 'event' : 'match'}-${row.isEvent ? row.eventId : row.id}`}
             onRowClick={onRowClick}
+            containerClassName="flex min-h-0 flex-1 flex-col"
+            tableContainerClassName="flex min-h-0 flex-1 flex-col"
+            bodyWrapperClassName="min-h-0 flex-1 overflow-auto"
           />
 
-          {pagination && pagination.totalPages > 1 ? (
-            <div className="flex items-center justify-between px-2">
-              <div className="text-sm text-muted-foreground">
-                Showing page {pagination.page} of {pagination.totalPages} ({pagination.totalCount}{' '}
-                matches)
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onPreviousPage}
-                  disabled={pagination.page <= 1 || loading || !onPreviousPage}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onNextPage}
-                  disabled={pagination.page >= pagination.totalPages || loading || !onNextPage}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          ) : null}
+          {pagination && <DataTablePagination pagination={pagination}
+            summary={`${pagination.totalCount} results`} disabled={loading} />}
         </div>
       )}
     </div>

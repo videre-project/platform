@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import type { ReactNode } from 'react'
+import { type ReactNode, useRef } from 'react'
 
 import { DeckEditorLayout } from '../../layouts/DeckEditorLayout'
 import type { DeckEditorCard } from '../../types/decks'
@@ -56,11 +56,26 @@ export function DeckEditorVignette({
   loadingOverlay,
   errorOverlay,
 }: DeckEditorVignetteProps) {
+  // Host preview buttons are outside the Sheet and do not use SheetTrigger.
+  const openerRef = useRef<HTMLElement | null>(null)
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        motion="fade"
+        // The card canvas is expensive to composite as a single translucent
+        // surface. Show and dismiss it without animating the entire board.
+        motion="none"
+        onOpenAutoFocus={() => {
+          openerRef.current = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null
+        }}
+        onCloseAutoFocus={event => {
+          if (!openerRef.current?.isConnected) return
+          event.preventDefault()
+          openerRef.current.focus({ preventScroll: true })
+        }}
         className="inset-y-[3vh] right-[2vw] h-[94vh] w-[96vw] max-w-[96vw] gap-0 overflow-hidden rounded-xl border border-sidebar-border/70 p-0 sm:max-w-[96vw] [&>button]:hidden"
       >
         <SheetTitle className="sr-only">{deckName} preview</SheetTitle>

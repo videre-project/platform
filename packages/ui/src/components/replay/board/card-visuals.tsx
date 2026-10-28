@@ -133,7 +133,7 @@ export function RevealedCardCell({ card, colIdx, rowIdx }: { card: CardState; co
               />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[200px]">
+          <TooltipContent showArrow side="bottom" className="max-w-[200px]">
             <CardTooltipContent card={card} />
           </TooltipContent>
         </Tooltip>
@@ -451,7 +451,6 @@ export function cardSelectionClassName(
   const selection = card.interaction
   if (selection?.isBeingCast) return "ring-2 ring-red-500"
   if (selection?.isTargeted) return "ring-2 ring-orange-500"
-  if (selection?.isTargetable) return "ring-2 ring-amber-300"
   if (card.isAttacking) return "ring-2 ring-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
   if (card.isBlocking) return "ring-2 ring-blue-500/70"
   if (selection?.isSelectable) return "ring-2 ring-white/80"
@@ -650,7 +649,7 @@ export function CardImage({
             </TooltipTrigger>
           )}
         </div>
-        <TooltipContent side="top" align="center" alignOffset={tooltipAlignOffsetPx ?? 0} className="max-w-[200px]">
+        <TooltipContent showArrow side="top" align="center" alignOffset={tooltipAlignOffsetPx ?? 0} className="max-w-[200px]">
           <CardTooltipContent card={card} />
         </TooltipContent>
       </Tooltip>

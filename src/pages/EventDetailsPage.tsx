@@ -4,8 +4,8 @@
 **/
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ReplaceAll, BookOpen, CalendarDays, Check, Eye, ListOrdered, LockKeyhole, Minus, Swords, Trophy, Users, X } from 'lucide-react'
-import { Button, CardTooltipProvider, DeckEditorVignette, Skeleton, getDisplayCardColors, getManaSymbolSvgPath, useCardTooltipHover, type DeckEditorCard } from '@videreproject/ui'
+import { ArrowLeft, BookOpen, CalendarDays, Check, ListOrdered, LockKeyhole, Minus, Trophy, Users, X } from 'lucide-react'
+import { Button, CardTooltipProvider, DeckEditorVignette, EventDecklist, EventPlayerTabs, Skeleton, DeckManaSymbols, type EventDecklistCard, type DeckEditorCard } from '@videreproject/ui'
 
 import { Footer } from '@/components/Footer'
 import { Header, navigateTo } from '@/components/Header'
@@ -15,19 +15,9 @@ import { formatEventTitle } from '@/utils/eventFormatting'
 import { openTrackerDeckImport } from '@/utils/trackerImport'
 import './EventPages.css'
 
-type DetailTab = 'matchups' | 'decklist' | 'sideboarding'
+type DetailTab = 'matchups' | 'decklist'
 
-interface DeckCard {
-  id: number
-  name: string
-  quantity: number
-  manaValue: number | null
-  manaCost: string | null
-  typeLine: string | null
-  imageUrl: string | null
-}
-
-const DECK_CARD_TUPLE = /^\((\d+),\s*(?:"([^"]*)"|([^,()]+)),\s*(\d+)\)$/
+type DeckCard = EventDecklistCard
 
 function formatDate(date: string) {
   return formatCalendarDate(date, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
@@ -51,34 +41,17 @@ function MatchResultIcon({ result }: { result: string }) {
   return <span className="event-detail-match-result is-draw" aria-label="Draw"><Minus size={13} /></span>
 }
 
-function ManaSymbols({ colors }: { colors?: readonly string[] | null }) {
-  if (!colors) return null
-  return <span className="event-detail-match-symbols" aria-label="Mana symbols">{getDisplayCardColors(colors).map(color => <img key={color} src={getManaSymbolSvgPath(color) ?? undefined} alt={color} />)}</span>
-}
-
-function parseDeckCards(entries: unknown[] | undefined, cardCatalog: Record<number, {
-  display_name?: string
-  name: string
-  image_url?: string
-  oracle_id?: string
-  mana_cost: string | null
-  mana_value: number | null
-  type_line: string | null
-  faces?: Array<{ mana_cost: string | null; mana_value: number | null; type_line: string | null }>
-}>): DeckCard[] {
+function toDeckCards(entries: EventDeck['mainboard'], cardCatalog: Record<number, EventCard>): DeckCard[] {
   const cards = new Map<string, DeckCard>()
 
   for (const entry of entries ?? []) {
-    if (typeof entry !== 'string') continue
-    const match = entry.match(DECK_CARD_TUPLE)
-    if (!match) continue
-    const id = Number(match[1])
+    const { id, quantity } = entry
     const card = cardCatalog[id]
-    const name = card?.display_name ?? card?.name ?? match[2] ?? match[3] ?? 'Unknown card'
+    const name = card?.display_name ?? card?.name ?? entry.name
     const parsedCard: DeckCard = {
       id,
       name,
-      quantity: Number(match[4]),
+      quantity,
       manaValue: card?.mana_value ?? card?.faces?.[0]?.mana_value ?? null,
       manaCost: card?.mana_cost || card?.faces?.map(face => face.mana_cost).filter(Boolean).join(' // ') || null,
       typeLine: card?.type_line ?? card?.faces?.[0]?.type_line ?? null,
@@ -97,8 +70,8 @@ function parseDeckCards(entries: unknown[] | undefined, cardCatalog: Record<numb
 function toEditorCards(deck: EventDeck | undefined, cardCatalog: Record<number, EventCard>): DeckEditorCard[] {
   if (!deck) return []
 
-  const mainboard = parseDeckCards(deck.mainboard, cardCatalog)
-  const sideboard = parseDeckCards(deck.sideboard, cardCatalog)
+  const mainboard = toDeckCards(deck.mainboard, cardCatalog)
+  const sideboard = toDeckCards(deck.sideboard, cardCatalog)
   return [
     ...mainboard.map(card => ({ card, zone: 'Mainboard' as const })),
     ...sideboard.map(card => ({ card, zone: 'Sideboard' as const })),
@@ -137,79 +110,6 @@ function getDeckFileName(deckName: string) {
     .replace(/^-+|-+$/g, '')
     .toLowerCase()
   return `${stem || 'deck'}.txt`
-}
-
-const DECK_CARD_GROUPS: Array<{ label: string; icon: string; type: string }> = [
-  { label: 'Creatures', icon: 'creature', type: 'Creature' },
-  { label: 'Sorceries', icon: 'sorcery', type: 'Sorcery' },
-  { label: 'Instants', icon: 'instant', type: 'Instant' },
-  { label: 'Artifacts', icon: 'artifact', type: 'Artifact' },
-  { label: 'Enchantments', icon: 'enchantment', type: 'Enchantment' },
-  { label: 'Planeswalkers', icon: 'planeswalker', type: 'Planeswalker' },
-  { label: 'Lands', icon: 'land', type: 'Land' },
-]
-
-function sortDeckCards(cards: DeckCard[]) {
-  return [...cards].sort((left, right) => {
-    if (left.manaValue == null && right.manaValue != null) return 1
-    if (left.manaValue != null && right.manaValue == null) return -1
-    if (left.manaValue != null && right.manaValue != null && left.manaValue !== right.manaValue) {
-      return left.manaValue - right.manaValue
-    }
-    return left.name.localeCompare(right.name)
-  })
-}
-
-function getDeckCardGroup(card: DeckCard) {
-  if (card.typeLine?.includes('Land')) return 'Lands'
-  return DECK_CARD_GROUPS.find(group => card.typeLine?.includes(group.type))?.label ?? 'Other'
-}
-
-function ManaCost({ cost, isLand }: { cost: string | null; isLand: boolean }) {
-  if (!cost) return isLand ? null : <span className="event-detail-deck-card-mana-empty">—</span>
-
-  return <span className="event-detail-deck-card-mana" aria-label={`Mana cost ${cost}`}>
-    {cost.split(/(\{[^}]+\}|\/\/)/g).filter(Boolean).map((part, index) => {
-      if (part === '//') return <span key={`${part}-${index}`}>//</span>
-      const symbol = part.match(/^\{(.+)\}$/)?.[1]
-      const path = symbol ? getManaSymbolSvgPath(symbol) : null
-      return path
-        ? <img key={`${part}-${index}`} src={path} alt={part} />
-        : <span key={`${part}-${index}`}>{part}</span>
-    })}
-  </span>
-}
-
-function DeckCardGroup({
-  label,
-  icon: Icon,
-  cards,
-  boardHeading = false,
-}: {
-  label: string
-  icon?: string
-  cards: DeckCard[]
-  boardHeading?: boolean
-}) {
-  if (cards.length === 0) return null
-  const count = cards.reduce((total, card) => total + card.quantity, 0)
-
-  return <section className="event-detail-deck-group">
-    <h3 className={boardHeading ? 'event-detail-deck-board-heading' : undefined}>{Icon ? <span className={`ms ms-${Icon}`} aria-hidden="true" /> : null}{label} ({count})</h3>
-    <div className="event-detail-deck-card-list">
-      {cards.map(card => <DeckCardRow card={card} key={`${card.id}-${card.name}`} />)}
-    </div>
-  </section>
-}
-
-function DeckCardRow({ card }: { card: DeckCard }) {
-  const tooltipHandlers = useCardTooltipHover({ catalogId: card.id, name: card.name, imageUrl: card.imageUrl })
-
-  return <div className="event-detail-deck-card" {...tooltipHandlers}>
-    <span className="event-detail-deck-card-quantity">{card.quantity}</span>
-    <strong>{card.name}</strong>
-    <ManaCost cost={card.manaCost} isLand={card.typeLine?.includes('Land') ?? false} />
-  </div>
 }
 
 function getStandingsBottom(
@@ -261,23 +161,7 @@ function DetailTabs({
   isLeagueEvent: boolean
   onChange: (tab: DetailTab) => void
 }) {
-  return <div className="event-detail-sidebar-tabs" role="tablist" aria-label="Player details">
-    <button type="button" role="tab" aria-selected={detailTab === 'decklist'} className={detailTab === 'decklist' ? 'is-active' : undefined} onClick={() => onChange('decklist')}><BookOpen size={16} />Decklist</button>
-    <button
-      type="button"
-      role="tab"
-      aria-selected={detailTab === 'matchups'}
-      aria-disabled={isLeagueEvent}
-      className={`${detailTab === 'matchups' ? 'is-active ' : ''}${isLeagueEvent ? 'is-disabled' : ''}`}
-      disabled={isLeagueEvent}
-      onClick={() => onChange('matchups')}
-    >
-      <Swords size={16} />Matchups
-    </button>
-    <button type="button" role="tab" aria-selected={false} aria-disabled="true" className="is-disabled" disabled>
-      <ReplaceAll size={16} />Sideboarding
-    </button>
-  </div>
+  return <EventPlayerTabs activeTab={detailTab} onChange={onChange} matchupsDisabled={isLeagueEvent} />
 }
 
 function MatchupsPanel({
@@ -301,7 +185,7 @@ function MatchupsPanel({
         return <div className="event-detail-match" key={`${match.id}-${match.round}`}>
         <span className="event-detail-match-round"><span>{formatMatchRound(match.round, eventRounds)}</span><MatchResultIcon result={match.result} /></span>
         <div className="event-detail-match-player"><strong>{match.opponent ?? 'Bye'}</strong><small>{match.record}</small></div>
-        <div className="event-detail-match-archetype"><strong className={opponentArchetype ? undefined : 'is-unknown'}>{opponentArchetype ?? 'Unknown'}</strong><small><ManaSymbols colors={match.opponent_deck_id == null ? null : deckColors[match.opponent_deck_id]} /></small></div>
+        <div className="event-detail-match-archetype"><strong className={opponentArchetype ? undefined : 'is-unknown'}>{opponentArchetype ?? 'Unknown'}</strong><small><DeckManaSymbols className="event-detail-match-symbols" colors={match.opponent_deck_id == null ? null : deckColors[match.opponent_deck_id]} /></small></div>
       </div>
       })}
     </div>
@@ -717,7 +601,7 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
   >
     {!isLeagueEvent && <td>{row.rank}</td>}
     <td className="event-detail-player">{row.player}</td>
-    <td className="event-detail-archetype-cell"><div className="event-detail-table-archetype"><span className={row.archetype?.trim() ? undefined : 'is-unknown'}>{row.archetype?.trim() || 'Unknown'}</span><ManaSymbols colors={row.deck_id == null ? null : data?.deckColors[row.deck_id]} /></div></td>
+    <td className="event-detail-archetype-cell"><div className="event-detail-table-archetype"><span className={row.archetype?.trim() ? undefined : 'is-unknown'}>{row.archetype?.trim() || 'Unknown'}</span><DeckManaSymbols className="event-detail-match-symbols" colors={row.deck_id == null ? null : data?.deckColors[row.deck_id]} /></div></td>
     <td>{row.record}</td>
     {!isLeagueEvent && <><td>{row.points}</td><td>{row.omwp == null ? '—' : `${row.omwp.toFixed(2)}%`}</td><td>{row.gwp == null ? '—' : `${row.gwp.toFixed(2)}%`}</td></>}
   </tr>
@@ -856,39 +740,16 @@ export default function EventDetailsPage({ eventId }: { eventId: number }) {
 
 function DecklistPanel({ deck, cardCatalog, onViewDeck }: {
   deck: EventDeck | undefined
-  cardCatalog: Record<number, {
-    display_name?: string
-    oracle_id?: string
-    name: string
-    mana_cost: string | null
-    mana_value: number | null
-    type_line: string | null
-    faces?: Array<{ mana_cost: string | null; mana_value: number | null; type_line: string | null }>
-  }>
+  cardCatalog: Record<number, EventCard>
   onViewDeck?: () => void
 }) {
   if (!deck) return <div className="event-detail-empty">No decklist recorded for this player.</div>
 
-  const mainboard = parseDeckCards(deck.mainboard, cardCatalog)
-  const sideboard = sortDeckCards(parseDeckCards(deck.sideboard, cardCatalog))
-  const mainboardCount = mainboard.reduce((total, card) => total + card.quantity, 0)
-  const groupedMainboard = new Map<string, DeckCard[]>()
-  mainboard.forEach(card => {
-    const group = getDeckCardGroup(card)
-    groupedMainboard.set(group, [...(groupedMainboard.get(group) ?? []), card])
-  })
-
-  groupedMainboard.forEach((cards, group) => groupedMainboard.set(group, sortDeckCards(cards)))
-
-  return <div className="event-detail-decklist">
-    <div className="event-detail-decklist-heading">
-      <h3 className="event-detail-deck-board-heading">Mainboard ({mainboardCount})</h3>
-      {onViewDeck ? <Button type="button" variant="outline" size="sm" className="event-detail-view-deck" onClick={onViewDeck}><Eye size={14} />Preview</Button> : null}
-    </div>
-    {DECK_CARD_GROUPS.map(group => <DeckCardGroup key={group.label} label={group.label} icon={group.icon} cards={groupedMainboard.get(group.label) ?? []} />)}
-    <DeckCardGroup label="Other" cards={groupedMainboard.get('Other') ?? []} />
-    <DeckCardGroup label="Sideboard" cards={sideboard} boardHeading />
-  </div>
+  return <EventDecklist
+    mainboard={toDeckCards(deck.mainboard, cardCatalog)}
+    sideboard={toDeckCards(deck.sideboard, cardCatalog)}
+    onPreview={onViewDeck}
+  />
 }
 
 function EventDetailsSkeleton() {

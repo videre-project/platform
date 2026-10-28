@@ -3,7 +3,7 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { useEffect, useState, type ComponentType, type FormEvent, type ReactNode } from 'react'
+import { useState, type ComponentType, type ReactNode } from 'react'
 import {
   ArrowLeft,
   Calendar,
@@ -15,13 +15,15 @@ import {
   Radio,
   UserRound,
 } from 'lucide-react'
-import * as Popover from '@radix-ui/react-popover'
 
 import { cn } from '../lib/cn'
 import { Badge } from '../primitives/Badge'
 import { Button } from '../primitives/Button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../primitives/Table'
 import { GameReviewPanel } from '../components/match/GameReviewPanel'
-import { DeckManaSymbols, MatchDeckCard } from '../components/match/MatchDeckCard'
+import { MatchDeckCard } from '../components/match/MatchDeckCard'
+import { DeckManaSymbols } from '../components/cards/DeckManaSymbols'
+import { OpponentArchetypePicker, type OpponentArchetypePickerProps } from '../components/match/OpponentArchetypePicker'
 import type { MatchDetailsData, MatchDetailsGame } from '../types/match'
 
 function MatchHeaderMeta({
@@ -44,67 +46,28 @@ function MatchHeaderMeta({
   )
 }
 
-function OpponentMetaValue({
-  match,
-  onArchetypeChange,
-  pending = false,
-  error,
-}: {
+function OpponentMetaValue({ match, onArchetypeChange, pending = false, error, loadContext }: {
   match: MatchDetailsData
-  onArchetypeChange?: (archetype: string) => void | Promise<void>
+  onArchetypeChange?: (archetype: string, colors: string[] | null) => void | Promise<void>
   pending?: boolean
   error?: string | null
+  loadContext?: OpponentArchetypePickerProps['loadContext']
 }) {
   const name = match.opponentName?.trim()
-  const [isEditing, setIsEditing] = useState(false)
-  const [value, setValue] = useState(match.opponentDeckArchetype ?? '')
-  const [saving, setSaving] = useState(false)
-  useEffect(() => setValue(match.opponentDeckArchetype ?? ''), [match.opponentDeckArchetype])
-  const deckLabel = value.trim() || match.opponentDeckArchetype?.trim()
-    || match.opponentDeckName?.trim()
-    || 'Deck unknown'
-
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!onArchetypeChange) return
-    setSaving(true)
-    try {
-      await onArchetypeChange(value.trim())
-      setIsEditing(false)
-    } catch {
-      // The host owns error reporting through the controlled error prop.
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
-      <span className="truncate">{name ? `vs ${name}` : 'Opponent unknown'}</span>
-      <span className="text-muted-foreground/60">-</span>
-      <Popover.Root open={isEditing} onOpenChange={setIsEditing}>
-        <Popover.Trigger asChild>
-          <button type="button" disabled={!onArchetypeChange} className="group/arch inline-flex max-w-full items-center gap-2 text-muted-foreground hover:text-foreground disabled:pointer-events-none" title={onArchetypeChange ? 'Edit opponent archetype' : undefined}>
-            <span className="truncate">{deckLabel}</span>
-            {onArchetypeChange ? <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover/arch:text-foreground" /> : null}
-          </button>
-        </Popover.Trigger>
-        <Popover.Portal>
-          <Popover.Content aria-label="Edit opponent archetype" align="start" sideOffset={4} className="z-50 w-64 rounded-md border border-sidebar-border/70 bg-popover p-3 font-sans text-popover-foreground shadow-lg">
-            <form onSubmit={handleSubmit} className="space-y-2.5">
-              <div className="text-xs font-medium text-muted-foreground">Edit Opponent Archetype</div>
-              <div className="flex items-center gap-1.5">
-                <input value={value} onChange={event => setValue(event.target.value)} autoFocus className="h-7 min-w-0 flex-1 rounded border border-input bg-background px-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring" placeholder="e.g. Dimir Murktide" />
-                <Button size="sm" type="submit" disabled={pending || saving} className="h-7 px-2.5 text-xs">Save</Button>
-              </div>
-              {error ? <div className="text-[11px] text-destructive">{error}</div> : null}
-            </form>
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
-      <DeckManaSymbols colors={match.opponentDeckColors} />
-    </span>
-  )
+  const deckLabel = match.opponentDeckArchetype?.trim() || match.opponentDeckName?.trim() || 'Deck unknown'
+  const trigger = <button type="button" disabled={!onArchetypeChange || pending}
+    className="group/arch inline-flex max-w-full items-center gap-2 text-muted-foreground hover:text-foreground disabled:pointer-events-none"
+    aria-label="Edit opponent archetype">
+    <span className="truncate">{deckLabel}</span>
+    <DeckManaSymbols colors={match.opponentDeckColors} className="shrink-0" />
+    {onArchetypeChange && <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover/arch:text-foreground" />}
+  </button>
+  return <span className="inline-flex min-w-0 items-center gap-1.5">
+    <span className="truncate">{name ? `vs ${name}` : 'Opponent unknown'}</span>
+    <span className="text-muted-foreground/60">-</span>
+    {onArchetypeChange ? <OpponentArchetypePicker value={match.opponentDeckArchetype ?? null} colors={match.opponentDeckColors}
+      error={error} loadContext={loadContext} onChange={onArchetypeChange}>{trigger}</OpponentArchetypePicker> : trigger}
+  </span>
 }
 
 function getResultVariant(result?: string | null) {
@@ -184,7 +147,8 @@ export interface MatchDetailsLayoutProps {
   onGameLog?: (game: MatchDetailsGame) => void
   onReplay?: (game: MatchDetailsGame) => void
   onGameChange?: (game: MatchDetailsGame) => void
-  onOpponentArchetypeChange?: (archetype: string) => void | Promise<void>
+  onOpponentArchetypeChange?: (archetype: string, colors: string[] | null) => void | Promise<void>
+  loadOpponentArchetypeContext?: OpponentArchetypePickerProps['loadContext']
   opponentArchetypePending?: boolean
   opponentArchetypeError?: string | null
   liveUpdateCount?: number
@@ -202,6 +166,7 @@ export function MatchDetailsLayout({
   onReplay,
   onGameChange,
   onOpponentArchetypeChange,
+  loadOpponentArchetypeContext,
   opponentArchetypePending,
   opponentArchetypeError,
   liveUpdateCount,
@@ -224,7 +189,7 @@ export function MatchDetailsLayout({
         <MatchHeaderMeta label="Format" value={match.format || '-'} icon={Layers3} />
         <MatchHeaderMeta
           label="Opponent"
-          value={<OpponentMetaValue match={match} onArchetypeChange={onOpponentArchetypeChange} pending={opponentArchetypePending} error={opponentArchetypeError} />}
+          value={<OpponentMetaValue match={match} onArchetypeChange={onOpponentArchetypeChange} pending={opponentArchetypePending} error={opponentArchetypeError} loadContext={loadOpponentArchetypeContext} />}
           icon={UserRound}
           className="max-w-full sm:max-w-[28rem]"
         />
@@ -232,58 +197,38 @@ export function MatchDetailsLayout({
         <MatchHeaderMeta label="Duration" value={match.duration || '-'} icon={Clock} />
       </div>
 
-      <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <div className="flex min-h-0 flex-col gap-3 overflow-visible">
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden">
-            <h2 className="text-sm font-medium text-foreground">Games ({match.games.length})</h2>
-            {match.games.map(game => {
-              const selected = selectedGame?.id === game.id
-              return (
-                <button
-                  key={game.id}
-                  type="button"
-                  onClick={() => chooseGame(game)}
-                  className={cn(
-                    'block w-full rounded-md border border-sidebar-border/60 bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/35',
-                    selected && 'border-sidebar-accent/70 bg-muted/45',
-                  )}
-                  aria-pressed={selected}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/40 text-sm font-semibold text-foreground',
-                      selected && 'bg-sidebar-accent/40',
-                    )}>
-                      {game.gameNumber}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <span className="font-medium">Game {game.gameNumber}</span>
-                        <Badge variant={getResultVariant(game.result)} className="rounded-md capitalize">
-                          {game.result || 'Unknown'}
-                        </Badge>
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span>On the {game.playDraw || '-'}</span>
-                        <span>{game.duration || '-'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-          <MatchDeckCard
-            deckName={match.deckName}
-            deckArchetype={match.deckArchetype}
-            deckColors={match.deckColors}
-            backgroundArtUrl={match.deckBackgroundArtUrl}
-            previewCards={match.deckPreviewCards}
-            onOpen={onOpenDeck}
-          />
-        </div>
+      {/* Exclude the run summary's 4.5rem caret and match-number gutter. */}
+      <section className="grid min-h-0 flex-1 auto-rows-max content-start gap-3 overflow-y-auto xl:grid-cols-[23.5rem_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_auto] xl:content-normal xl:overflow-hidden">
+        <Table aria-label="Games" scrollLabel="Scroll games" className="table-fixed" wrapperClassName="max-h-96 min-h-0 overflow-auto xl:max-h-none">
+          <colgroup><col /><col className="w-28" /><col className="w-20" /></colgroup>
+          <TableHeader className="sticky top-0 z-10 bg-background">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="pl-3 text-xs">Games</TableHead>
+              <TableHead className="text-xs">Result</TableHead>
+              <TableHead className="pr-3 text-right text-xs">Duration</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {match.games.map(game => (
+              <TableRow key={game.id} data-state={selectedGame?.id === game.id ? 'selected' : undefined}
+                className="cursor-pointer" onClick={() => chooseGame(game)}>
+                <TableCell className="pl-3">
+                  <button type="button" aria-label={`Game ${game.gameNumber}`} aria-pressed={selectedGame?.id === game.id}
+                    className="block w-full rounded text-left outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <span className="block font-medium">Game {game.gameNumber}</span>
+                    <span className="mt-0.5 inline-flex whitespace-nowrap text-xs text-muted-foreground">
+                      {game.playDraw === 'Play' || game.playDraw === 'Draw' ? `On the ${game.playDraw.toLowerCase()}` : '—'}
+                    </span>
+                  </button>
+                </TableCell>
+                <TableCell><Badge variant={getResultVariant(game.result)} className="whitespace-nowrap rounded-md capitalize">{game.result || 'Unknown'}</Badge></TableCell>
+                <TableCell className="pr-3 text-right text-xs tabular-nums text-muted-foreground">{game.duration || '—'}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-sidebar-border/60 bg-card">
+        <div className="flex h-[36rem] min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-sidebar-border/60 bg-card xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:h-auto">
           {selectedGame ? (
             <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
               <GameReviewPanel
@@ -341,6 +286,16 @@ export function MatchDetailsLayout({
               No games recorded for this match.
             </div>
           )}
+        </div>
+        <div className="min-w-0 shrink-0 xl:col-start-1 xl:row-start-2">
+          <MatchDeckCard
+            deckName={match.deckName}
+            deckArchetype={match.deckArchetype}
+            deckColors={match.deckColors}
+            backgroundArtUrl={match.deckBackgroundArtUrl}
+            previewCards={match.deckPreviewCards}
+            onOpen={onOpenDeck}
+          />
         </div>
       </section>
     </div>

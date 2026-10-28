@@ -3,6 +3,65 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
+@import 'mana-font/css/mana.css';
+
+.data-table-pagination-container {
+  container-type: inline-size;
+  container-name: table-pagination;
+}
+
+.data-table-scroll {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+}
+.data-table-scroll::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Opaque tint keeps overlapping segments and row dividers from brightening the guide. */
+.data-table-group-guide {
+  background-color: color-mix(in srgb, hsl(var(--muted-foreground)) 40%, hsl(var(--background)));
+}
+
+[data-slot="data-table-pagination"] .data-table-pagination-boundary {
+  display: none;
+}
+
+@container table-pagination (max-width: 20rem) {
+  .data-table-pagination-container > [data-slot="data-table-pagination"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  [data-slot="data-table-pagination"] [data-slot] {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: flex-start;
+  }
+}
+
+@container table-pagination (min-width: 32rem) {
+  [data-slot="data-table-pagination"] .data-table-pagination-boundary {
+    display: inline-flex;
+  }
+}
+
+@container table-pagination (min-width: 48rem) {
+  .data-table-pagination-container > [data-slot="data-table-pagination"] {
+    display: flex;
+    justify-content: space-between;
+  }
+  [data-slot="data-table-pagination"] > [data-slot="data-table-pagination-summary"] {
+    flex: 1;
+  }
+  [data-slot="data-table-pagination"] > .data-table-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  [data-slot="data-table-pagination"] [data-slot="data-table-pagination-page"] {
+    width: 100px;
+    justify-content: center;
+  }
+}
+
 /*
  * Canonical Videre UI theme
  *
@@ -97,4 +156,77 @@
 .videre-ui *::before,
 .videre-ui *::after {
   box-sizing: border-box;
+}
+
+/* Shared event sidebar presentation. */
+.event-detail-sidebar-tabs { display: inline-flex; align-items: stretch; gap: 0.25rem; height: 2rem; }
+.event-detail-sidebar-tabs button { display: inline-flex; align-items: center; gap: 0.45rem; height: 2rem; padding: 0.05rem 0.75rem 0.15rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: hsl(var(--muted-foreground)); font-size: 0.875rem; font-weight: 500; line-height: 1.2; cursor: pointer; transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease; }
+.event-detail-sidebar-tabs button:hover,
+.event-detail-sidebar-tabs button.is-active { border-bottom-color: hsl(var(--foreground)); color: hsl(var(--foreground)); }
+.event-detail-sidebar-tabs button:hover { background: hsl(var(--muted) / 0.3); }
+.event-detail-sidebar-tabs button.is-disabled,
+.event-detail-sidebar-tabs button.is-disabled:hover { border-bottom-color: transparent; background: transparent; color: hsl(var(--muted-foreground) / 0.55); cursor: not-allowed; }
+.event-detail-decklist { overflow: visible; overflow-anchor: none; border-top: 1px solid hsl(var(--sidebar-border) / 0.65); border-bottom: 1px solid hsl(var(--sidebar-border) / 0.65); }
+.event-detail-decklist-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.35rem 0; }
+.event-detail-decklist-heading .event-detail-deck-board-heading { min-width: 0; padding: 0; }
+.event-detail-decklist .event-detail-view-deck { flex: 0 0 auto; height: 1.75rem; gap: 0.35rem; padding: 0 0.55rem; font-size: 0.72rem; }
+.event-detail-deck-board + .event-detail-deck-board { border-top: 1px solid hsl(var(--sidebar-border) / 0.65); }
+.event-detail-deck-board-heading { padding: 0.75rem 0 0.45rem; color: hsl(var(--foreground)); font-size: 0.8rem; font-weight: 650; line-height: 1.3; }
+.event-detail-deck-group h3.event-detail-deck-board-heading { padding: 0.75rem 0 0.45rem; font-size: 0.8rem; }
+.event-detail-deck-group { border-top: 1px solid hsl(var(--sidebar-border) / 0.45); }
+.event-detail-deck-group h3 { display: flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0 0.25rem; color: hsl(var(--foreground)); font-size: 0.78rem; font-weight: 650; line-height: 1.3; }
+.event-detail-deck-group h3 .ms { color: hsl(var(--muted-foreground)); font-size: 1rem; }
+.event-detail-deck-card-list { border-top: 1px solid hsl(var(--sidebar-border) / 0.35); }
+.event-detail-deck-card { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; align-items: center; gap: 0.45rem; min-height: 1.9rem; padding: 0.25rem 0; border-top: 1px solid hsl(var(--sidebar-border) / 0.32); cursor: pointer; }
+.event-detail-deck-card:first-child { border-top: 0; }
+.event-detail-deck-card-quantity { color: hsl(var(--muted-foreground)); font-size: 0.72rem; font-variant-numeric: tabular-nums; text-align: right; }
+.event-detail-deck-card strong { overflow: hidden; color: hsl(var(--foreground)); font-size: 0.75rem; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.event-detail-deck-card-mana { display: inline-flex; min-width: 2.5rem; align-items: center; justify-content: flex-end; gap: 0.1rem; color: hsl(var(--muted-foreground)); font-size: 0.68rem; white-space: nowrap; }
+.event-detail-deck-card-mana img { width: 0.9rem; height: 0.9rem; }
+.event-detail-deck-card-mana-empty { color: hsl(var(--muted-foreground) / 0.6); font-size: 0.68rem; }
+
+.scroll-fade-top,
+.scroll-fade-bottom,
+.event-detail-sidebar-scroll-fade {
+  pointer-events: none;
+  position: absolute;
+  right: 0.55rem;
+  bottom: 1px;
+  left: 0;
+  z-index: 20;
+  height: 1.25rem;
+  background: linear-gradient(to top, hsl(var(--background)), transparent);
+}
+
+.scroll-fade-top {
+  top: 0;
+  right: 0;
+  bottom: auto;
+  background: linear-gradient(to bottom, hsl(var(--background)), transparent);
+}
+
+.event-tournament-player-panel {
+  container-type: inline-size;
+  container-name: tournament-player;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 32rem;
+  min-height: 0;
+  overflow-anchor: none;
+}
+@container tournament-player (max-width: 24rem) {
+  .event-detail-sidebar-tabs button {
+    gap: 0.35rem;
+    padding-right: 0.45rem;
+    padding-left: 0.45rem;
+    font-size: 0.8rem;
+  }
+}
+.event-tournament-player-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
+  scrollbar-gutter: stable;
 }

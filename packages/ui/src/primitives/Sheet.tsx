@@ -35,8 +35,11 @@ const SheetOverlay = React.forwardRef<
 ))
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
+const sheetAnimationClasses =
+  "transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out"
+
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-4 bg-background p-6 shadow-lg",
   {
     variants: {
       side: {
@@ -47,8 +50,9 @@ const sheetVariants = cva(
           "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
       },
       motion: {
-        slide: "",
-        fade: "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        slide: sheetAnimationClasses,
+        fade: [sheetAnimationClasses, "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"],
+        none: "",
       },
     },
     compoundVariants: [
@@ -73,7 +77,9 @@ const SheetContent = React.forwardRef<
   SheetContentProps
 >(({ side = "right", motion = "slide", className, children, ...props }, ref) => (
   <SheetPortal>
-    <SheetOverlay />
+    <SheetOverlay className={motion === 'none'
+      ? 'data-[state=open]:animate-none data-[state=closed]:animate-none'
+      : undefined} />
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side, motion }), className)}

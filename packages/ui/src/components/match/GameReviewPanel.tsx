@@ -65,7 +65,7 @@ function OpeningHandCardTile({ card }: { card: OpeningHandCard }) {
       title={card.bottomed ? `${card.name} (put on bottom)` : card.name}
     >
       <div className="absolute inset-0 flex items-center justify-center px-1.5 text-center text-[10px] font-semibold leading-tight text-muted-foreground">{card.name}</div>
-      {card.catalogId != null ? (
+      {card.catalogId != null && card.catalogId > 0 ? (
         <CatalogCardImage catalogId={card.catalogId} name={card.name} alt={card.name} className="absolute inset-0 h-full w-full object-cover" loading="eager" />
       ) : null}
     </div>
@@ -107,7 +107,7 @@ function SideboardingCardTile({ card, direction }: {
     >
       <div className="relative h-full w-full overflow-hidden rounded-sm bg-background/35 shadow-sm shadow-black/30">
         <div className="absolute inset-0 flex items-center justify-center px-1.5 text-center text-[10px] font-semibold leading-tight text-muted-foreground">{card.name}</div>
-        {card.catalogId != null ? (
+        {card.catalogId != null && card.catalogId > 0 ? (
           <CatalogCardImage catalogId={card.catalogId} name={card.name} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" />
         ) : null}
         <div className="absolute left-2 z-10 rounded-sm bg-black/75 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white ring-1 ring-white/10" style={{ top: CARD_STACK_BADGE_TOP }}>

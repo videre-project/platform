@@ -4,8 +4,11 @@
 **/
 
 import type { DateRange } from 'react-day-picker'
+import type { ReactNode } from 'react'
+import type { MatchDetailsCard } from './match'
 
 import type { GameType } from '../components/filters/GameTypeFormatFilter'
+import type { ControlledDataTablePagination } from '../components/tables/DataTablePagination'
 
 export type MatchHistoryItem = {
   id: number
@@ -17,19 +20,19 @@ export type MatchHistoryItem = {
   record: string
   duration: string
   deckName?: string
+  deckArchetype?: string | null
   deckColors?: string[] | null
   opponentName?: string | null
   opponentDeckName?: string | null
   opponentDeckArchetype?: string | null
   opponentDeckColors?: string[] | null
+  opponentCards?: MatchDetailsCard[] | null
   isActive?: boolean
   isEvent?: boolean
   matches?: MatchHistoryItem[]
 }
 
-export type HistoryPagination = {
-  page: number
-  totalPages: number
+export type HistoryPagination = ControlledDataTablePagination & {
   totalCount: number
 }
 
@@ -45,8 +48,9 @@ export type HistoryLayoutProps = {
   dateRange: DateRange | undefined
   onDateRangeChange: (range: DateRange | undefined) => void
   onRowClick?: (item: MatchHistoryItem) => void
+  renderOpponentArchetype?: (item: MatchHistoryItem, trigger: ReactNode) => ReactNode
+  reviewLabel?: string
+  onClearReview?: () => void
   pagination?: HistoryPagination | null
-  onPreviousPage?: () => void
-  onNextPage?: () => void
   className?: string
 }

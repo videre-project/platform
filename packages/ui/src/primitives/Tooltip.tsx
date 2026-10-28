@@ -5,6 +5,7 @@
 
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import { TooltipCaret } from './TooltipCaret'
 
 const TooltipProvider = TooltipPrimitive.Provider
 const Tooltip = TooltipPrimitive.Root
@@ -12,8 +13,8 @@ const TooltipTrigger = TooltipPrimitive.Trigger
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & { showArrow?: boolean }
+>(({ className, sideOffset = 4, showArrow = false, children, ...props }, ref) => (
   <TooltipPrimitive.Portal>
     <TooltipPrimitive.Content
       ref={ref}
@@ -25,6 +26,9 @@ const TooltipContent = React.forwardRef<
       {...props}
     >
       {children}
+      {showArrow && <TooltipPrimitive.Arrow asChild width={12} height={6}>
+        <TooltipCaret data-tooltip-caret className="overflow-visible fill-popover stroke-sidebar-border/70" />
+      </TooltipPrimitive.Arrow>}
     </TooltipPrimitive.Content>
   </TooltipPrimitive.Portal>
 ))

@@ -3,13 +3,15 @@
   SPDX-License-Identifier: Apache-2.0
 **/
 
-import { useState, type ComponentProps } from 'react'
+import { useCallback, useState, type ComponentProps, type ReactNode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import type { DateRange } from 'react-day-picker'
 
 import { HISTORY_SHOWCASE_ITEMS, SHOWCASE_FORMATS } from '../src/fixtures/layout-showcase'
 import { HistoryLayout } from '../src/layouts/HistoryLayout'
+import { OpponentArchetypePicker } from '../src/components/match/OpponentArchetypePicker'
+import type { MatchHistoryItem } from '../src/types/history'
 import type { GameType } from '../src/components/filters/GameTypeFormatFilter'
 
 const meta = {
@@ -18,7 +20,7 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     Story => (
-      <div className="h-[700px] w-[1120px] overflow-hidden bg-background">
+      <div className="flex h-[700px] w-[1120px] flex-col overflow-hidden bg-background">
         <Story />
       </div>
     ),
@@ -53,9 +55,8 @@ function HistoryHarness({
       dateRange={dateRange}
       onDateRangeChange={setDateRange}
       onRowClick={fn()}
-      pagination={{ page: 1, totalPages: 3, totalCount: 120 }}
-      onPreviousPage={fn()}
-      onNextPage={fn()}
+      pagination={{ pageIndex: 0, pageSize: 50, pageCount: 3, totalCount: 120,
+        hasPreviousPage: false, hasNextPage: true, onPageIndexChange: fn(), onPageSizeChange: fn() }}
       {...rest}
     />
   )
@@ -70,4 +71,33 @@ export const Default: Story = {
 
 export const Loading: Story = {
   render: () => <HistoryHarness items={[]} loading />,
+}
+
+const classify = fn()
+
+function EditableHistoryHarness() {
+  const [items, setItems] = useState(HISTORY_SHOWCASE_ITEMS)
+  const renderEditor = useCallback((match: MatchHistoryItem, trigger: ReactNode) => (
+    <OpponentArchetypePicker value={match.opponentDeckArchetype ?? null} colors={match.opponentDeckColors}
+      loadContext={async () => {
+        // Replace the history snapshot while the editor is opening.
+        setItems(current => current.map(item => ({ ...item })))
+        return { archetypes: [{ name: 'Dimir Control', colors: ['U', 'B'] }], cards: [] }
+      }} onChange={classify}>{trigger}</OpponentArchetypePicker>
+  ), [])
+  return <HistoryHarness items={items} renderOpponentArchetype={renderEditor} />
+}
+
+export const ArchetypeEditor: Story = {
+  render: () => <EditableHistoryHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getAllByRole('button', { name: /^Classify opponent in match/ })[0])
+    const picker = within(await within(document.body).findByRole('dialog', { name: 'Classify opponent' }))
+    await userEvent.type(picker.getByRole('textbox', { name: 'Search archetypes' }), 'Dimir')
+    await userEvent.click(picker.getByRole('button', { name: 'Colorless', exact: true }))
+    await userEvent.click(picker.getByRole('button', { name: 'G deck color', exact: true }))
+    await userEvent.click(await picker.findByRole('option', { name: /^Dimir Control/ }))
+    await expect(classify).toHaveBeenCalledWith('Dimir Control', ['G'])
+  },
 }

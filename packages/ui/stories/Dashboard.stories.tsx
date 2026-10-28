@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { DateRange } from 'react-day-picker'
 
 import {
@@ -35,9 +35,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-function DashboardHarness() {
+function DashboardHarness({ withReports = false }: { withReports?: boolean }) {
   const [gameType, setGameType] = useState<DashboardGameType>('Constructed')
   const [selectedFormat, setSelectedFormat] = useState('')
+  const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date('2026-07-01T00:00:00.000Z'),
     to: new Date('2026-08-01T00:00:00.000Z'),
@@ -63,7 +64,9 @@ function DashboardHarness() {
         <a href="/metagame" onClick={event => event.preventDefault()}>{children}</a>
       )}
       getArtUrl={() => backfaceUrl}
-      onViewMoreDecks={fn()}
+      selectedArchetype={selectedArchetype}
+      onDeckClick={setSelectedArchetype}
+      performanceContent={withReports ? <section aria-label="Matchup preview" className="h-[600px]" /> : undefined}
     />
   )
 }
@@ -78,5 +81,56 @@ export const Default: Story = {
     await expect(canvas.getByRole('list', { name: 'Top metagame decks' })).toBeVisible()
     await expect(canvasElement.querySelector('[data-metagame-edge="left"]')).toHaveAttribute('data-visible', 'false')
     await expect(canvasElement.querySelector('[data-metagame-edge="right"]')).toHaveAttribute('data-visible', 'true')
+  },
+}
+
+export const DeckSelection: Story = {
+  render: () => <DashboardHarness />,
+  play: async ({ canvasElement }) => {
+    const chart = within(within(canvasElement).getByRole('group', { name: 'Deck performance chart' }))
+    await expect(chart.getByRole('img', { name: /Expected spread around 58.3% overall winrate/ })).toBeVisible()
+    await expect(chart.queryByText('Overall 58.3%')).toBeNull()
+    const spread = chart.getByRole('img', { name: /Expected spread around/ })
+    const clip = spread.querySelector('clipPath rect') as SVGRectElement
+    const contours = spread.querySelectorAll('path')
+    await expect(contours).toHaveLength(3)
+    // Curves must continue above the visible plot, even when nice axis ticks
+    // extend beyond the highest observed match count.
+    for (const contour of contours) {
+      await expect(contour.getBBox().y).toBeLessThan(clip.y.baseVal.value)
+      await expect(contour.getAttribute('d')).not.toMatch(/NaN|Infinity/)
+    }
+    const rakdos = chart.getByRole('button', { name: 'Show matchups for Rakdos Scam' })
+    await userEvent.click(rakdos)
+    await waitFor(() => expect(rakdos).toHaveAttribute('aria-pressed', 'true'))
+    const yawgmoth = chart.getByRole('button', { name: 'Show matchups for Yawgmoth' })
+    yawgmoth.focus()
+    await userEvent.keyboard('{Enter}')
+    await waitFor(() => expect(yawgmoth).toHaveAttribute('aria-pressed', 'true'))
+    await expect(yawgmoth).toHaveFocus()
+    await expect(rakdos).toHaveAttribute('aria-pressed', 'false')
+    await expect(within(canvasElement).queryByRole('button', { name: 'View More Decks' })).toBeNull()
+  },
+}
+
+export const StickyFilters: Story = {
+  render: () => <DashboardHarness withReports />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const filters = canvas.getByRole('group', { name: 'Dashboard filters' })
+    const dashboard = filters.closest('[data-ui-layout="dashboard"]')!
+    const scrollport = dashboard.parentElement!
+    const overview = dashboard.querySelector('[data-dashboard-overview]')!
+    const reports = canvas.getByRole('region', { name: 'Matchup preview' })
+    const top = scrollport.getBoundingClientRect().top
+    scrollport.scrollTop = 150
+    await waitFor(() => expect(filters.getBoundingClientRect().top).toBeCloseTo(top, 0))
+    scrollport.scrollTop = overview.getBoundingClientRect().height - 12
+    await waitFor(() => {
+      expect(filters.getBoundingClientRect().bottom).toBeCloseTo(overview.getBoundingClientRect().bottom, 0)
+      expect(filters.getBoundingClientRect().bottom).toBeLessThan(reports.getBoundingClientRect().top)
+    })
+    scrollport.scrollTop = overview.getBoundingClientRect().height + 100
+    await waitFor(() => expect(filters.getBoundingClientRect().bottom).toBeLessThan(top))
   },
 }

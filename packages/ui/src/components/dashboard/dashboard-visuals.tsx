@@ -4,6 +4,7 @@
 **/
 
 import { useId, type ElementType } from 'react'
+import { usePlotArea, useXAxisScale, useYAxisInverseScale, useYAxisScale } from 'recharts'
 
 import { cn } from '../../lib/cn'
 
@@ -36,51 +37,58 @@ type DensityDeck = {
   keyCard?: string
 }
 
-/** Recharts Customized layer: soft density ellipses behind scatter points. */
-// Recharts injects axis maps at runtime; preserve unknown additional properties.
-export function DensityLayer(props: {
-  xAxisMap?: Record<string, { scale: (v: number) => number }>
-  yAxisMap?: Record<string, { scale: (v: number) => number }>
+/**
+ * Approximate sampling spread for decks performing at the overall winrate.
+ * These are reference bands, not estimates of an individual deck's true winrate.
+ * Binomial standard error: https://www.itl.nist.gov/div898/handbook/eda/section3/eda366i.htm
+ */
+export function DensityLayer({ data, overallWinrate }: {
   data?: DensityDeck[]
-  [key: string]: unknown
+  overallWinrate?: number | null
 }) {
-  const { xAxisMap, yAxisMap, data } = props
-  if (!xAxisMap || !yAxisMap || !data) return null
+  const clipId = `performance-spread-${useId().replaceAll(':', '')}`
+  const plot = usePlotArea()
+  const xScale = useXAxisScale()
+  const yScale = useYAxisScale()
+  const yInverse = useYAxisInverseScale()
+  const decks = data?.filter(deck => Number.isFinite(deck.matches) && deck.matches > 0
+    && Number.isFinite(deck.winrate) && deck.winrate >= 0 && deck.winrate <= 100) ?? []
+  const matches = decks.reduce((sum, deck) => sum + deck.matches, 0)
+  // Retain support for consumers that only supply deck data.
+  const average = overallWinrate === undefined && matches > 0
+    ? decks.reduce((sum, deck) => sum + deck.matches * deck.winrate, 0) / matches
+    : overallWinrate
+  const maxMatches = plot && yInverse ? Number(yInverse(plot.y)) : 0
+  if (!plot || !xScale || !yScale || !Number.isFinite(maxMatches) || maxMatches <= 0
+    || average == null || !Number.isFinite(average) || average <= 0 || average >= 100) return null
 
-  const xScale = (Object.values(xAxisMap)[0] as { scale: (v: number) => number }).scale
-  const yScale = (Object.values(yAxisMap)[0] as { scale: (v: number) => number }).scale
+  const p = average / 100
+  // Sample beyond the visible axis so contour closures stay outside the plot.
+  // Quadratic spacing keeps the wider curves smooth near zero matches.
+  const samples = Array.from({ length: 161 }, (_, index) => maxMatches * 1.1 * (index / 160) ** 2)
+  const contours = [2, 1.3, 0.65].map(deviations => {
+    const edge = (n: number, direction: -1 | 1) => {
+      const spread = n === 0 ? Infinity : 100 * Math.sqrt(p * (1 - p) / n)
+      const rate = Math.max(0, Math.min(100, average + direction * deviations * spread))
+      return `${xScale(rate)},${yScale(n)}`
+    }
+    return `M${samples.map(n => edge(n, -1)).join(' L')} L${[...samples].reverse().map(n => edge(n, 1)).join(' L')} Z`
+  })
 
   return (
-    <g>
+    <g role="img" aria-label={`Expected spread around ${average}% overall winrate; wider with fewer matches`}
+      pointerEvents="none">
       <defs>
-        <radialGradient id="densityGradient">
-          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-        </radialGradient>
+        <clipPath id={clipId}>
+          <rect x={plot.x} y={plot.y} width={plot.width} height={plot.height} />
+        </clipPath>
       </defs>
-      {data.map(deck => {
-        const x = xScale(deck.winrate)
-        const y = yScale(deck.matches)
-
-        const p = deck.winrate / 100
-        const n = deck.matches
-        const sd = Math.sqrt((p * (1 - p)) / n) * 100
-
-        // 2 sigma width (approx 95% CI)
-        const rx = Math.abs(xScale(deck.winrate + sd * 2) - xScale(deck.winrate))
-        const ry = 20
-
-        return (
-          <ellipse
-            key={deck.name}
-            cx={x}
-            cy={y}
-            rx={rx}
-            ry={ry}
-            fill="url(#densityGradient)"
-          />
-        )
-      })}
+      <g clipPath={`url(#${clipId})`}>
+        {contours.map((path, index) => (
+          <path key={index} d={path} fill="hsl(var(--muted-foreground))" fillOpacity={0.035}
+            stroke="hsl(var(--muted-foreground))" strokeOpacity={0.12} strokeWidth={0.75} />
+        ))}
+      </g>
     </g>
   )
 }

@@ -51,6 +51,7 @@
     "@types/node": "^20.2.3",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@videreproject/sql-schema": "workspace:*",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.5.4",
     "eslint": "^10.8.1",

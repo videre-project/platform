@@ -6,6 +6,7 @@
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -16,7 +17,6 @@ import {
 import { createPortal } from 'react-dom'
 import * as ScrollArea from '@radix-ui/react-scroll-area'
 import {
-  GripVertical,
   LayoutGrid,
   Loader2,
   PanelRightClose,
@@ -129,12 +129,13 @@ function isGhostCard(card: DeckEditorCard): boolean {
   return card.originalIndex >= GHOST_INDEX_BASE
 }
 
-function SheetCard({
+const SheetCard = memo(function SheetCard({
   index,
   card,
   cardWidth,
   cardHeight,
-  position,
+  left,
+  top,
   onDragStart,
   onContextMenu,
   isDragging,
@@ -145,13 +146,18 @@ function SheetCard({
   suppressTopBorder,
   highlighted = false,
   selected = false,
+  emphasized = false,
   hiddenWhileDragging = false,
+  dimmed = false,
+  occluded = false,
+  tooltipPlacement,
 }: {
   index: number
   card: DeckEditorCard
   cardWidth: number
   cardHeight: number
-  position: Position
+  left: number
+  top: number
   onDragStart: (index: number, e: ReactPointerEvent<HTMLDivElement>) => void
   onContextMenu?: DeckBoardProps['onCardContextMenu']
   isDragging: boolean
@@ -163,8 +169,13 @@ function SheetCard({
   highlighted?: boolean
   /** Part of the current marquee selection (persistent ring + tint). */
   selected?: boolean
+  /** Transient host emphasis shares the selection appearance without changing selection. */
+  emphasized?: boolean
   /** Hide the in-canvas copy while its portal drag preview is active. */
   hiddenWhileDragging?: boolean
+  dimmed?: boolean
+  occluded?: boolean
+  tooltipPlacement?: DeckBoardProps['sideboardTooltipPlacement']
 }) {
   const { catalogId, imageUrl } = card
   const isGhost = isGhostCard(card)
@@ -175,7 +186,11 @@ function SheetCard({
 
   const tooltipHandlers = useCardTooltipHover({
     catalogId,
+    name: card.name,
     imageUrl,
+    otherFaceCatalogId: card.otherFaceCatalogId,
+    placement: tooltipPlacement,
+    anchorPoint: { x: 0.5, y: occluded ? getStackPeekOffset(cardHeight) / (2 * cardHeight) : 0.5 },
     enabled: !isDragging && !isAnyDragging,
   })
 
@@ -183,10 +198,13 @@ function SheetCard({
     <div
       {...tooltipHandlers}
       data-deck-card-index={index}
+      data-deck-card-name={isGhost ? undefined : card.name}
+      data-deck-card-change={diffDelta ? (isGhost ? 'removed' : 'added') : undefined}
+      aria-label={diffDelta ? `${card.name}: ${isGhost ? 'removed from' : 'added to'} ${card.zone.toLowerCase()}` : undefined}
       // Dragged cards keep the exact selection highlight (the overlay below);
       // only the lift (scale/shadow/cursor) differs while a card is moving.
       className={cn(
-        'absolute select-none overflow-hidden rounded-lg',
+        'group absolute select-none rounded-lg',
         isGhost ? 'cursor-default' : 'cursor-grab',
         isDragging
           ? 'cursor-grabbing shadow-xl'
@@ -195,8 +213,8 @@ function SheetCard({
             : 'hover:ring-1 hover:ring-primary/30',
       )}
       style={{
-        left: position.x,
-        top: position.y,
+        left,
+        top,
         width: cardWidth,
         height: cardHeight,
         zIndex: isDragging ? 1000 : zIndex,
@@ -227,7 +245,8 @@ function SheetCard({
         if (!isGhost) onContextMenu?.(card, { x: event.clientX, y: event.clientY })
       }}
     >
-      <div className="group relative h-full w-full">
+      <div className={cn('pointer-events-none relative h-full w-full overflow-hidden rounded-lg', isGhost && 'bg-background')}>
+        {/* Keep selection and history overlays at full brightness. */}
         <CardImage
           catalogId={catalogId}
           imageUrl={imageUrl}
@@ -235,7 +254,14 @@ function SheetCard({
           width={cardWidth}
           height={cardHeight}
           draggable={false}
-          style={{ display: 'block', width: cardWidth, height: cardHeight }}
+          className="transition-[filter] duration-150 motion-reduce:transition-none"
+          style={{
+            display: 'block',
+            width: cardWidth,
+            height: cardHeight,
+            opacity: isGhost ? 0.45 : undefined,
+            filter: dimmed && !isDragging && !isAnyDragging ? 'brightness(0.7)' : undefined,
+          }}
         />
 
         {diffDelta != null && diffDelta !== 0 ? (
@@ -261,23 +287,20 @@ function SheetCard({
           <div className="pointer-events-none absolute inset-0 z-40 rounded-lg border-2 border-primary" />
         ) : null}
 
-        {/* Selection: a persistent inset border + tint, visually distinct from
+        {/* Selection and sidebar emphasis share an inset border + tint, distinct from
             the transient context-menu outline above. A real border (not a
             box-shadow ring) so it paints crisply while a card is being dragged
             — box-shadows fade to a thin line during rapid movement in the
             WebView2 host (the same reason the "highlighted" overlay uses a
             border). */}
-        {selected ? (
+        {selected || emphasized ? (
           <div className="pointer-events-none absolute inset-0 z-40 rounded-lg border-2 border-primary/70 bg-primary/10" />
         ) : null}
 
-        <div className="absolute right-2 top-2 rounded bg-black/40 p-1 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
-          <GripVertical className="h-3 w-3 text-white/70" />
-        </div>
       </div>
     </div>
   )
-}
+})
 
 function SkeletonCard({
   cardWidth,
@@ -546,6 +569,8 @@ function getEffectiveCardsForZone(
           colors: template?.colors ?? diff.colors ?? [],
           types,
           rarity: template?.rarity ?? diff.rarity ?? 'common',
+          imageUrl: template?.imageUrl,
+          otherFaceCatalogId: template?.otherFaceCatalogId,
           zone,
         })
       }
@@ -594,7 +619,10 @@ function DeckGrid({
   onSelectionChange,
   onCardContextMenu,
   highlightedCard,
+  hoveredCardName,
+  emphasizedCardName,
   dragPreview,
+  tooltipPlacement,
   onDragPreviewChange,
   placement,
   onLayoutChange,
@@ -615,6 +643,9 @@ function DeckGrid({
   onSelectionChange?: DeckBoardProps['onSelectionChange']
   onCardContextMenu?: DeckBoardProps['onCardContextMenu']
   highlightedCard?: DeckBoardHighlight | null
+  hoveredCardName: string | null
+  emphasizedCardName: string | null
+  tooltipPlacement?: DeckBoardProps['sideboardTooltipPlacement']
   dragPreview: DragPreview | null
   onDragPreviewChange: (preview: DragPreview | null) => void
   placement?: GridPlacement
@@ -830,6 +861,16 @@ function DeckGrid({
     return counts
   }, [actualColumns, effectiveCardSlots])
 
+  // Removed markers occupy stack space, but are no longer cards in this zone.
+  const displayedCounts = useMemo(() => {
+    const counts = new Array(actualColumns).fill(0) as number[]
+    for (const card of unrolledCards) {
+      const slot = effectiveCardSlots.get(card.index)
+      if (!isGhostCard(card) && slot && slot.col >= 0 && slot.col < actualColumns) counts[slot.col]++
+    }
+    return counts
+  }, [actualColumns, effectiveCardSlots, unrolledCards])
+
   const cardPositions = useMemo(() => {
     const positions = new Map<number, Position>()
     unrolledCards.forEach(card => {
@@ -922,6 +963,8 @@ function DeckGrid({
   })
 
   const getDropZoneAtPointer = useCallback((position: Position): DeckZone => {
+    // Read-only previews may rearrange a zone locally, but cannot transfer copies.
+    if (!onDragEndRef.current) return zoneRef.current
     const element = document.elementFromPoint(position.x, position.y)
     const zone = element?.closest<HTMLElement>('[data-deck-zone]')?.dataset.deckZone
     return zone === 'Mainboard' || zone === 'Sideboard' ? zone : zoneRef.current
@@ -1013,7 +1056,13 @@ function DeckGrid({
           .filter((id): id is number => id != null),
       ),
     ]
-    onSelectionChangeRef.current?.({ zone: zoneRef.current, cardIndices: indices, catalogIds })
+    const quantities = new Map<number, number>()
+    for (const index of indices) {
+      const id = cardByIndexRef.current.get(index)!.catalogId
+      quantities.set(id, (quantities.get(id) ?? 0) + 1)
+    }
+    onSelectionChangeRef.current?.({ zone: zoneRef.current, cardIndices: indices, catalogIds,
+      cards: [...quantities].map(([catalogId, quantity]) => ({ catalogId, quantity })) })
   }, [])
 
   const handleBackgroundPointerDown = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
@@ -1494,12 +1543,13 @@ function DeckGrid({
                   card={card}
                   cardWidth={dragOverlayRef.current.width}
                   cardHeight={dragOverlayRef.current.height}
-                  position={position}
+                  left={position.x}
+                  top={position.y}
                   onDragStart={() => undefined}
                   isDragging
                   isAnyDragging={true}
                   zIndex={10000 + overlayIndex}
-                  diffDelta={diff?.delta}
+                  diffDelta={diffCopyIndices.has(cardIndex) ? diff?.delta : undefined}
                   highlighted={isHighlighted}
                   selected={selectedIndices.has(cardIndex)}
                 />
@@ -1541,7 +1591,7 @@ function DeckGrid({
                 transform: `scale(${scale})`,
               }}
             >
-              {cardsPerColumn.map((count, col) => {
+              {displayedCounts.map((count, col) => {
                 if (collapsed && col === 0) {
                   return (
                     <div
@@ -1649,7 +1699,10 @@ function DeckGrid({
                   card={card}
                   cardWidth={scaledCardWidth}
                   cardHeight={scaledCardHeight}
-                  position={pos}
+                  occluded={slot != null && slotToCardIndex.has(slotKey(slot.col, slot.row + 1))}
+                  tooltipPlacement={tooltipPlacement}
+                  left={pos.x}
+                  top={pos.y}
                   onDragStart={handleDragStart}
                   onContextMenu={onCardContextMenu}
                   isDragging={
@@ -1663,10 +1716,16 @@ function DeckGrid({
                   suppressTopBorder={suppressTopBorder}
                   highlighted={isHighlighted}
                   selected={selectedIndices.has(cardIndex)}
+                  emphasized={!isGhostCard(card) && emphasizedCardName === card.name}
                   hiddenWhileDragging={
                     draggingIndex === cardIndex ||
                     (multiDrag != null && multiDrag.indexSet.has(cardIndex)) ||
                     pendingDrop?.indices.has(cardIndex) === true
+                  }
+                  dimmed={
+                    !isGhostCard(card) &&
+                    hoveredCardName !== null &&
+                    hoveredCardName !== card.name
                   }
                 />
               )
@@ -1722,11 +1781,15 @@ export function DeckBoard({
   onSortModeChange,
   sideboardCollapsed: controlledSideboardCollapsed,
   onSideboardCollapsedChange,
+  sideboardTooltipPlacement = 'auto',
   diffMap,
   onDragEnd,
   onSelectionChange,
+  onCardOrderChange,
+  onCardHoverChange,
   onCardContextMenu,
   highlightedCard,
+  emphasizedCardName,
   showDeckStats = false,
   showHeader = false,
   editorTitle = 'Deck',
@@ -1734,6 +1797,19 @@ export function DeckBoard({
   className,
 }: DeckBoardProps) {
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null)
+  const [hoveredCardName, setHoveredCardName] = useState<string | null>(null)
+  const externalEmphasisName = emphasizedCardName && cards.some(card => card.name === emphasizedCardName)
+    ? emphasizedCardName : null
+  const activeHoverName = hoveredCardName ?? externalEmphasisName
+  const activeEmphasisName = dragPreview || hoveredCardName !== null ? null : externalEmphasisName
+  const boardHoverName = !dragPreview && cards.some(card => card.name === hoveredCardName) ? hoveredCardName : null
+  useEffect(() => { onCardHoverChange?.(boardHoverName) }, [boardHoverName, onCardHoverChange])
+  useEffect(() => () => onCardHoverChange?.(null), [onCardHoverChange])
+  const handleCardPointerOver = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement
+    const card = target.closest<HTMLElement>('[data-deck-card-name]')
+    setHoveredCardName(event.buttons === 0 ? card?.dataset.deckCardName ?? null : null)
+  }, [])
   const [internalSortMode, setInternalSortMode] = useState<DeckSortMode>('cmc')
   const sortMode = controlledSortMode ?? internalSortMode
   const layoutsRef = useRef(new Map<DeckZone, GridLayout>())
@@ -1745,7 +1821,15 @@ export function DeckBoard({
   const [placements, setPlacements] = useState<Partial<Record<DeckZone, GridPlacement>>>({})
   const registerLayout = useCallback((zone: DeckZone, layout: GridLayout) => {
     layoutsRef.current.set(zone, layout)
-  }, [])
+    if (onCardOrderChange) {
+      const ordered = layout.cards.filter(card => !isGhostCard(card)).slice().sort((a, b) => {
+        const left = layout.slots.get(a.index), right = layout.slots.get(b.index)
+        return (left?.col ?? Infinity) - (right?.col ?? Infinity) ||
+          (left?.row ?? Infinity) - (right?.row ?? Infinity)
+      })
+      onCardOrderChange(zone, [...new Set(ordered.map(card => card.name))])
+    }
+  }, [onCardOrderChange])
   const clearPlacement = useCallback((zone: DeckZone) => {
     setPlacements(previous => ({ ...previous, [zone]: undefined }))
   }, [])
@@ -1888,6 +1972,10 @@ export function DeckBoard({
     <div
       className={cn('flex h-full min-w-0 cursor-default flex-col gap-6 overflow-hidden p-4', className)}
       onPointerDown={handleGutterPointerDown}
+      onPointerOver={handleCardPointerOver}
+      onPointerLeave={() => setHoveredCardName(null)}
+      onPointerDownCapture={() => setHoveredCardName(null)}
+      onScrollCapture={() => setHoveredCardName(null)}
     >
       {showDeckStats && hasCards ? (
         <DeckStats mainboard={mainboardCards} sideboard={sideboardCards} />
@@ -1984,6 +2072,8 @@ export function DeckBoard({
                 onSelectionChange={onSelectionChange}
                 onCardContextMenu={onCardContextMenu}
                 highlightedCard={highlightedCard}
+                hoveredCardName={dragPreview ? null : activeHoverName}
+                emphasizedCardName={activeEmphasisName}
               />
             )}
           </div>
@@ -1995,6 +2085,7 @@ export function DeckBoard({
             >
               <DeckGrid
                 title="Sideboard"
+                tooltipPlacement={sideboardTooltipPlacement}
                 cards={sideboardCards}
                 allCards={cards}
                 loading={loading}
@@ -2013,6 +2104,8 @@ export function DeckBoard({
                 onSelectionChange={onSelectionChange}
                 onCardContextMenu={onCardContextMenu}
                 highlightedCard={highlightedCard}
+                hoveredCardName={dragPreview ? null : activeHoverName}
+                emphasizedCardName={activeEmphasisName}
               />
             </div>
           ) : null}

@@ -12,7 +12,7 @@ import { Card, CardContent } from '../../primitives/Card'
 import type { DeckFeaturedCard, DeckGalleryItem } from '../../types/decks'
 import { getDisplayCardColors } from '../../utils/card-colors'
 import { getFormatLabel } from '../../utils/formats'
-import { getManaSymbolSvgPath } from '../../utils/mana-symbols'
+import { DeckManaSymbols } from '../cards/DeckManaSymbols'
 import { getDeckMatchStats } from '../../utils/deck-sortable'
 import { CardImage } from '../cards/CardImage'
 import { CatalogCardImage } from '../cards/CatalogCardImage'
@@ -30,23 +30,6 @@ function FormatLabel({ format, className }: { format: string; className?: string
     <span className={cn('inline-flex min-w-0 items-center', className)}>
       <span className="truncate">{formatFormatName(format)}</span>
     </span>
-  )
-}
-
-function ManaSymbols({ colors, className }: { colors: string[]; className?: string }) {
-  const visibleColors = getDisplayCardColors(colors)
-
-  return (
-    <div className={cn('flex items-center gap-1', className)}>
-      {visibleColors.map((color, index) => (
-        <img
-          key={`${color}-${index}`}
-          src={getManaSymbolSvgPath(color) ?? undefined}
-          alt={color}
-          className="h-5 w-5 rounded-full bg-background shadow-sm ring-1 ring-background"
-        />
-      ))}
-    </div>
   )
 }
 
@@ -140,7 +123,7 @@ function DeckHeroPreview({
       <div className="absolute inset-x-0 bottom-0 z-20 h-11 bg-gradient-to-t from-card/90 from-[0%] via-card/45 via-[38%] to-transparent" />
       <div className="absolute inset-x-3 bottom-2 z-30 flex items-center justify-between gap-3">
         <div className="px-2 py-1">
-          <ManaSymbols colors={[...colors]} />
+          <DeckManaSymbols colors={colors} className="h-5 gap-1" symbolClassName="h-5 w-5" />
         </div>
         <Badge
           variant="secondary"

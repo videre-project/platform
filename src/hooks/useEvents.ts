@@ -4,6 +4,7 @@
 **/
 
 import { useEffect, useMemo, useState } from 'react'
+import type { CardQuantityPair } from '@videreproject/sql-schema'
 import type { DatePickerWithRangeProps } from '@videreproject/ui'
 
 import { fetchSharedJSON } from './apiClient'
@@ -49,8 +50,8 @@ export interface EventDeck {
   id: number
   event_id: number
   player: string
-  mainboard: unknown[]
-  sideboard: unknown[]
+  mainboard: CardQuantityPair[] | null
+  sideboard: CardQuantityPair[] | null
   deck_name: string | null
   archetype: string | null
 }
@@ -74,7 +75,6 @@ export interface EventCard {
 }
 
 const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'] as const
-const DECK_CARD_TUPLE = /^\((\d+),\s*(?:"([^"]*)"|([^,()]+)),\s*(\d+)\)$/
 const EVENT_DATA_BATCH_SIZE = 500
 
 function formatCode(format: string) {
@@ -222,21 +222,11 @@ export interface EventDetails {
   cardCatalog: Record<number, EventCard>
 }
 
-function getDeckCardIds(entries: unknown[]) {
-  return entries.flatMap(entry => {
-    if (typeof entry !== 'string') return []
-    const match = entry.match(DECK_CARD_TUPLE)
-    if (!match) return []
-    const id = Number(match[1])
-    return Number.isFinite(id) ? [id] : []
-  })
-}
-
 async function getDeckCardCatalog(decks: EventDeck[], signal: AbortSignal) {
   const cardIds = [...new Set(decks.flatMap(deck => [
-    ...getDeckCardIds(deck.mainboard),
-    ...getDeckCardIds(deck.sideboard),
-  ]))]
+    ...(deck.mainboard ?? []),
+    ...(deck.sideboard ?? []),
+  ].map(card => card.id)))]
   if (cardIds.length === 0) return { deckColors: {}, cardCatalog: {} }
 
   const cardIdBatches = Array.from({ length: Math.ceil(cardIds.length / 500) }, (_, index) => cardIds.slice(index * 500, (index + 1) * 500))
@@ -255,7 +245,7 @@ async function getDeckCardCatalog(decks: EventDeck[], signal: AbortSignal) {
   return {
     deckColors: Object.fromEntries(decks.map(deck => [
       deck.id,
-      COLOR_ORDER.filter(color => getDeckCardIds(deck.mainboard).some(id => cardsById.get(id)?.colors?.includes(color))),
+      COLOR_ORDER.filter(color => deck.mainboard?.some(card => cardsById.get(card.id)?.colors?.includes(color))),
     ])),
     cardCatalog: Object.fromEntries(cards.map(card => [card.id, card])),
   }
@@ -266,9 +256,9 @@ export function useSelectedDeckCardCatalog(
   cardCatalog: Record<number, EventCard> | undefined,
 ) {
   const cardIds = useMemo(() => [...new Set([
-    ...getDeckCardIds(deck?.mainboard ?? []),
-    ...getDeckCardIds(deck?.sideboard ?? []),
-  ])].filter(id => {
+    ...(deck?.mainboard ?? []),
+    ...(deck?.sideboard ?? []),
+  ].map(card => card.id))].filter(id => {
     const card = cardCatalog?.[id]
     return card?.is_multiface === true && !card.mana_cost && !card.faces
   }), [cardCatalog, deck])

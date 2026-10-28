@@ -56,6 +56,8 @@ export type DashboardLayoutProps = {
   onFormatChange: (value: string) => void
   dateRange?: DateRange
   onDateRangeChange: (range: DateRange | undefined) => void
+  /** Space reserved for a host header above the sticky dashboard filters, in pixels. */
+  stickyFilterOffset?: number
 
   // KPI + trend
   stats?: DashboardStats | null
@@ -65,6 +67,8 @@ export type DashboardLayoutProps = {
   // Deck performance
   archetypes?: DashboardArchetype[]
   archetypesLoading?: boolean
+  /** Selected archetype, shared with the host's detailed performance view. */
+  selectedArchetype?: string | null
 
   // Public metagame deck previews (host-fetched using the active filters)
   metagameDecks?: DeckGalleryItem[]
@@ -72,7 +76,7 @@ export type DashboardLayoutProps = {
   metagameDecksError?: string | null
 
   /**
-   * Resolve a card art URL for scatter points and list thumbnails.
+   * Resolve a card art URL for scatter points.
    * Prefer this over artUrls when URLs are loaded asynchronously.
    */
   getArtUrl?: (cardName: string) => string | null | undefined
@@ -80,7 +84,7 @@ export type DashboardLayoutProps = {
   artUrls?: Record<string, string>
 
   /**
-   * Optional host link wrapper for deck names (defaults to a span).
+   * Optional host link wrapper for deck scatter points.
    * Hosts can use this for deck navigation when their application supports it.
    */
   renderDeckLink?: (props: { deckName: string; children: ReactNode }) => ReactNode
@@ -89,12 +93,8 @@ export type DashboardLayoutProps = {
   /** Host callback for opening a metagame deck preview from the dashboard carousel. */
   onMetagameDeckClick?: (deckRevisionId: number, deck: DeckGalleryItem) => void
 
-  /**
-   * Host navigation for "View More Decks" (e.g. `<Link to="/decks">{children}</Link>`).
-   * Falls back to onViewMoreDecks as a button click, or a non-navigating Button.
-   */
-  renderViewMoreDecks?: (props: { children: ReactNode }) => ReactNode
-  onViewMoreDecks?: () => void
+  /** Additional personal performance reports, displayed above the metagame carousel. */
+  performanceContent?: ReactNode
 
   /** Optional host link for the full metagame deck search surface. */
   renderSearchMoreMetagameDecks?: (props: { children: ReactNode }) => ReactNode

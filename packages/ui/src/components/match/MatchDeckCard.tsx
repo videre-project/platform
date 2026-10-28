@@ -7,27 +7,9 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { SquarePen } from 'lucide-react'
 
 import { CatalogCardImage } from '../cards/CatalogCardImage'
-import { getManaSymbolSvgPath } from '../../utils/mana-symbols'
+import { DeckManaSymbols } from '../cards/DeckManaSymbols'
 import { cn } from '../../lib/cn'
 import type { MatchDetailsCard } from '../../types/match'
-
-export function DeckManaSymbols({ colors }: { colors?: string[] | null }) {
-  if (!colors) return null
-  const visibleColors = colors.length ? colors : ['C']
-
-  return (
-    <span className="inline-flex h-4 items-center gap-0.5 leading-none">
-      {visibleColors.map((color, index) => (
-        <img
-          key={`${color}-${index}`}
-          src={getManaSymbolSvgPath(color) ?? undefined}
-          alt={color}
-          className="block h-3.5 w-3.5 rounded-full bg-background shadow-sm ring-1 ring-background"
-        />
-      ))}
-    </span>
-  )
-}
 
 function MatchDeckCardContent({
   deckName,

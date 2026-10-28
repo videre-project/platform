@@ -50,7 +50,7 @@ export const NavigationActions: Story = {
   args: { match: MATCH_DETAILS_SHOWCASE, initialGameId: 'game-2', ...actions },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: /Game 1 Win On the Play 9m 7s/ }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Game 1', exact: true }))
     await expect(args.onGameChange).toHaveBeenCalled()
     await userEvent.click(canvas.getByRole('button', { name: 'Replay' }))
     await expect(args.onReplay).toHaveBeenCalled()
@@ -62,11 +62,15 @@ export const NavigationActions: Story = {
 }
 
 export const ArchetypeEditor: Story = {
-  args: { match: MATCH_DETAILS_SHOWCASE, initialGameId: 'game-2', ...actions, onOpponentArchetypeChange: fn() },
-  play: async ({ canvasElement }) => {
+  args: { match: MATCH_DETAILS_SHOWCASE, initialGameId: 'game-2', ...actions, onOpponentArchetypeChange: fn(),
+    loadOpponentArchetypeContext: async () => ({ archetypes: [{ name: 'Dimir Control', colors: ['U', 'B'] }], cards: [] }) },
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByTitle('Edit opponent archetype'))
-    await expect(within(document.body).getByText('Edit Opponent Archetype')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit opponent archetype' }))
+    const picker = within(await within(document.body).findByRole('dialog', { name: 'Classify opponent' }))
+    await userEvent.type(picker.getByRole('textbox', { name: 'Search archetypes' }), 'Dimir')
+    await userEvent.click(await picker.findByRole('option', { name: /^Dimir Control/ }))
+    await expect(args.onOpponentArchetypeChange).toHaveBeenCalledWith('Dimir Control', ['U', 'B'])
   },
 }
 

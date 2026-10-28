@@ -29,7 +29,12 @@ function formatSchedule(start?: string, end?: string) {
   })
   const startTime = formatTime(start)
   const endTime = formatTime(end)
-  return `${date}, ${startTime} – ${endTime}`
+  return (
+    <span className="inline-flex flex-col">
+      <span className="whitespace-nowrap">{date}</span>
+      <span className="whitespace-nowrap">{startTime} – {endTime}</span>
+    </span>
+  )
 }
 
 const DEFAULT_ROUND_DURATION_MS = 50 * 60 * 1000
@@ -96,7 +101,7 @@ function RoundsCell({
 
   if (!hasStarted) {
     return (
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
         <span
           className="text-right tabular-nums text-muted-foreground"
           style={{ width: `${roundsDigitsWidth}ch` }}
@@ -112,7 +117,7 @@ function RoundsCell({
   const filled = circ * progress
 
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
       <span className="text-right tabular-nums" style={{ width: `${roundsDigitsWidth}ch` }}>
         {currentRound}
       </span>
@@ -236,42 +241,53 @@ export function EventsLayout({
       {
         accessorKey: 'name',
         header: 'Name',
+        minSize: 184,
       },
       {
         id: 'schedule',
         header: 'Schedule',
-        size: 176,
+        size: 192,
+        minSize: 192,
         cell: ({ row }) => formatSchedule(row.original._rawStartTime, row.original._rawEndTime),
       },
       {
         accessorKey: 'format',
         header: 'Format',
-        size: 112,
+        size: 120,
+        minSize: 120,
         cell: ({ row }) => (
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5" title={row.original.format}>
             <span
               className={cn(
                 'h-2 w-2 shrink-0 translate-y-px rounded-full',
                 getFormatDotColor(row.original.format),
               )}
             />
-            {row.original.format}
+            <span className="truncate">{row.original.format}</span>
           </span>
         ),
       },
       {
         id: 'entryFee',
         header: 'Entry Fee',
-        size: 86,
+        size: 104,
+        minSize: 104,
         cell: ({ row }) => {
           const fee = entryFees[row.original.id]
-          return <span className="text-muted-foreground">{fee ?? '...'}</span>
+          return (
+            <span className="inline-flex flex-col text-muted-foreground">
+              {(fee ?? '...').split(/\s*\/\s*/).map((part, index) => (
+                <span key={index} className="whitespace-nowrap">{part}</span>
+              ))}
+            </span>
+          )
         },
       },
       {
         accessorKey: 'totalPlayers',
         header: 'Players',
-        size: 84,
+        size: 112,
+        minSize: 112,
         cell: ({ row }) => {
           const total = row.original.totalPlayers ?? 0
           const min = row.original.minimumPlayers ?? 0
@@ -280,7 +296,7 @@ export function EventsLayout({
           const circ = 2 * Math.PI * r
           const filled = circ * pct
           return (
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
               <span
                 className="text-right tabular-nums"
                 style={{ width: `${playersDigitsWidth}ch` }}
@@ -322,7 +338,8 @@ export function EventsLayout({
       {
         accessorKey: 'totalRounds',
         header: 'Rounds',
-        size: 84,
+        size: 112,
+        minSize: 112,
         cell: ({ row }) => (
           <RoundsCell event={row.original} roundsDigitsWidth={roundsDigitsWidth} />
         ),
@@ -384,7 +401,7 @@ export function EventsLayout({
               autoResetPageIndex={false}
               containerClassName="flex min-h-0 flex-1 flex-col"
               tableContainerClassName="flex min-h-0 flex-1 flex-col overflow-visible"
-              bodyWrapperClassName="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+              bodyWrapperClassName="min-h-0 flex-1 overflow-auto"
               onRowHover={event => onHoveredEventIdChange?.(event.id)}
               onRowLeave={() => onHoveredEventIdChange?.(null)}
               onRowClick={handleRowClick}

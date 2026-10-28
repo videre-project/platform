@@ -57,6 +57,8 @@ export interface CollectionProductEntry {
 export type CollectionViewMode = 'cards' | 'products'
 export type CollectionGridItem = CollectionCardEntry | CollectionProductEntry
 export type CollectionSelection = { item: CollectionGridItem; viewMode: CollectionViewMode }
+/** View state keeps identity; its data owner supplies the current item. */
+export type CollectionSelectionKey = { catalogId: number; viewMode: CollectionViewMode }
 
 export interface CollectionLayoutProps {
   cards: CollectionCardEntry[]
@@ -88,6 +90,8 @@ export interface CollectionLayoutProps {
   loading?: boolean
   error?: string | null
   onCloseDetails?: () => void
+  /** Bottom workspace rendered over the grid without changing its viewport. */
+  bottomPanel?: ReactNode
   detailsCloseDisabled?: boolean
   className?: string
 }

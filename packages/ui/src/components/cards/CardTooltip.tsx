@@ -16,8 +16,10 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { arrow, autoUpdate, flip, offset, shift, size, useFloating } from '@floating-ui/react-dom'
 
 import { CatalogCardImage } from './CatalogCardImage'
+import { TooltipCaret } from '../../primitives/TooltipCaret'
 
 export interface CardTooltipData {
   catalogId: number
@@ -31,14 +33,8 @@ export interface CardTooltipProviderProps {
   resolveOtherFaceCatalogId?: (catalogId: number) => Promise<number | null>
 }
 
-interface CardTooltipPosition {
-  x: number
-  y: number
-}
-
 interface CardTooltipContextType {
-  showTooltip: (data: CardTooltipData, position: CardTooltipPosition) => void
-  updatePosition: (position: CardTooltipPosition) => void
+  showTooltip: (data: CardTooltipData, anchor: HTMLElement, point: { x: number; y: number }, placement: 'left' | 'right' | 'auto') => void
   hideTooltip: () => void
 }
 
@@ -50,16 +46,17 @@ const TooltipChildren = memo(function TooltipChildren({ children }: { children: 
 })
 
 const CARD_WIDTH = 210
-const CARD_HEIGHT = 294
 const TOOLTIP_GAP = 8
-const TOOLTIP_OFFSET = 16
-/** Cursor-following card preview. Hosts may supply a known back-face ID offline. */
+const TOOLTIP_PADDING = 14
+const VIEWPORT_PADDING = 12
+const CARET_SIZE = 12
+
+/** Anchored card preview. Hosts may supply a known back-face ID offline. */
 export function CardTooltipProvider({
   children,
   resolveOtherFaceCatalogId,
 }: CardTooltipProviderProps) {
   const [activeCard, setActiveCard] = useState<CardTooltipData | null>(null)
-  const [position, setPosition] = useState<CardTooltipPosition>({ x: 0, y: 0 })
   const [resolvedOtherFaceCatalogId, setResolvedOtherFaceCatalogId] = useState<number | null>(null)
   const otherFaceCatalogIdCache = useRef(new Map<number, number | null>())
   const pendingOtherFaceRequests = useRef(new Map<number, Promise<number | null>>())
@@ -68,26 +65,92 @@ export function CardTooltipProvider({
   // not reliably dispatch to a display:contents element in the WebView2 host.
   const hideOnPressRef = useRef<HTMLDivElement | null>(null)
 
-  const showTooltip = useCallback((data: CardTooltipData, nextPosition: CardTooltipPosition) => {
-    if (data.catalogId <= 0) return
-    setActiveCard(data)
-    setPosition(nextPosition)
-    setResolvedOtherFaceCatalogId(data.otherFaceCatalogId ?? null)
-  }, [])
+  const arrowRef = useRef<HTMLDivElement>(null)
+  const [anchorPoint, setAnchorPoint] = useState({ x: 0.5, y: 0.5 })
+  const [preferredSide, setPreferredSide] = useState<'left' | 'right'>('right')
+  const otherFaceCatalogId = activeCard?.otherFaceCatalogId ?? resolvedOtherFaceCatalogId
+  const isDoubleSided = Boolean(
+    otherFaceCatalogId && otherFaceCatalogId > 0 && otherFaceCatalogId !== activeCard?.catalogId,
+  )
+  const faceCount = isDoubleSided ? 2 : 1
+  const containerWidth = CARD_WIDTH * faceCount + TOOLTIP_GAP * (faceCount - 1) + TOOLTIP_PADDING
+  const caret = arrow({ element: arrowRef, padding: 12 })
+  const { refs, floatingStyles, placement, middlewareData, isPositioned } = useFloating({
+    open: activeCard != null,
+    placement: preferredSide,
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      offset(12),
+      flip({
+        padding: VIEWPORT_PADDING,
+        crossAxis: false,
+        fallbackPlacements: [preferredSide === 'left' ? 'right' : 'left', 'top', 'bottom'],
+      }),
+      // Shift along the card's edge without crossing back over the card itself.
+      shift({ padding: VIEWPORT_PADDING }),
+      size({
+        padding: VIEWPORT_PADDING,
+        apply({ availableWidth, availableHeight, elements }) {
+          const heightLimitedWidth =
+            Math.max(0, availableHeight - TOOLTIP_PADDING) * (5 / 7) * faceCount
+            + TOOLTIP_GAP * (faceCount - 1) + TOOLTIP_PADDING
+          elements.floating.style.setProperty(
+            '--card-tooltip-max-width',
+            `${Math.max(0, Math.min(availableWidth, heightLimitedWidth))}px`,
+          )
+        },
+      }, [faceCount]),
+      {
+        ...caret,
+        options: { ...caret.options, anchorPoint },
+        // Keep the full card as the collision boundary, but point the caret
+        // at its hovered area (which can be just a title in a stacked deck).
+        fn(state) {
+          const reference = state.rects.reference
+          return caret.fn({
+            ...state,
+            rects: {
+              ...state.rects,
+              reference: {
+                ...reference,
+                x: reference.x + reference.width * anchorPoint.x,
+                y: reference.y + reference.height * anchorPoint.y,
+                width: 0,
+                height: 0,
+              },
+            },
+          })
+        },
+      },
+    ],
+  })
+  const setReference = refs.setReference
+  const side = placement.split('-')[0] as 'top' | 'right' | 'bottom' | 'left'
+  const arrowEdge = { top: 'bottom', right: 'left', bottom: 'top', left: 'right' }[side]
+  const arrowRotation = { top: 0, right: 90, bottom: 180, left: -90 }[side]
 
-  const updatePosition = useCallback((nextPosition: CardTooltipPosition) => {
-    setPosition(nextPosition)
-  }, [])
+  const showTooltip = useCallback((data: CardTooltipData, anchor: HTMLElement, point: { x: number; y: number }, preferredPlacement: 'left' | 'right' | 'auto') => {
+    if (data.catalogId <= 0) return
+    const bounds = anchor.getBoundingClientRect()
+    setPreferredSide(preferredPlacement === 'auto'
+      ? bounds.left > document.documentElement.clientWidth - bounds.right ? 'left' : 'right'
+      : preferredPlacement)
+    setAnchorPoint(point)
+    setReference(anchor)
+    setActiveCard(data)
+    setResolvedOtherFaceCatalogId(data.otherFaceCatalogId ?? null)
+  }, [setReference])
 
   const hideTooltip = useCallback(() => {
     setActiveCard(null)
     setResolvedOtherFaceCatalogId(null)
   }, [])
 
-  // Tooltip position changes should not notify every card consuming this context.
+  // Position updates should not notify every card consuming this context.
   const contextValue = useMemo(
-    () => ({ showTooltip, updatePosition, hideTooltip }),
-    [showTooltip, updatePosition, hideTooltip],
+    () => ({ showTooltip, hideTooltip }),
+    [showTooltip, hideTooltip],
   )
 
   // Face lookup is intentionally explicit here. The media provider may expose
@@ -162,27 +225,6 @@ export function CardTooltipProvider({
     }
   }, [activeCard, faceCatalogIdResolver])
 
-  const otherFaceCatalogId = activeCard?.otherFaceCatalogId ?? resolvedOtherFaceCatalogId
-  const isDoubleSided = Boolean(
-    otherFaceCatalogId && otherFaceCatalogId > 0 && otherFaceCatalogId !== activeCard?.catalogId,
-  )
-  const containerWidth = isDoubleSided ? CARD_WIDTH * 2 + TOOLTIP_GAP + 12 : CARD_WIDTH + 12
-  const containerHeight = CARD_HEIGHT + 12
-  let left = position.x + TOOLTIP_OFFSET
-  let top = position.y - CARD_HEIGHT / 2
-
-  if (typeof window !== 'undefined') {
-    if (position.x > window.innerWidth / 2) {
-      left = position.x - containerWidth - TOOLTIP_OFFSET
-      if (left < 12) left = position.x + TOOLTIP_OFFSET
-    } else if (left + containerWidth > window.innerWidth - 12) {
-      left = position.x - containerWidth - TOOLTIP_OFFSET
-    }
-
-    left = Math.max(12, Math.min(left, window.innerWidth - containerWidth - 12))
-    top = Math.max(12, Math.min(top, window.innerHeight - containerHeight - 12))
-  }
-
   return (
     <CardTooltipContext.Provider value={contextValue}>
       <div ref={hideOnPressRef} style={{ display: 'contents' }}>
@@ -190,31 +232,55 @@ export function CardTooltipProvider({
       </div>
       {activeCard && typeof document !== 'undefined' ? createPortal(
         <div
-          className="pointer-events-none fixed z-[9999] rounded-xl border border-white/15 bg-black/85 p-1.5 shadow-2xl backdrop-blur-md transition-opacity duration-150 animate-in fade-in-0 zoom-in-95"
-          style={{ left, top }}
+          ref={refs.setFloating}
+          role="tooltip"
+          aria-label={`${activeCard.name ?? 'Card'} preview`}
+          data-side={side}
+          className="pointer-events-none z-[9999]"
+          style={{
+            ...floatingStyles,
+            width: containerWidth,
+            maxWidth: 'min(calc(100vw - 24px), var(--card-tooltip-max-width, 100vw))',
+            visibility: isPositioned ? 'visible' : 'hidden',
+          }}
         >
-          <div className="flex flex-row items-center gap-2">
-            <div className="relative overflow-hidden rounded-lg border border-white/10 bg-muted/30 shadow-md" style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
-              <CatalogCardImage
-                catalogId={activeCard.catalogId}
-                name={activeCard.name ?? ''}
-                imageUrl={activeCard.imageUrl ?? undefined}
-                alt={activeCard.name ?? ''}
-                className="h-full w-full object-cover"
-                loading="eager"
-              />
-            </div>
-            {isDoubleSided && otherFaceCatalogId ? (
-              <div className="relative overflow-hidden rounded-lg border border-white/10 bg-muted/30 shadow-md" style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
+          <div className="relative rounded-xl border border-white/15 bg-black/85 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95">
+            <div className="flex flex-row items-start gap-2">
+              <div className="relative aspect-[5/7] min-w-0 flex-1 overflow-hidden rounded-lg border border-white/10 bg-muted/30 shadow-md">
                 <CatalogCardImage
-                  catalogId={otherFaceCatalogId}
-                  name={`${activeCard.name ?? ''} (Back Face)`}
-                  alt={`${activeCard.name ?? ''} (Back Face)`}
+                  catalogId={activeCard.catalogId}
+                  name={activeCard.name ?? ''}
+                  imageUrl={activeCard.imageUrl ?? undefined}
+                  alt={activeCard.name ?? ''}
                   className="h-full w-full object-cover"
                   loading="eager"
                 />
               </div>
-            ) : null}
+              {isDoubleSided && otherFaceCatalogId ? (
+                <div className="relative aspect-[5/7] min-w-0 flex-1 overflow-hidden rounded-lg border border-white/10 bg-muted/30 shadow-md">
+                  <CatalogCardImage
+                    catalogId={otherFaceCatalogId}
+                    name={`${activeCard.name ?? ''} (Back Face)`}
+                    alt={`${activeCard.name ?? ''} (Back Face)`}
+                    className="h-full w-full object-cover"
+                    loading="eager"
+                  />
+                </div>
+              ) : null}
+            </div>
+            <div
+              ref={arrowRef}
+              data-tooltip-caret
+              className="absolute h-3 w-3"
+              style={{
+                left: middlewareData.arrow?.x,
+                top: middlewareData.arrow?.y,
+                [arrowEdge]: -CARET_SIZE / 2,
+                transform: `rotate(${arrowRotation}deg)`,
+              }}
+            >
+              <TooltipCaret className="absolute left-0 top-1/2 overflow-visible fill-black/85 stroke-white/15" />
+            </div>
           </div>
         </div>,
         document.body,
@@ -228,36 +294,60 @@ export function useCardTooltipHover({
   name,
   imageUrl,
   otherFaceCatalogId,
+  anchorPoint = { x: 0.5, y: 0.5 },
+  placement = 'right',
   enabled = true,
+  delayMs = 0,
 }: {
   catalogId?: number | null
   name?: string
   imageUrl?: string | null
   otherFaceCatalogId?: number | null
+  /** Anchor within the card, expressed as fractions of its width and height. */
+  anchorPoint?: { x: number; y: number }
+  /** Prefer an edge, or use the horizontal edge with more viewport space. */
+  placement?: 'left' | 'right' | 'auto'
   enabled?: boolean
+  /** Optional hover delay for small preview thumbnails. */
+  delayMs?: number
 }) {
   const context = useContext(CardTooltipContext)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cancelPending = useCallback(() => {
+    if (timer.current !== null) clearTimeout(timer.current)
+    timer.current = null
+  }, [])
+  useEffect(() => cancelPending, [cancelPending])
+  const { x: anchorX, y: anchorY } = anchorPoint
 
   useEffect(() => {
-    if (!enabled) context?.hideTooltip()
-  }, [context, enabled])
+    if (!enabled) { cancelPending(); context?.hideTooltip() }
+  }, [cancelPending, context, enabled])
 
-  const onMouseEnter = useCallback((event: ReactMouseEvent) => {
+  const onMouseEnter = useCallback((event: ReactMouseEvent<HTMLElement>) => {
     if (!context || !enabled || !catalogId || catalogId <= 0 || event.buttons !== 0) return
-    context.showTooltip({ catalogId, name, imageUrl, otherFaceCatalogId }, { x: event.clientX, y: event.clientY })
-  }, [catalogId, context, enabled, imageUrl, name, otherFaceCatalogId])
+    cancelPending()
+    const anchor = event.currentTarget
+    const show = () => {
+      timer.current = null
+      if (delayMs > 0 && (!anchor.isConnected || !anchor.matches(':hover'))) return
+      context.showTooltip({ catalogId, name, imageUrl, otherFaceCatalogId }, anchor, { x: anchorX, y: anchorY }, placement)
+    }
+    if (delayMs > 0) timer.current = setTimeout(show, delayMs)
+    else show()
+  }, [catalogId, context, enabled, imageUrl, name, otherFaceCatalogId, anchorX, anchorY, placement, delayMs, cancelPending])
 
-  const onMouseMove = useCallback((event: ReactMouseEvent) => {
+  const onMouseMove = useCallback((event: ReactMouseEvent<HTMLElement>) => {
     if (!context || !enabled || !catalogId || catalogId <= 0) return
     if (event.buttons !== 0) {
+      cancelPending()
       context.hideTooltip()
       return
     }
-    context.updatePosition({ x: event.clientX, y: event.clientY })
-  }, [catalogId, context, enabled])
+  }, [catalogId, context, enabled, cancelPending])
 
-  const onMouseLeave = useCallback(() => context?.hideTooltip(), [context])
-  const onMouseDown = useCallback(() => context?.hideTooltip(), [context])
+  const onMouseLeave = useCallback(() => { cancelPending(); context?.hideTooltip() }, [context, cancelPending])
+  const onMouseDown = useCallback(() => { cancelPending(); context?.hideTooltip() }, [context, cancelPending])
 
   return {
     onMouseEnter: context && enabled && catalogId ? onMouseEnter : undefined,

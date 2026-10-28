@@ -108,7 +108,7 @@ function CollectionCardTile({
           : 'border-sidebar-border/60 hover:border-sidebar-accent/70 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15)]'
       }`}
       style={position}
-      title={priceLabel && totalPriceLabel
+      aria-label={priceLabel && totalPriceLabel
         ? `${card.quantity}x ${card.name} - ${totalPriceLabel} tix total, ${priceLabel} tix each`
         : `${card.quantity}x ${card.name}`}
     >

@@ -12,6 +12,7 @@ import type {
   CollectionProductEntry,
   CollectionGridItem,
   CollectionSelection,
+  CollectionSelectionKey,
   CollectionSortDirection,
   CollectionSortMode,
   CollectionLayoutProps,
@@ -60,21 +61,27 @@ export function CollectionLayout({
   error,
   onCloseDetails,
   detailsCloseDisabled = false,
+  bottomPanel,
   className,
 }: CollectionLayoutProps) {
   const [internalViewMode, setInternalViewMode] = useState<CollectionViewMode>(defaultViewMode)
   const [internalSearch, setInternalSearch] = useState(defaultSearch)
   const [internalSortMode, setInternalSortMode] = useState<CollectionSortMode>(initialSortMode)
   const [internalSortDirection, setInternalSortDirection] = useState<CollectionSortDirection>(initialSortDirection)
-  const initialIndex = initialSelectedCatalogId === undefined
-    ? -1
-    : cards.findIndex(card => card.catalogId === initialSelectedCatalogId)
-  const [internalSelection, setInternalSelection] = useState<CollectionSelection | null>(defaultViewMode === 'cards' && initialIndex >= 0 && cards[initialIndex] ? { item: cards[initialIndex], viewMode: 'cards' } : null)
+  const initialCard = cards.find(card => card.catalogId === initialSelectedCatalogId)
+  const [internalSelection, setInternalSelection] = useState<CollectionSelectionKey | null>(
+    defaultViewMode === 'cards' && initialCard
+      ? { catalogId: initialCard.catalogId, viewMode: 'cards' } : null,
+  )
   const viewMode = controlledViewMode ?? internalViewMode
   const search = controlledSearch ?? internalSearch
   const sortMode = controlledSortMode ?? internalSortMode
   const sortDirection = controlledSortDirection ?? internalSortDirection
-  const selected = controlledSelection === undefined ? internalSelection : controlledSelection
+  const selectedItem = internalSelection && (internalSelection.viewMode === 'cards' ? cards : products)
+    .find(item => item.catalogId === internalSelection.catalogId)
+  let selected = controlledSelection ?? null
+  if (controlledSelection === undefined && internalSelection && selectedItem)
+    selected = { item: selectedItem, viewMode: internalSelection.viewMode }
 
   const visibleItems = useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
@@ -122,7 +129,8 @@ export function CollectionLayout({
       && selected.item.catalogId === nextSelection.item.catalogId
       ? null
       : nextSelection
-    if (controlledSelection === undefined) setInternalSelection(toggledSelection)
+    if (controlledSelection === undefined) setInternalSelection(toggledSelection
+      ? { catalogId: toggledSelection.item.catalogId, viewMode: toggledSelection.viewMode } : null)
     onSelectionChange?.(toggledSelection)
   }
 
@@ -144,8 +152,11 @@ export function CollectionLayout({
         activeFilterCount={activeFilterCount}
       />
       {error ? <div className="shrink-0 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-red-400">{error}</div> : null}
-      <div className="flex min-h-0 flex-1 gap-2 overflow-hidden">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-sidebar-border/60 bg-card">
+      <div className="relative flex min-h-0 flex-1 gap-2 overflow-hidden">
+        <div className={cn(
+          'flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-sidebar-border/60 bg-card',
+          bottomPanel && 'rounded-b-none border-b-0 pb-10',
+        )}>
           <VirtualCollectionGrid
             items={visibleItems}
             viewMode={viewMode}
@@ -158,6 +169,7 @@ export function CollectionLayout({
         </div>
         {selected ? (
           <CollectionPriceHistoryPanel
+            className={bottomPanel ? 'rounded-b-none border-b-0 pb-10' : undefined}
             {...(selected.viewMode === 'cards'
               ? { card: selected.item as CollectionCardEntry }
               : { product: selected.item as CollectionProductEntry })}
@@ -165,6 +177,7 @@ export function CollectionLayout({
             closeDisabled={detailsCloseDisabled}
           />
         ) : null}
+        {bottomPanel}
       </div>
     </div>
   )

@@ -139,7 +139,7 @@ function ZoneBrowsePanel({
                     />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px]">
+                <TooltipContent showArrow side="top" className="max-w-[200px]">
                   <CardTooltipContent card={card} />
                 </TooltipContent>
               </Tooltip>
@@ -209,7 +209,7 @@ export function BottomZoneBar({
                           />
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[200px]">
+                      <TooltipContent showArrow side="top" className="max-w-[200px]">
                         <CardTooltipContent card={card} />
                       </TooltipContent>
                     </Tooltip>
@@ -383,7 +383,7 @@ export function TopZoneBar({
                               />
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-[200px]">
+                          <TooltipContent showArrow side="bottom" className="max-w-[200px]">
                             <CardTooltipContent card={card} />
                           </TooltipContent>
                         </Tooltip>

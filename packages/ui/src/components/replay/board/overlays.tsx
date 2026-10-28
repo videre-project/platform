@@ -140,7 +140,7 @@ export function TriggeredAbilitiesOverlay({
                         type="Triggered Ability" cardFrameUrl={cardFrameUrl} />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[240px]">
+                  <TooltipContent showArrow side="top" className="max-w-[240px]">
                     <div className="font-semibold">{card.name ?? "Triggered Ability"}</div>
                     <GameLogText text={card.rulesText ?? ""} />
                   </TooltipContent>
@@ -308,7 +308,7 @@ export function StackOverlay({
                         )}
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px]">
+                    <TooltipContent showArrow side="top" className="max-w-[200px]">
                       <CardTooltipContent card={card} footer={
                         <div className="text-muted-foreground/60 text-[10px]">
                           {isTop ? "Resolves next" : `Resolves in ${count - i} steps`}

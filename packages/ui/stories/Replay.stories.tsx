@@ -5,7 +5,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ArrowLeft } from 'lucide-react'
 
 import { BoardView } from '../src/components/replay/BoardView'
@@ -170,25 +170,27 @@ export const PendingTriggeredAbilities: Story = {
 
 function CombatHighlightFixture() {
   const initialBoard = useMemo(() => new ReplayStateEngine(replay).stepTo(61), [])
-  const [mode, setMode] = useState<'attack' | 'block' | 'target'>('attack')
+  const [mode, setMode] = useState<'attack' | 'block' | 'target' | 'selectable' | 'targetable'>('attack')
+  const attacking = mode === 'attack' || mode === 'target'
+  const targetable = mode === 'target' || mode === 'targetable'
   const creature = initialBoard.cards.get(424)!
   const card: CardState = {
     ...creature,
-    isAttacking: mode !== 'block',
+    isAttacking: attacking,
     isBlocking: mode === 'block',
     interaction: {
       logicalAddress: '424', cardId: 424, sourceId: 0,
       hasActions: true, isSelectable: true,
-      isTargetable: mode === 'target', isTargeted: false,
+      isTargetable: targetable, isTargeted: false,
       actions: [{ $type: 'CardAction', actionId: 1, name: mode === 'block' ? "Don't block" : "Don't attack" }],
     },
   }
   const board: BoardState = {
     ...initialBoard,
-    phase: mode === 'block' ? 'DeclareBlockers' : 'DeclareAttackers',
+    phase: mode === 'block' ? 'DeclareBlockers' : attacking ? 'DeclareAttackers' : 'PreCombatMain',
     interaction: {
-      mode: mode === 'target' ? 'SelectTargets' : 'None',
-      promptText: mode === 'target' ? 'Choose a creature.' : null,
+      mode: targetable ? 'SelectTargets' : 'None',
+      promptText: targetable ? 'Choose a creature.' : null,
       cards: [card.interaction!], players: [],
     },
     cards: new Map(initialBoard.cards).set(card.cardId, card),
@@ -200,6 +202,8 @@ function CombatHighlightFixture() {
       <div>
         <button type="button" onClick={() => setMode('block')}>Show blocker</button>
         <button type="button" onClick={() => setMode('target')}>Show targetable attacker</button>
+        <button type="button" onClick={() => setMode('selectable')}>Show selectable creature</button>
+        <button type="button" onClick={() => setMode('targetable')}>Show targetable creature</button>
       </div>
       <div className="flex-1 min-h-0"><BoardView board={board} /></div>
     </div>
@@ -216,7 +220,23 @@ export const CombatHighlightPriority: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Show blocker' }))
     await expect(card()).toHaveClass('ring-blue-500/70')
     await userEvent.click(canvas.getByRole('button', { name: 'Show targetable attacker' }))
-    await expect(card()).toHaveClass('ring-amber-300')
+    await expect(card()).not.toHaveClass('ring-amber-300')
+    await expect(card()).toHaveClass('ring-red-500')
+    await userEvent.hover(card() as HTMLElement)
+    await waitFor(() => {
+      const caret = document.querySelector('[data-tooltip-caret]')
+      expect(caret).toBeVisible()
+      const popup = caret!.closest('[data-side]')!.getBoundingClientRect()
+      const source = card()!.getBoundingClientRect()
+      const overlaps = popup.left < source.right && popup.right > source.left
+        && popup.top < source.bottom && popup.bottom > source.top
+      expect(overlaps).toBe(false)
+    })
+    await userEvent.click(canvas.getByRole('button', { name: 'Show selectable creature' }))
+    await expect(card()).toHaveClass('ring-white/80')
     await expect(card()).not.toHaveClass('ring-red-500')
+    await userEvent.click(canvas.getByRole('button', { name: 'Show targetable creature' }))
+    await expect(card()).not.toHaveClass('ring-amber-300')
+    await expect(card()).toHaveClass('ring-white/80')
   },
 }
