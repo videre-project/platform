@@ -324,6 +324,9 @@ importers:
       slash-create:
         specifier: ^6.1.2
         version: 6.8.1(express@4.22.2)
+      videre-api:
+        specifier: workspace:*
+        version: link:../videre-api
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20240419.0

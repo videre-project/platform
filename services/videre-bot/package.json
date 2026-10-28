@@ -13,7 +13,8 @@
 		"@videreproject/constants": "workspace:*",
 		"@discordjs/builders": "^1.7.0",
 		"itty-router": "^5.0.16",
-		"slash-create": "^6.1.2"
+		"slash-create": "^6.1.2",
+		"videre-api": "workspace:*"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20240419.0",
