@@ -89,7 +89,9 @@ const columns: ColumnDef<MatchHistoryItem>[] = [
     header: 'Event',
     minSize: 160,
     cell: ({ row }) => <span className="inline-grid min-w-0 gap-0.5">
-      <span className="truncate">{row.depth ? `Match ${row.index + 1}` : row.original.eventName}</span>
+      <span className="truncate">{row.depth
+        ? <>Match{row.original.matchNumber != null && ` ${row.original.matchNumber}`}</>
+        : row.original.eventName}</span>
       {row.original.isEvent && <span className="text-xs text-muted-foreground">{row.original.matches?.length ?? 0} matches</span>}
     </span>,
   },

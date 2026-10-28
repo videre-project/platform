@@ -14,6 +14,8 @@ export type MatchHistoryItem = {
   id: number
   eventId: number
   eventName: string
+  /** One-based position in the event or league course, when known. */
+  matchNumber?: number | null
   format: string
   startTime: string
   result: string

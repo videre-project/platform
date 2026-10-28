@@ -121,7 +121,7 @@ export type TournamentMatch = {
   round: number | null
   opponent: string | null
   record: string | null
-  result: 'win' | 'loss' | 'draw' | 'bye' | 'in-progress' | 'pending'
+  result: 'win' | 'loss' | 'draw' | 'bye' | 'in-progress' | 'pending' | 'nullified'
   isRecorded: boolean
   opponentArchetype?: string | null
   opponentColors?: string[]
